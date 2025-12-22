@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Correção Trindade-GO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .loading { background-color: #fff3cd; border: 1px solid #ffeaa7; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .info-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 2px solid;
+        }
+        .test-pass { background-color: #d4edda; border-color: #28a745; }
+        .test-fail { background-color: #f8d7da; border-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Teste de Correção - Trindade-GO</h1>
+        <p>Este teste verifica se a correção para detectar Trindade em vez de "Campestre de Goiás" está funcionando.</p>
+        
+        <button onclick="testTrindadeDetection()">📍 Testar Detecção de Trindade</button>
+        <button onclick="testCampestreCorrection()">🔧 Testar Correção Campestre → Trindade</button>
+        <button onclick="clearResults()">🗑️ Limpar Resultados</button>
+        
+        <div id="status"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Função para calcular distância entre dois pontos
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Raio da Terra em km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Função para detectar cidade específica (copiada do código)
+        function detectSpecificCity(lat, lng) {
+            const cities = [
+                { name: 'Trindade', lat: -16.6469, lng: -49.4889, radius: 35 }, // Raio aumentado
+                { name: 'Goiânia', lat: -16.6869, lng: -49.2648, radius: 30 },
+                { name: 'Aparecida de Goiânia', lat: -16.8173, lng: -49.2436, radius: 20 },
+                { name: 'Senador Canedo', lat: -16.7011, lng: -49.0919, radius: 15 },
+                { name: 'Hidrolândia', lat: -16.9619, lng: -49.2297, radius: 15 },
+                { name: 'Nerópolis', lat: -16.4053, lng: -49.2197, radius: 15 }
+            ];
+
+            for (const city of cities) {
+                const distance = calculateDistance(lat, lng, city.lat, city.lng);
+                if (distance <= city.radius) {
+                    return { city: city.name, distance: distance.toFixed(2) };
+                }
+            }
+            return null;
+        }
+
+        // Função para simular correção de Campestre
+        function correctCampestreToTrindade(city, lat, lng) {
+            if (city.toLowerCase().includes('campestre') && city.toLowerCase().includes('goiás')) {
+                const distanceToTrindade = calculateDistance(lat, lng, -16.6469, -49.4889);
+                if (distanceToTrindade <= 35) {
+                    return { corrected: true, newCity: 'Trindade', distance: distanceToTrindade.toFixed(2) };
+                }
+            }
+            return { corrected: false, newCity: city, distance: null };
+        }
+
+        function showStatus(message, type = 'loading') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showResults(content) {
+            document.getElementById('results').innerHTML = content;
+        }
+
+        function clearResults() {
+            document.getElementById('status').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function testTrindadeDetection() {
+            showStatus('🔍 Testando detecção de Trindade com raio aumentado...', 'loading');
+            
+            // Coordenadas de teste em diferentes pontos de Trindade
+            const testPoints = [
+                { name: 'Centro de Trindade', lat: -16.6469, lng: -49.4889 },
+                { name: 'Periferia de Trindade (Norte)', lat: -16.6200, lng: -49.4889 },
+                { name: 'Periferia de Trindade (Sul)', lat: -16.6700, lng: -49.4889 },
+                { name: 'Periferia de Trindade (Leste)', lat: -16.6469, lng: -49.4600 },
+                { name: 'Periferia de Trindade (Oeste)', lat: -16.6469, lng: -49.5200 },
+                { name: 'Limite do raio (30km)', lat: -16.6469, lng: -49.2000 },
+                { name: 'Fora do raio (40km)', lat: -16.6469, lng: -49.1000 }
+            ];
+
+            let resultsHTML = '<h3>🎯 Resultados do Teste de Detecção:</h3>';
+            let passCount = 0;
+            let totalTests = testPoints.length;
+
+            testPoints.forEach((point, index) => {
+                const detection = detectSpecificCity(point.lat, point.lng);
+                const shouldDetect = index < 6; // Primeiros 6 pontos devem detectar Trindade
+                const passed = shouldDetect ? (detection && detection.city === 'Trindade') : !detection;
+                
+                if (passed) passCount++;
+
+                resultsHTML += `
+                    <div class="test-result ${passed ? 'test-pass' : 'test-fail'}">
+                        <strong>${point.name}</strong><br>
+                        <small>Coordenadas: ${point.lat}, ${point.lng}</small><br>
+                        <strong>Resultado:</strong> ${detection ? `${detection.city} (${detection.distance}km)` : 'Não detectado'}<br>
+                        <strong>Esperado:</strong> ${shouldDetect ? 'Trindade' : 'Não detectar'}<br>
+                        <strong>Status:</strong> ${passed ? '✅ PASSOU' : '❌ FALHOU'}
+                    </div>
+                `;
+            });
+
+            resultsHTML += `
+                <div class="info-box">
+                    <h4>📊 Resumo dos Testes:</h4>
+                    <p><strong>Testes Passaram:</strong> ${passCount}/${totalTests}</p>
+                    <p><strong>Taxa de Sucesso:</strong> ${((passCount/totalTests)*100).toFixed(1)}%</p>
+                    <p><strong>Status Geral:</strong> ${passCount === totalTests ? '✅ TODOS OS TESTES PASSARAM' : '⚠️ ALGUNS TESTES FALHARAM'}</p>
+                </div>
+            `;
+
+            showResults(resultsHTML);
+            showStatus(passCount === totalTests ? '✅ Detecção funcionando perfeitamente!' : '⚠️ Alguns testes falharam', 
+                      passCount === totalTests ? 'success' : 'error');
+        }
+
+        function testCampestreCorrection() {
+            showStatus('🔧 Testando correção Campestre → Trindade...', 'loading');
+            
+            // Coordenadas de teste que podem retornar "Campestre de Goiás"
+            const testCases = [
+                { name: 'Próximo ao centro de Trindade', lat: -16.6469, lng: -49.4889, inputCity: 'Campestre de Goiás' },
+                { name: 'Periferia de Trindade', lat: -16.6600, lng: -49.4800, inputCity: 'Campestre de Goiás' },
+                { name: 'Limite do raio (35km)', lat: -16.6469, lng: -49.1500, inputCity: 'Campestre de Goiás' },
+                { name: 'Fora do raio (40km)', lat: -16.6469, lng: -49.1000, inputCity: 'Campestre de Goiás' },
+                { name: 'Cidade diferente', lat: -16.6869, lng: -49.2648, inputCity: 'Goiânia' }
+            ];
+
+            let resultsHTML = '<h3>🔧 Resultados do Teste de Correção:</h3>';
+            let passCount = 0;
+            let totalTests = testCases.length;
+
+            testCases.forEach((testCase, index) => {
+                const correction = correctCampestreToTrindade(testCase.inputCity, testCase.lat, testCase.lng);
+                const shouldCorrect = index < 3 && testCase.inputCity.includes('Campestre'); // Primeiros 3 casos devem corrigir
+                const passed = shouldCorrect ? correction.corrected : !correction.corrected;
+                
+                if (passed) passCount++;
+
+                resultsHTML += `
+                    <div class="test-result ${passed ? 'test-pass' : 'test-fail'}">
+                        <strong>${testCase.name}</strong><br>
+                        <small>Coordenadas: ${testCase.lat}, ${testCase.lng}</small><br>
+                        <strong>Entrada:</strong> "${testCase.inputCity}"<br>
+                        <strong>Resultado:</strong> "${correction.newCity}" ${correction.distance ? `(${correction.distance}km de Trindade)` : ''}<br>
+                        <strong>Corrigido:</strong> ${correction.corrected ? 'Sim' : 'Não'}<br>
+                        <strong>Esperado:</strong> ${shouldCorrect ? 'Corrigir para Trindade' : 'Não corrigir'}<br>
+                        <strong>Status:</strong> ${passed ? '✅ PASSOU' : '❌ FALHOU'}
+                    </div>
+                `;
+            });
+
+            resultsHTML += `
+                <div class="info-box">
+                    <h4>📊 Resumo dos Testes de Correção:</h4>
+                    <p><strong>Testes Passaram:</strong> ${passCount}/${totalTests}</p>
+                    <p><strong>Taxa de Sucesso:</strong> ${((passCount/totalTests)*100).toFixed(1)}%</p>
+                    <p><strong>Status Geral:</strong> ${passCount === totalTests ? '✅ CORREÇÃO FUNCIONANDO' : '⚠️ CORREÇÃO PRECISA DE AJUSTES'}</p>
+                </div>
+            `;
+
+            showResults(resultsHTML);
+            showStatus(passCount === totalTests ? '✅ Correção funcionando perfeitamente!' : '⚠️ Correção precisa de ajustes', 
+                      passCount === totalTests ? 'success' : 'error');
+        }
+    </script>
+</body>
+</html>

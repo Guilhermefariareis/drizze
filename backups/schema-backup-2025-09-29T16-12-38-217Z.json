@@ -1,0 +1,122 @@
+{
+  "timestamp": "2025-09-29T16:12:38.219Z",
+  "tables": {
+    "profiles": {
+      "table_name": "profiles",
+      "exists": true,
+      "sample_data": [
+        {
+          "id": "73b8411b-d737-4109-853f-73242b079c84",
+          "user_id": "3f8be934-7e9a-4160-9a69-1436576859d9",
+          "email": "admin-test@sorrisosaude.com",
+          "full_name": "",
+          "role": "patient",
+          "avatar_url": null,
+          "phone": null,
+          "cpf": null,
+          "birth_date": null,
+          "gender": null,
+          "address": null,
+          "is_active": true,
+          "email_verified": false,
+          "phone_verified": false,
+          "created_at": "2025-09-02T13:37:35.714113+00:00",
+          "updated_at": "2025-09-02T13:37:35.714113+00:00",
+          "account_type": "paciente"
+        }
+      ],
+      "note": "Schema básico - tabela existe e é acessível"
+    },
+    "clinics": {
+      "table_name": "clinics",
+      "exists": true,
+      "sample_data": [
+        {
+          "id": "45b2554d-d220-43b4-a167-afa694caa76b",
+          "name": "Crédito Odontológico",
+          "cnpj": null,
+          "email": "edeventosproducoes@gmail.com",
+          "phone": null,
+          "address": {
+            "zip": "75389-452",
+            "city": "Trindade",
+            "state": "GO",
+            "number": "17",
+            "street": "rua m15 quadra",
+            "complement": "",
+            "neighborhood": "residencial monte cristo"
+          },
+          "description": "Sistema de crédito para tratamentos odontológicos",
+          "logo_url": "https://irrtjredcrwucrnagune.supabase.co/storage/v1/object/public/profile-images/clinics/45b2554d-d220-43b4-a167-afa694caa76b/logo-1757334470388-Doutorizze%20Azul.png",
+          "website": null,
+          "social_media": null,
+          "operating_hours": null,
+          "is_active": true,
+          "is_verified": false,
+          "rating": 0,
+          "total_reviews": 0,
+          "created_at": "2025-09-08T12:27:13.864758+00:00",
+          "updated_at": "2025-09-29T11:19:31.390677+00:00",
+          "subscription_plan": "basic",
+          "services_config": {
+            "advanced": [],
+            "essential": []
+          },
+          "master_user_id": "e72d40b2-a695-489b-968b-e2479b5889f2",
+          "status": "active",
+          "clinic_slug": null,
+          "hero_image_url": "https://irrtjredcrwucrnagune.supabase.co/storage/v1/object/public/profile-images/clinics/45b2554d-d220-43b4-a167-afa694caa76b/hero-1757334483035-9d4c9f5e0e0137f5f66eef27bd784dde.jpeg",
+          "whatsapp_url": null,
+          "clinicorp_enabled": false,
+          "clinicorp_api_user": null,
+          "clinicorp_api_token": null,
+          "clinicorp_subscriber_id": null,
+          "clinicorp_business_id_default": null,
+          "clinicorp_code_link_default": null,
+          "clinicorp_webhook_secret": null,
+          "clinicorp_base_url": "https://api.clinicorp.com/rest/v1",
+          "city": "Trindade",
+          "agenda_link_url": null,
+          "owner_id": "41488a7e-a7bb-4b8a-a762-88efd7f7038c",
+          "doutorizze_api_url": null,
+          "doutorizze_api_token": null,
+          "doutorizze_enabled": false
+        }
+      ],
+      "note": "Schema básico - tabela existe e é acessível"
+    },
+    "credit_requests": {
+      "table_name": "credit_requests",
+      "exists": true,
+      "sample_data": [],
+      "note": "Schema básico - tabela existe e é acessível"
+    },
+    "subscription_plans": {
+      "table_name": "subscription_plans",
+      "exists": true,
+      "sample_data": [
+        {
+          "id": 1,
+          "name": "Básico",
+          "description": "Plano ideal para quem está começando",
+          "price_monthly": 29.9,
+          "price_annual": 19.9,
+          "original_price_monthly": 39.9,
+          "original_price_annual": 29.9,
+          "is_popular": false,
+          "is_active": true,
+          "display_order": 1,
+          "created_at": "2025-08-26T18:47:29.797731+00:00",
+          "updated_at": "2025-08-26T18:47:29.797731+00:00"
+        }
+      ],
+      "note": "Schema básico - tabela existe e é acessível"
+    },
+    "subscriptions": {
+      "table_name": "subscriptions",
+      "exists": true,
+      "sample_data": [],
+      "note": "Schema básico - tabela existe e é acessível"
+    }
+  }
+}

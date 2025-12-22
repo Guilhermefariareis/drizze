@@ -1,0 +1,74 @@
+/* Estilos para espaçamento entre colunas Nº Proposta e Cliente */
+
+/* Aplicar diretamente nas células da tabela usando nth-child - SOLUÇÃO DEFINITIVA */
+.table-proposal-spacing td:nth-child(1),
+.table-proposal-spacing th:nth-child(1) {
+  max-width: 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  padding-right: 50px !important;
+  margin-right: 60px !important;
+  border-right: 4px solid #e5e7eb !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  float: left !important;
+}
+
+.table-proposal-spacing td:nth-child(2),
+.table-proposal-spacing th:nth-child(2) {
+  max-width: 350px !important;
+  width: 350px !important;
+  min-width: 350px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  padding-left: 50px !important;
+  margin-left: 60px !important;
+  border-left: 4px solid #e5e7eb !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  float: left !important;
+}
+
+/* Garantir que o conteúdo das células não transborde */
+.table-proposal-spacing td:nth-child(1) > div,
+.table-proposal-spacing th:nth-child(1) > div,
+.table-proposal-spacing td:nth-child(2) > div,
+.table-proposal-spacing th:nth-child(2) > div {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Forçar separação entre colunas */
+.table-proposal-spacing tr {
+  display: block !important;
+  clear: both !important;
+  overflow: hidden !important;
+}
+
+.table-proposal-spacing tbody {
+  display: block !important;
+}
+
+.table-proposal-spacing table {
+  display: block !important;
+  border-collapse: separate !important;
+  border-spacing: 20px !important;
+}
+
+/* Estilos adicionais para garantir separação */
+.table-proposal-spacing .proposal-cell {
+  position: relative !important;
+}
+
+.table-proposal-spacing .client-cell {
+  position: relative !important;
+  margin-left: 50px !important;
+}

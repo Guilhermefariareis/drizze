@@ -1,0 +1,15 @@
+{
+  "backup_id": "full-backup-2025-09-29T16-15-07-002Z",
+  "created_at": "2025-09-29T16:15:07.914Z",
+  "type": "full_backup",
+  "files": {
+    "schema_json": "schema-backup-2025-09-29T16-15-07-002Z.json",
+    "schema_sql": "schema-backup-2025-09-29T16-15-07-002Z.sql",
+    "data_json": "data-backup-2025-09-29T16-15-07-002Z.json"
+  },
+  "metadata": {
+    "supabase_url": "https://irrtjredcrwucrnagune.supabase.co",
+    "backup_version": "1.0.0",
+    "node_version": "v22.13.1"
+  }
+}

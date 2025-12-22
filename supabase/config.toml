@@ -1,0 +1,22 @@
+project_id = "irrtjredcrwucrnagune"
+
+[functions.clinicorp-api]
+verify_jwt = true
+
+[functions.ping]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.create-portal-session]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.cancel-subscription]
+verify_jwt = false
+
+[functions.update-subscription]
+verify_jwt = false
