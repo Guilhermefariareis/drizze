@@ -2,7 +2,7 @@
 
 Bem-vindo ao repositório oficial do projeto **Doutorizze**.
 
-Este é um sistema moderno de gestão e agendamento para clínicas e profissionais de saúde, desenvolvido com as tecnologias mais recentes do mercado para garantir alta performance, escalabilidade e uma excelente experiência de usuário.
+Este é um sistema moderno de gestão e agendamento e solicitação de crédito para clínicas Odontológicas, desenvolvido com as tecnologias mais recentes do mercado para garantir alta performance, escalabilidade e uma excelente experiência de usuário.
 
 ## 🚀 Tecnologias Utilizadas
 
