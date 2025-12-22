@@ -1,73 +1,94 @@
-# Welcome to your doutorizze project
+# 🏥 Doutorizze
 
-## Project info
+Bem-vindo ao repositório oficial do projeto **Doutorizze**.
 
-**URL**: https://doutorizze.dev/projects/49023c53-93d4-4d90-8308-33c0339f6ce5
+Este é um sistema moderno de gestão e agendamento para clínicas e profissionais de saúde, desenvolvido com as tecnologias mais recentes do mercado para garantir alta performance, escalabilidade e uma excelente experiência de usuário.
 
-## How can I edit this code?
+## 🚀 Tecnologias Utilizadas
 
-There are several ways of editing your application.
+Este projeto foi construído utilizando uma stack robusta e moderna:
 
-**Use doutorizze**
+*   **Frontend**: [React](https://react.dev/) com [TypeScript](https://www.typescriptlang.org/)
+*   **Build Tool**: [Vite](https://vitejs.dev/) - para um ambiente de desenvolvimento ultra-rápido
+*   **Estilização**: [Tailwind CSS](https://tailwindcss.com/) - para estilização utilitária e responsiva
+*   **UI Components**: [shadcn/ui](https://ui.shadcn.com/) (baseado em [Radix UI](https://www.radix-ui.com/)) - para componentes acessíveis e customizáveis
+*   **Gerenciamento de Estado**: [Zustand](https://zustand-demo.pmnd.rs/) e [TanStack Query](https://tanstack.com/query/latest)
+*   **Backend / BaaS**: [Supabase](https://supabase.com/) - para autenticação, banco de dados (PostgreSQL) e armazenamento
+*   **Pagamentos**: Integração com [Stripe](https://stripe.com/)
+*   **Roteamento**: [React Router](https://reactrouter.com/)
 
-Simply visit the [doutorizze Project](https://doutorizze.dev/projects/49023c53-93d4-4d90-8308-33c0339f6ce5) and start prompting.
+## 📋 Pré-requisitos
 
-Changes made via doutorizze will be committed automatically to this repo.
+Antes de começar, certifique-se de ter as seguintes ferramentas instaladas em sua máquina:
 
-**Use your preferred IDE**
+*   [Node.js](https://nodejs.org/) (versão 18 ou superior recomendada)
+*   [npm](https://www.npmjs.com/) (geralmente vem instalado com o Node.js) ou um gerenciador de pacotes alternativo como `pnpm` ou `yarn`.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in doutorizze.
+## 🛠️ Como Instalar e Rodar o Projeto
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Siga os passos abaixo para configurar o ambiente de desenvolvimento localmente:
 
-Follow these steps:
+### 1. Clone o repositório
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+git clone https://github.com/doutorizzeapp/doutorizze.git
+cd doutorizze
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 2. Instale as dependências
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 3. Configure as Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto, baseando-se no arquivo `.env.example` (se disponível). Você precisará configurar as chaves de API do Supabase e Stripe.
+
+```bash
+cp .env.example .env
+```
+
+Edite o arquivo `.env` com suas credenciais.
+
+### 4. Execute o servidor de desenvolvimento
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O aplicativo estará disponível em `http://localhost:5173` (ou outra porta indicada no terminal).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📜 Scripts Disponíveis
 
-**Use GitHub Codespaces**
+No diretório do projeto, você pode rodar os seguintes comandos:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Comando | Descrição |
+| :--- | :--- |
+| `npm run dev` | Inicia o servidor de desenvolvimento. |
+| `npm run build` | Cria a versão de produção otimizada na pasta `dist`. |
+| `npm run preview` | Visualiza a versão de produção localmente. |
+| `npm run lint` | Excecuta o linter para verificar problemas no código (ESLint). |
 
-## What technologies are used for this project?
+## 📂 Estrutura do Projeto
 
-This project is built with:
+A estrutura de pastas segue as melhores práticas de desenvolvimento React:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+*   `src/components`: Componentes reutilizáveis da UI.
+*   `src/pages`: Componentes que representam páginas inteiras.
+*   `src/hooks`: Custom Hooks do React.
+*   `src/lib`: Utilitários e configurações de bibliotecas (ex: cliente do Supabase).
+*   `src/services`: Lógica de integração com APIs externas.
+*   `src/types`: Definições de tipos TypeScript.
 
-## How can I deploy this project?
+## 🤝 Contribuição
 
-Simply open [doutorizze](https://doutorizze.dev/projects/49023c53-93d4-4d90-8308-33c0339f6ce5) and click on Share -> Publish.
+1.  Faça um Fork do projeto
+2.  Crie uma Branch para sua Feature (`git checkout -b feature/MinhaFeature`)
+3.  Faça o Commit de suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4.  Faça o Push para a Branch (`git push origin feature/MinhaFeature`)
+5.  Abra um Pull Request
 
-## Can I connect a custom domain to my doutorizze project?
+---
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.doutorizze.dev/tips-tricks/custom-domain#step-by-step-guide)
+Desenvolvido para **Doutorizze**.
