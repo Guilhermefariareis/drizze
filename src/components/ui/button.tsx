@@ -22,12 +22,19 @@ const buttonVariants = cva(
         accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-soft hover:shadow-medium transform hover:scale-105",
         gradient: "bg-gradient-primary text-white hover:shadow-glow transform hover:scale-105 font-semibold",
         medical: "bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white shadow-medium hover:shadow-large transform hover:scale-105",
+        // V2 Variants
+        "v2-gradient": "bg-gradient-to-r from-[#E94560] via-[#FB923C] to-[#F9B500] text-white font-bold shadow-lg shadow-[#E94560]/25 hover:scale-105 transition-all",
+        "v2-primary": "bg-[#E94560] hover:bg-[#DC2626] text-white font-bold rounded-xl shadow-lg shadow-[#E94560]/25 transition-all",
+        "v2-success": "bg-[#4ADE80] hover:bg-[#22C55E] text-white font-bold rounded-xl shadow-lg shadow-[#4ADE80]/25 transition-all",
+        "v2-blue": "bg-[#3B82F6] hover:bg-[#2563EB] text-white font-bold rounded-xl shadow-lg shadow-[#3B82F6]/25 transition-all",
+        "v2-outline": "border border-white/10 text-white/70 font-semibold rounded-xl hover:border-[#E94560]/50 hover:text-[#E94560] transition-all bg-white/[0.03]",
+        "v2-ghost": "border border-white/10 text-white/70 font-semibold rounded-xl hover:border-white/30 hover:bg-white/[0.05] transition-all",
       },
       size: {
         default: "h-11 px-6 py-3",
         sm: "h-9 rounded-md px-4 text-xs",
-        lg: "h-13 rounded-lg px-8 py-4 text-base font-semibold",
-        xl: "h-16 rounded-xl px-10 py-5 text-lg font-semibold",
+        lg: "h-13 rounded-xl px-8 py-4 text-base font-bold",
+        xl: "h-16 rounded-2xl px-10 py-5 text-lg font-black",
         icon: "h-11 w-11",
       },
     },
@@ -40,7 +47,7 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   asChild?: boolean
 }
 

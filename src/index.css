@@ -10,61 +10,58 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Professional dental theme colors */
-    --background: 0 0% 100%;
-    --foreground: 210 20% 15%;
+    /* Dark Theme V2 default */
+    --background: 240 40% 10%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card: 240 28% 14%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover: 240 28% 14%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Medical blue primary */
-    --primary: 200 90% 45%;
+    /* V2 Primary (Coral) */
+    --primary: 350 79% 59%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 200 90% 40%;
+    --primary-hover: 350 79% 50%;
 
-    /* Soft secondary */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 210 20% 25%;
+    /* V2 Secondary (Elevated) */
+    --secondary: 240 28% 14%;
+    --secondary-foreground: 0 0% 100%;
 
-    /* Subtle muted */
-    --muted: 210 25% 95%;
-    --muted-foreground: 210 15% 55%;
+    /* V2 Muted (Glass-like) */
+    --muted: 240 28% 14% / 0.5;
+    --muted-foreground: 0 0% 70%;
 
-    /* Accent teal */
-    --accent: 180 70% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    /* Success green for confirmations */
-    --success: 145 70% 45%;
+    /* V2 Success (Green) */
+    --success: 142 71% 58%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning for important actions */
-    --warning: 45 90% 55%;
-    --warning-foreground: 210 20% 15%;
+    /* V2 Warning (Orange/Yellow) */
+    --warning: 45 97% 56%;
+    --warning-foreground: 240 40% 10%;
 
-    --destructive: 0 75% 55%;
+    --destructive: 0 91% 71%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 30% 90%;
-    --input: 210 30% 92%;
-    --ring: 200 90% 45%;
+    --border: 0 0% 100% / 0.06;
+    --input: 0 0% 100% / 0.03;
+    --ring: 350 79% 59% / 0.5;
 
     /* Design system tokens */
-    --radius: 0.75rem;
+    --radius: 1rem;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
-    --gradient-hero: linear-gradient(135deg, hsl(200 95% 48%), hsl(180 85% 52%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 25% 98%));
+    --gradient-primary: linear-gradient(to right, #E94560, #FB923C, #F9B500);
+    --gradient-hero: linear-gradient(to right, #E94560, #FB923C);
+    --gradient-card: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
     
     /* Shadows */
-    --shadow-sm: 0 2px 8px hsl(210 20% 15% / 0.06);
-    --shadow-md: 0 4px 16px hsl(210 20% 15% / 0.08);
-    --shadow-lg: 0 8px 32px hsl(210 20% 15% / 0.12);
-    --shadow-glow: 0 0 24px hsl(var(--primary) / 0.15);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 8px 32px rgba(233, 69, 96, 0.25);
+    /* Glow uses primary color */
+    --shadow-glow: 0 0 24px rgba(233, 69, 96, 0.3);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -189,11 +186,16 @@ All colors MUST be HSL.
     transition: var(--transition-bounce);
   }
   
-  /* Professional glass effect */
+  /* Professional glass effect V2 */
+  .glass-effect-v2 {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
   .glass-effect {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    @apply glass-effect-v2;
   }
   
   /* Modern hover effects */

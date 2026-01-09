@@ -60,45 +60,50 @@ const TestimonialsSection = () => {
   }
 
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="py-24 bg-[#0F0F23] relative">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            O que nossos pacientes dizem
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-black text-white mb-6">
+            O que nossos <span className="text-[#E94560]">pacientes</span> dizem
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Milhares de pessoas já realizaram seus sonhos de ter um sorriso perfeito com nossa plataforma
+          <p className="text-white/40 text-xl max-w-2xl mx-auto font-medium">
+            Milhares de pessoas já realizaram seus sonhos de ter um sorriso perfeito com nossa plataforma segura e inovadora.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial) => (
-            <Card key={testimonial.id} className="bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="flex">
+            <Card key={testimonial.id} className="bg-white/[0.03] border-white/[0.06] hover:border-[#E94560]/30 transition-all duration-500 rounded-[2rem] overflow-hidden group">
+              <CardContent className="p-8">
+                <div className="flex items-center mb-6">
+                  <div className="flex gap-1">
                     {[...Array(5)].map((_, index) => (
                       <Star
                         key={index}
-                        size={16}
-                        className={index < testimonial.rating 
-                          ? "fill-yellow-400 text-yellow-400" 
-                          : "text-muted-foreground"
+                        size={18}
+                        className={index < testimonial.rating
+                          ? "fill-[#F9B500] text-[#F9B500]"
+                          : "text-white/10"
                         }
                       />
                     ))}
                   </div>
                 </div>
-                
-                <p className="text-muted-foreground mb-4 leading-relaxed">
+
+                <p className="text-white/60 mb-8 leading-relaxed italic text-lg">
                   "{testimonial.comment}"
                 </p>
-                
-                <div className="space-y-1">
-                  <p className="font-semibold text-foreground">{testimonial.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {testimonial.treatment} - {testimonial.clinic}
-                  </p>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#E94560] to-[#FB923C] flex items-center justify-center text-white font-black text-xl">
+                    {testimonial.name.charAt(0)}
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="font-bold text-white text-lg leading-none">{testimonial.name}</p>
+                    <p className="text-sm text-white/30 font-medium">
+                      {testimonial.treatment} • {testimonial.clinic}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

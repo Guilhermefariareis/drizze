@@ -42,7 +42,7 @@ const CreditSimulator = () => {
   const fetchClinics = async () => {
     try {
       setLoadingClinics(true);
-      
+
       // Buscar apenas id e name das clínicas (colunas que existem)
       const { data: clinicsData, error } = await supabase
         .from('clinics')
@@ -95,91 +95,95 @@ const CreditSimulator = () => {
 
     setShowResult(true);
     toast.success('Simulação realizada com sucesso!');
-      
-      // Redirecionar para a página de solicitação de crédito após 3 segundos
-      setTimeout(() => {
-        navigate('/patient/credit-request');
-      }, 3000);
-    };
+
+    // Redirecionar para a página de solicitação de crédito após 3 segundos
+    setTimeout(() => {
+      navigate('/patient/credit-request');
+    }, 3000);
+  };
 
   return (
-    <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-100">
+    <section className="py-24 bg-[#0F0F23] relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#3B82F6]/5 rounded-full blur-[120px] -z-10"></div>
+
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Título e Descrição */}
-          <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              Simulador de Crédito
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+              Simulador de <span className="text-[#3B82F6]">Crédito</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Descubra como financiar seu tratamento de forma simples e acessível
+            <p className="text-white/40 text-xl max-w-2xl mx-auto font-medium">
+              Descubra como financiar seu tratamento de forma simples, transparente e acessível.
             </p>
           </div>
 
           {/* Aviso de pré-simulação */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
-            <div className="flex items-center justify-center text-yellow-800">
-              <span className="text-sm">
-                ⚠️ Pré-simulação: Os valores apresentados são estimativas e dependem de validação interna de crédito ou validação direta pela clínica.
-              </span>
-            </div>
+          <div className="bg-[#F9B500]/10 border border-[#F9B500]/20 rounded-2xl p-4 mb-12 flex items-center justify-center gap-3">
+            <span className="text-[#F9B500] text-sm font-bold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#F9B500] animate-pulse"></span>
+              PRÉ-SIMULAÇÃO: Os valores são estimativas sujeitas a validação interna.
+            </span>
           </div>
 
           {/* Layout de duas colunas */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Coluna Esquerda - Simulação de Parcelas */}
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-bold text-blue-600 flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
+            <Card className="bg-white/[0.03] border-white/[0.06] backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-xl font-bold text-white flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#3B82F6]/20 flex items-center justify-center">
+                    <Calculator className="h-5 w-5 text-[#3B82F6]" />
+                  </div>
                   Simulação de Parcelas
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-              {/* Seletor de Clínica */}
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-gray-700">
-                  Selecione a Clínica *
-                </label>
-                <Select value={selectedClinic} onValueChange={setSelectedClinic}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Escolha uma clínica" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingClinics ? (
-                      <SelectItem value="loading" disabled>
-                        Carregando clínicas...
-                      </SelectItem>
-                    ) : clinics.length > 0 ? (
-                      clinics.map((clinic) => (
-                        <SelectItem key={clinic.id} value={clinic.id}>
-                          {clinic.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled>
-                        Nenhuma clínica encontrada.
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {clinics.length === 0 && !loadingClinics && (
-                  <p className="text-xs text-muted-foreground">
-                    Nenhuma clínica disponível no momento.
-                  </p>
-                )}
-              </div>
-
-                {/* Valor do Tratamento */}
+                {/* Seletor de Clínica */}
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-gray-700">
+                    Selecione a Clínica *
+                  </label>
+                  <Select value={selectedClinic} onValueChange={setSelectedClinic}>
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder="Escolha uma clínica" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingClinics ? (
+                        <SelectItem value="loading" disabled>
+                          Carregando clínicas...
+                        </SelectItem>
+                      ) : clinics.length > 0 ? (
+                        clinics.map((clinic) => (
+                          <SelectItem key={clinic.id} value={clinic.id}>
+                            {clinic.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled>
+                          Nenhuma clínica encontrada.
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {clinics.length === 0 && !loadingClinics && (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma clínica disponível no momento.
+                    </p>
+                  )}
+                </div>
+
+                {/* Valor do Tratamento */}
+                <div className="space-y-4">
+                  <label className="text-sm font-bold text-white/60 uppercase tracking-widest outline-none">
                     Valor do Tratamento
                   </label>
-                  <div className="text-2xl font-bold text-blue-600 mb-2">
+                  <div className="text-4xl font-black text-[#3B82F6]">
                     {formatCurrency(treatmentValue[0])}
                   </div>
-                  <div className="text-xs text-gray-500 mb-3">
-                    Entre R$ 300 e R$ 50.000
+                  <div className="text-xs text-white/20 font-medium">
+                    LIMITE: R$ 300 — R$ 50.000
                   </div>
                   <Slider
                     value={treatmentValue}
@@ -192,11 +196,11 @@ const CreditSimulator = () => {
                 </div>
 
                 {/* Número de Parcelas */}
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-gray-700">
+                <div className="space-y-4">
+                  <label className="text-sm font-bold text-white/60 uppercase tracking-widest outline-none">
                     Número de Parcelas
                   </label>
-                  <div className="text-xl font-bold text-green-600 mb-3">
+                  <div className="text-3xl font-black text-[#4ADE80]">
                     {installmentOptions[installments[0]]}x
                   </div>
                   <Slider
@@ -209,125 +213,103 @@ const CreditSimulator = () => {
                   />
                 </div>
 
-                  {/* Resultado da Simulação */}
-                  {showResult && (
-                    <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
-                      <div className="text-center">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                          Resultado da Simulação
-                        </h3>
-                        <div className="grid grid-cols-1 gap-2 text-center">
-                          <div>
-                            <p className="text-sm text-gray-600">Valor da Parcela</p>
-                            <p className="text-2xl font-bold text-orange-600">
-                              {formatCurrency(calculateInstallmentValue())}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Botão Simular */}
-                  <div className="text-center pt-4">
-                    <Button 
-                      onClick={handleSimulate}
-                      size="lg"
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      🧮 Simular Crédito
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Coluna Direita - Vantagens do Crédito Doutorizze */}
-              <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold text-green-600 flex items-center gap-2">
-                    ✅ Vantagens do Crédito Doutorizze
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Lista de Vantagens */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                      <span className="text-gray-700">Aprovação rápida em até 24 horas</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                      <span className="text-gray-700">Sem consulta ao SPC/Serasa</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                      <span className="text-gray-700">Parcelas fixas sem surpresas</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                      <span className="text-gray-700">Atendimento humanizado</span>
+                {/* Resultado da Simulação */}
+                {showResult && (
+                  <div className="bg-[#4ADE80]/5 border border-[#4ADE80]/20 p-6 rounded-3xl">
+                    <div className="text-center">
+                      <p className="text-white/40 text-sm font-bold uppercase tracking-widest mb-2">
+                        Valor da Parcela
+                      </p>
+                      <p className="text-4xl font-black text-[#FB923C]">
+                        {formatCurrency(calculateInstallmentValue())}
+                      </p>
                     </div>
                   </div>
+                )}
 
-                  {/* Seção de Segurança */}
-                  <div className="border-t pt-4 mt-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
-                        <span className="text-gray-700">100% Seguro e Confiável</span>
+                {/* Botão Simular */}
+                <div className="text-center pt-4">
+                  <Button
+                    onClick={handleSimulate}
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    🧮 Simular Crédito
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coluna Direita - Vantagens do Crédito Doutorizze */}
+            <Card className="bg-white/[0.03] border-white/[0.06] backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-xl font-bold text-[#4ADE80] flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#4ADE80]/20 flex items-center justify-center">
+                    <Check className="h-5 w-5 text-[#4ADE80]" />
+                  </div>
+                  Vantagens Doutorizze
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                {/* Lista de Vantagens */}
+                <div className="space-y-4">
+                  {[
+                    "Aprovação rápida em até 24 horas",
+                    "Sem consulta ao SPC/Serasa",
+                    "Parcelas fixas sem surpresas",
+                    "Atendimento humanizado"
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-center gap-4 group">
+                      <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:bg-[#4ADE80]/20 group-hover:border-[#4ADE80]/30 transition-all">
+                        <Check className="h-4 w-4 text-[#4ADE80]" />
                       </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
-                        <span className="text-gray-700">Processo 100% Digital</span>
-                      </div>
+                      <span className="text-white/70 font-medium">{text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Seção de Segurança */}
+                <div className="pt-8 border-t border-white/10">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
+                      <p className="text-white font-bold text-sm mb-1">100% Digital</p>
+                      <p className="text-white/20 text-[10px] uppercase font-black uppercase tracking-widest">Processo</p>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
+                      <p className="text-white font-bold text-sm mb-1">Seguro</p>
+                      <p className="text-white/20 text-[10px] uppercase font-black uppercase tracking-widest">Criptografado</p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Texto de Rodapé */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
-                    <p className="text-sm text-yellow-800">
-                      💡 Para solicitar seu crédito, entre em contato com uma de nossas clínicas parceiras ou utilize nosso sistema de agendamento.
-                    </p>
-                  </div>
+                {/* Texto de Rodapé */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+                  <p className="text-sm text-yellow-800">
+                    💡 Para solicitar seu crédito, entre em contato com uma de nossas clínicas parceiras ou utilize nosso sistema de agendamento.
+                  </p>
+                </div>
 
-                  {/* Texto de Disclaimer */}
-                  <div className="text-xs text-gray-500 text-center mt-4">
-                    * Sujeito à análise de crédito. Valores e condições podem variar conforme perfil do cliente.
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                {/* Texto de Disclaimer */}
+                <div className="text-xs text-gray-500 text-center mt-4">
+                  * Sujeito à análise de crédito. Valores e condições podem variar conforme perfil do cliente.
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-            {/* Aviso de Responsabilidade */}
-            <div className="mt-12 text-center">
-              <div className="max-w-4xl mx-auto bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  <strong className="text-gray-800">Aviso de responsabilidade:</strong> Os resultados apresentados são meramente ilustrativos e podem sofrer alteração após a análise de crédito, vinculada ao CPF do solicitante, avaliação de risco, políticas internas e documentos comprobatórios.
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed mt-3">
-                  As condições finais — incluindo taxas, CET, entrada, prazos e parcelas — serão definidas somente após a validação cadastral.
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed mt-3">
-                  Esta simulação não constitui proposta, reserva de condições, nem garantia de aprovação.
-                </p>
-              </div>
+          {/* Aviso de Responsabilidade */}
+          <div className="mt-16 text-center">
+            <div className="max-w-4xl mx-auto bg-white/[0.02] border border-white/[0.05] rounded-[2rem] p-8">
+              <p className="text-sm text-white/30 leading-relaxed font-medium italic">
+                * Os resultados apresentados são estimativas e podem sofrer alteração após a análise de crédito.
+                Esta simulação não constitui proposta ou garantia de aprovação.
+              </p>
             </div>
           </div>
         </div>
-      </section>
-    );
-  };
+      </div>
+    </section>
+  );
+};
 
 export default CreditSimulator;

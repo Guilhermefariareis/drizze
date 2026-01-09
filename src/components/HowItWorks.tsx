@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Search, 
-  Calendar, 
-  CreditCard, 
+import {
+  Search,
+  Calendar,
+  CreditCard,
   Star,
   ArrowRight,
   CheckCircle,
@@ -78,7 +78,7 @@ const creditSteps = [
 
 const benefits = [
   "Profissionais verificados e qualificados",
-  "Preços transparentes e competitivos", 
+  "Preços transparentes e competitivos",
   "Agendamento rápido e fácil",
   "Suporte 24/7 para dúvidas",
   "Garantia de qualidade nos serviços",
@@ -96,28 +96,30 @@ const creditBenefits = [
 
 const HowItWorks = () => {
   return (
-    <section id="about" className="py-20 bg-muted/30">
+    <section id="about" className="py-24 bg-[#0F0F23] relative overflow-hidden">
+      {/* Glow Effect */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#E94560]/5 rounded-full blur-[120px] -z-10"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-success/10 text-success hover:bg-success/20">
-            Como Funciona
+          <Badge variant="v2-dark" className="mb-6 px-4 py-2">
+            COMO FUNCIONA
           </Badge>
-          <h2 className="text-4xl font-bold text-foreground mb-4">
-            Duas Formas de Cuidar da sua Saúde
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
+            Duas Formas de <span className="text-[#E94560]">Cuidar</span> da sua Saúde
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Escolha entre agendar consultas diretamente ou solicitar crédito para financiar seu tratamento
+          <p className="text-xl text-white/40 max-w-3xl mx-auto leading-relaxed font-medium">
+            Escolha entre agendar consultas diretamente ou solicitar crédito para financiar seu tratamento com condições exclusivas.
           </p>
         </div>
 
         <Tabs defaultValue="credit" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-12 max-w-md mx-auto">
-            <TabsTrigger value="credit" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-2 mb-16 max-w-md mx-auto bg-white/5 border border-white/10 p-1 rounded-2xl h-14">
+            <TabsTrigger value="credit" className="rounded-xl data-[state=active]:bg-[#E94560] data-[state=active]:text-white transition-all font-bold">
+              <CreditCard className="w-4 h-4 mr-2" />
               Crédito Odonto
             </TabsTrigger>
-            <TabsTrigger value="consultation" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+            <TabsTrigger value="consultation" className="rounded-xl data-[state=active]:bg-[#E94560] data-[state=active]:text-white transition-all font-bold">
+              <Calendar className="w-4 h-4 mr-2" />
               Consultas
             </TabsTrigger>
           </TabsList>
@@ -129,40 +131,41 @@ const HowItWorks = () => {
                 const IconComponent = step.icon;
                 return (
                   <div key={step.id} className="relative">
-                    <Card className="h-full border-2 hover:border-primary/20 transition-all duration-300 hover:shadow-medium bg-gradient-card">
-                      <CardHeader className="text-center pb-4">
-                        <div className="relative inline-flex items-center justify-center">
-                          <div className="bg-gradient-primary p-4 rounded-full text-white shadow-glow">
+                    <Card className="h-full bg-white/[0.03] border-white/[0.06] hover:border-[#E94560]/30 transition-all duration-500 group overflow-hidden rounded-[2rem]">
+                      <CardHeader className="text-center pb-6">
+                        <div className="relative inline-flex items-center justify-center mb-4">
+                          <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] p-5 rounded-2xl text-white shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform duration-500">
                             <IconComponent className="w-8 h-8" />
                           </div>
-                          <div className="absolute -top-2 -right-2 bg-accent text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                          <div className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center text-sm font-black">
                             {step.id}
                           </div>
                         </div>
-                        <CardTitle className="text-xl text-foreground mt-4">
+                        <CardTitle className="text-xl font-bold text-white">
                           {step.title}
                         </CardTitle>
-                        <CardDescription className="text-muted-foreground leading-relaxed">
+                        <CardDescription className="text-white/40 leading-relaxed font-medium">
                           {step.description}
                         </CardDescription>
                       </CardHeader>
-                      
-                      <CardContent className="pt-0">
-                        <ul className="space-y-2">
+
+                      <CardContent>
+                        <ul className="space-y-3">
                           {step.features.map((feature, featureIndex) => (
-                            <li key={featureIndex} className="flex items-center text-sm text-muted-foreground">
-                              <CheckCircle className="w-4 h-4 text-success mr-2 flex-shrink-0" />
+                            <li key={featureIndex} className="flex items-center text-sm text-white/60">
+                              <div className="w-5 h-5 rounded-full bg-[#4ADE80]/10 flex items-center justify-center mr-3">
+                                <CheckCircle className="w-3 h-3 text-[#4ADE80]" />
+                              </div>
                               {feature}
                             </li>
                           ))}
                         </ul>
                       </CardContent>
                     </Card>
-                    
-                    {/* Arrow for desktop */}
+
                     {index < consultationSteps.length - 1 && (
-                      <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                        <ArrowRight className="w-8 h-8 text-primary/60" />
+                      <div className="hidden lg:flex absolute top-1/2 -right-4 transform -translate-y-1/2 z-10 text-white/10">
+                        <ArrowRight className="w-8 h-8" />
                       </div>
                     )}
                   </div>
@@ -171,16 +174,20 @@ const HowItWorks = () => {
             </div>
 
             {/* Benefits for consultation */}
-            <div className="bg-white rounded-2xl p-8 shadow-large border">
-              <h3 className="text-2xl font-bold text-foreground text-center mb-8">
-                Por que agendar com a Doutorizze?
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-[2.5rem] p-10 lg:p-12 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#4ADE80]/5 rounded-full blur-[80px] -z-10 group-hover:bg-[#4ADE80]/10 transition-colors duration-700"></div>
+
+              <h3 className="text-2xl font-black text-white text-center mb-10">
+                Por que agendar com a <span className="text-[#E94560]">Doutorizze</span>?
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span className="text-foreground">{benefit}</span>
+                  <div key={index} className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+                    <div className="w-6 h-6 rounded-full bg-[#4ADE80]/20 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-4 h-4 text-[#4ADE80]" />
+                    </div>
+                    <span className="text-white/80 font-medium">{benefit}</span>
                   </div>
                 ))}
               </div>
@@ -194,40 +201,41 @@ const HowItWorks = () => {
                 const IconComponent = step.icon;
                 return (
                   <div key={step.id} className="relative">
-                    <Card className="h-full border-2 hover:border-primary/20 transition-all duration-300 hover:shadow-medium bg-gradient-card">
-                      <CardHeader className="text-center pb-4">
-                        <div className="relative inline-flex items-center justify-center">
-                          <div className="bg-gradient-primary p-4 rounded-full text-white shadow-glow">
+                    <Card className="h-full bg-white/[0.03] border-white/[0.06] hover:border-[#8B5CF6]/30 transition-all duration-500 group overflow-hidden rounded-[2rem]">
+                      <CardHeader className="text-center pb-6">
+                        <div className="relative inline-flex items-center justify-center mb-4">
+                          <div className="bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] p-5 rounded-2xl text-white shadow-lg shadow-[#8B5CF6]/20 group-hover:scale-110 transition-transform duration-500">
                             <IconComponent className="w-8 h-8" />
                           </div>
-                          <div className="absolute -top-2 -right-2 bg-accent text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                          <div className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center text-sm font-black">
                             {step.id}
                           </div>
                         </div>
-                        <CardTitle className="text-xl text-foreground mt-4">
+                        <CardTitle className="text-xl font-bold text-white">
                           {step.title}
                         </CardTitle>
-                        <CardDescription className="text-muted-foreground leading-relaxed">
+                        <CardDescription className="text-white/40 leading-relaxed font-medium">
                           {step.description}
                         </CardDescription>
                       </CardHeader>
-                      
-                      <CardContent className="pt-0">
-                        <ul className="space-y-2">
+
+                      <CardContent>
+                        <ul className="space-y-3">
                           {step.features.map((feature, featureIndex) => (
-                            <li key={featureIndex} className="flex items-center text-sm text-muted-foreground">
-                              <CheckCircle className="w-4 h-4 text-success mr-2 flex-shrink-0" />
+                            <li key={featureIndex} className="flex items-center text-sm text-white/60">
+                              <div className="w-5 h-5 rounded-full bg-[#8B5CF6]/10 flex items-center justify-center mr-3">
+                                <CheckCircle className="w-3 h-3 text-[#8B5CF6]" />
+                              </div>
                               {feature}
                             </li>
                           ))}
                         </ul>
                       </CardContent>
                     </Card>
-                    
-                    {/* Arrow for desktop */}
+
                     {index < creditSteps.length - 1 && (
-                      <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                        <ArrowRight className="w-8 h-8 text-primary/60" />
+                      <div className="hidden lg:flex absolute top-1/2 -right-4 transform -translate-y-1/2 z-10 text-white/10">
+                        <ArrowRight className="w-8 h-8" />
                       </div>
                     )}
                   </div>
@@ -236,20 +244,24 @@ const HowItWorks = () => {
             </div>
 
             {/* Benefits for credit */}
-            <div className="bg-white rounded-2xl p-8 shadow-large border">
-              <h3 className="text-2xl font-bold text-foreground text-center mb-8">
-                Vantagens do Crédito Odonto Doutorizze
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-[2.5rem] p-10 lg:p-12 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-64 h-64 bg-[#8B5CF6]/5 rounded-full blur-[80px] -z-10 group-hover:bg-[#8B5CF6]/10 transition-colors duration-700"></div>
+
+              <h3 className="text-2xl font-black text-white text-center mb-10">
+                Vantagens do <span className="text-[#8B5CF6]">Crédito Odonto</span> Doutorizze
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {creditBenefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span className="text-foreground">{benefit}</span>
+                  <div key={index} className="flex items-center space-x-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+                    <div className="w-6 h-6 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-4 h-4 text-[#8B5CF6]" />
+                    </div>
+                    <span className="text-white/80 font-medium">{benefit}</span>
                   </div>
                 ))}
               </div>
-              
+
               <div className="mt-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   * Sujeito à política de crédito da instituição financeira parceira

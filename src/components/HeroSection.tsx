@@ -16,7 +16,7 @@ const HeroSection = () => {
   const [selectedTreatment, setSelectedTreatment] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [location, setLocation] = useState<string>("");
-  
+
   const allTreatments = [
     { name: "Limpeza Dental", icon: Sparkles, category: "Preventivo", popular: true },
     { name: "Clareamento", icon: Zap, category: "Estético", popular: true },
@@ -68,89 +68,95 @@ const HeroSection = () => {
     }
   };
   return (
-    <section className="relative bg-gradient-hero overflow-hidden">
-      <div className="absolute inset-0 bg-black/40"></div>
-      <div className="absolute inset-0">
-        <img 
-          src={heroImage} 
-          alt="Modern dental clinic" 
-          className="w-full h-full object-cover mix-blend-overlay"
+    <section className="relative bg-[#0F0F23] overflow-hidden py-20 lg:py-32">
+      {/* Background Effects */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E94560]/10 rounded-full blur-[120px] -z-10"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#8B5CF6]/10 rounded-full blur-[100px] -z-10"></div>
+
+      <div className="absolute inset-0 opacity-20">
+        <img
+          src={heroImage}
+          alt="Modern dental clinic"
+          className="w-full h-full object-cover"
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0F0F23] via-transparent to-[#0F0F23]"></div>
       </div>
-      
+
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="text-center lg:text-left px-4 sm:px-6">
-            <Badge className="mb-4 sm:mb-6 bg-accent/90 text-white hover:bg-accent backdrop-blur-sm text-base sm:text-lg px-3 sm:px-4 py-2 font-semibold shadow-lg">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              ✓ Profissionais Verificados
+            <Badge variant="v2-dark" className="mb-6 px-4 py-2">
+              <Shield className="w-5 h-5 mr-2" />
+              PROFISSIONAIS VERIFICADOS
             </Badge>
-            
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
-              Seu sorriso 
-              <span className="text-accent block drop-shadow-lg">perfeito</span>
+
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-[1.1] tracking-tighter">
+              Seu sorriso
+              <span className="block bg-gradient-to-r from-[#E94560] via-[#FB923C] to-[#F9B500] bg-clip-text text-transparent">
+                perfeito
+              </span>
               está aqui
             </h1>
-            
-            <p className="text-sm sm:text-base md:text-lg text-white mb-6 sm:mb-8 leading-relaxed drop-shadow-md font-medium px-2">
-              Conectamos você aos melhores dentistas da sua região. 
-              Agende consultas, compare preços e transforme seu sorriso com segurança.
+
+            <p className="text-xl text-white/60 mb-8 leading-relaxed font-medium max-w-lg">
+              Conectamos você aos melhores dentistas da sua região com tecnologia de ponta e segurança total.
             </p>
 
-            <div className="flex flex-wrap gap-3 sm:gap-4 mb-6 sm:mb-8 px-2">
-              <div className="flex items-center text-white/90">
-                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mr-2" />
-                <span className="font-semibold text-sm sm:text-base">4.9/5</span>
-                <span className="ml-1 text-sm sm:text-base">avaliação média</span>
+            <div className="flex flex-wrap gap-6 mb-8">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-[#F9B500]" />
+                <span className="font-bold text-white text-lg">4.9/5</span>
+                <span className="text-white/40">Satisfação</span>
               </div>
-              <div className="flex items-center text-white/90">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-accent mr-2" />
-                <span className="font-semibold text-sm sm:text-base">50k+</span>
-                <span className="ml-1 text-sm sm:text-base">pacientes atendidos</span>
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#E94560]" />
+                <span className="font-bold text-white text-lg">50k+</span>
+                <span className="text-white/40">Pacientes</span>
               </div>
             </div>
 
-            <div className="flex justify-center">
-              <Button 
-                size="lg" 
-                className="bg-white hover:bg-gray-50 text-blue-600 hover:text-blue-700 px-8 sm:px-12 py-3 sm:py-4 text-lg sm:text-xl font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 border border-blue-200"
+            <div className="flex justify-center lg:justify-start">
+              <Button
+                variant="v2-gradient"
+                size="lg"
+                className="px-12 py-7 text-xl"
                 onClick={() => navigate('/search')}
               >
-                Agendar Consulta
+                Agendar Consulta →
               </Button>
             </div>
           </div>
 
           {/* Search Card */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-large mx-4 sm:mx-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
+          <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-2xl rounded-[2.5rem] p-8 lg:p-10 shadow-2xl">
+            <h2 className="text-2xl font-black text-white mb-8">
               Encontre o tratamento ideal
             </h2>
-            
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                <Input 
+
+            <div className="space-y-6">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/30 w-5 h-5 group-focus-within:text-[#E94560] transition-colors" />
+                <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Qual tratamento você precisa?"
-                  className="pl-10 h-11 sm:h-12 text-base"
+                  className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:border-[#E94560]/50 outline-none text-white placeholder-white/30 transition-all"
                 />
               </div>
-              
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                <Input 
+
+              <div className="relative group">
+                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/30 w-5 h-5 group-focus-within:text-[#E94560] transition-colors" />
+                <Input
                   value={location || (city && state ? `${city}, ${state}` : "")}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="Digite sua localização"
-                  className="pl-10 pr-12 h-11 sm:h-12 text-base"
+                  className="pl-12 pr-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:border-[#E94560]/50 outline-none text-white placeholder-white/30 transition-all"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-10 w-10 p-0"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10 w-10 p-0 text-white/40 hover:text-white"
                   onClick={() => {
                     requestLocation();
                     setLocation("");
@@ -160,10 +166,10 @@ const HeroSection = () => {
                   <Navigation className={`w-4 h-4 ${locationLoading ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
-              
-              <Button variant="gradient" size="lg" className="w-full" onClick={() => window.location.href = '/search'}>
-                <Search className="w-5 h-5 mr-2" />
-                Buscar Clínicas
+
+              <Button variant="v2-gradient" size="lg" className="w-full h-14 text-lg shadow-lg shadow-[#E94560]/20" onClick={() => window.location.href = '/search'}>
+                <Search className="w-5 h-5 mr-3" />
+                Buscar Clínicas →
               </Button>
             </div>
 
@@ -182,38 +188,23 @@ const HeroSection = () => {
                     Carregando clínicas...
                   </div>
                 ) : nearbyClinics.length > 0 ? (
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                     {nearbyClinics.map((clinic) => (
-                      <Card key={clinic.id} className="p-3 hover:bg-accent/5 cursor-pointer transition-colors" onClick={() => navigate(`/booking/${clinic.id}`)}>
+                      <Card key={clinic.id} className="p-4 bg-white/5 border-white/5 hover:bg-white/10 hover:border-[#E94560]/30 cursor-pointer transition-all" onClick={() => navigate(`/booking/${clinic.id}`)}>
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">{clinic.name}</p>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Star className="w-3 h-3 text-yellow-400 mr-1" />
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-bold text-white">{clinic.name}</p>
+                              <div className="flex items-center text-xs text-[#F9B500]">
+                                <Star className="w-3 h-3 fill-current mr-1" />
                                 {clinic.rating ? clinic.rating.toFixed(1) : "0.0"}
                               </div>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {(() => {
-                                const addr = clinic.address;
-                                if (typeof addr === 'object' && addr !== null) {
-                                  const addressObj = addr as { street?: string; neighborhood?: string; city?: string; state?: string };
-                                  const parts = [
-                                    addressObj.street,
-                                    addressObj.neighborhood,
-                                    addressObj.city,
-                                    addressObj.state
-                                  ].filter(Boolean);
-                                  return parts.length > 0 ? parts.join(', ') : 'Endereço não informado';
-                                }
-                                return addr || 'Endereço não informado';
-                              })()}
+                            <p className="text-xs text-white/40 truncate">
+                              {clinic.city} • {clinic.total_reviews || 0} avaliações
                             </p>
                           </div>
-                          <Badge variant="outline" className="text-xs">
-                            {clinic.total_reviews || 0} avaliações
-                          </Badge>
+                          <Badge variant="v2-blue" className="text-[10px]">RECOMENDADA</Badge>
                         </div>
                       </Card>
                     ))}
@@ -231,8 +222,8 @@ const HeroSection = () => {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">
                   <div className="flex-1">
-                    <Select 
-                      value={selectedTreatment} 
+                    <Select
+                      value={selectedTreatment}
                       onValueChange={(value) => {
                         setSelectedTreatment(value);
                         setSearchTerm(value);
@@ -257,7 +248,7 @@ const HeroSection = () => {
                             </SelectItem>
                           );
                         })}
-                        
+
                         {/* Todos os Tratamentos por Categoria */}
                         {Object.entries(categorizedTreatments).map(([category, treatments]) => (
                           <div key={category}>
@@ -280,21 +271,21 @@ const HeroSection = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <Button 
+
+                  <Button
+                    variant="v2-success"
                     size="sm"
-                    className="bg-green-500 text-white hover:bg-green-600 active:bg-green-700 active:scale-95 active:shadow-inner transition-all duration-200 whitespace-nowrap text-sm sm:text-base px-4 py-2 w-full sm:w-auto shadow-md hover:shadow-lg border-none outline-none focus:outline-none"
+                    className="w-full sm:w-auto px-6"
                     onClick={() => {
                       const el = document.getElementById('credit-simulator');
                       if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       } else {
-                        // Fallback: manter comportamento atual caso âncora não exista
                         navigate('/patient/credit-request');
                       }
                     }}
                   >
-                    SIMULE SEU CRÉDITO
+                    ⚡ SIMULE SEU CRÉDITO
                   </Button>
                 </div>
               </div>

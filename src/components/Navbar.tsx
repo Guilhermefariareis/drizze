@@ -47,11 +47,11 @@ const Navbar = () => {
 
   const getUserMenuItems = () => {
     if (!user) return [];
-    
+
     const baseItems = [
       { icon: User, label: 'Perfil', href: '/profile' },
     ];
-    
+
     // Add role-specific dashboard items
     if (user.user_metadata?.role === 'admin' || user.user_metadata?.role === 'master') {
       baseItems.push(
@@ -71,50 +71,49 @@ const Navbar = () => {
         { icon: Heart, label: 'Favoritos', href: '/favoritos' }
       );
     }
-    
+
     return baseItems;
   };
 
   return (
-    <nav className={`bg-white/95 backdrop-blur-md border-b border-border sticky top-0 z-50 transition-all duration-300 ease-out ${
-      isScrolled ? 'shadow-lg shadow-primary/5' : 'shadow-soft'
-    }`}>
+    <nav className={`sticky top-0 z-50 transition-all duration-300 ease-out border-b ${isScrolled
+        ? 'bg-[#1A1A2E]/90 backdrop-blur-2xl border-white/[0.08] shadow-2xl'
+        : 'bg-[#1A1A2E]/70 backdrop-blur-xl border-white/[0.05]'
+      }`}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16 md:h-18">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center group">
-              <img 
-                src={config.site_logo?.url || "/doutorizze-uploads/e4e59e9c-6806-48a8-be4c-476ac461beb9.png"} 
-                alt="Logo" 
-                className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain transition-all duration-300 ease-out group-hover:scale-105 group-hover:brightness-110"
-              />
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E94560] to-[#FB923C] flex items-center justify-center text-white font-black text-lg shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform">
+                D
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white font-black text-xl tracking-tight">Doutorizze</span>
+                <span className="hidden sm:inline-block px-2 py-0.5 bg-[#E94560]/20 text-[#E94560] text-[10px] font-bold rounded-full border border-[#E94560]/30 w-fit">
+                  PREMIUM V2
+                </span>
+              </div>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:block">
             <div className="ml-4 xl:ml-10 flex items-center space-x-2 lg:space-x-3 xl:space-x-6">
-              <Link to="/" className="relative text-foreground hover:text-primary transition-all duration-300 ease-out font-medium text-sm lg:text-sm xl:text-base py-2 px-2 lg:px-3 rounded-md hover:bg-primary/5 hover:shadow-sm group">
-                <span className="relative z-10">Início</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out group-hover:w-full"></div>
-                <div className="absolute inset-0 bg-primary/5 rounded-md scale-0 transition-transform duration-300 ease-out group-hover:scale-100"></div>
+              <Link to="/" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3">
+                Início
               </Link>
-              <Link to="/como-funciona" className="relative text-foreground hover:text-primary transition-all duration-300 ease-out font-medium text-sm lg:text-sm xl:text-base py-2 px-2 lg:px-3 rounded-md hover:bg-primary/5 hover:shadow-sm group">
-                <span className="relative z-10">Como Funciona</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out group-hover:w-full"></div>
-                <div className="absolute inset-0 bg-primary/5 rounded-md scale-0 transition-transform duration-300 ease-out group-hover:scale-100"></div>
+              <Link to="/como-funciona" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3">
+                Como Funciona
               </Link>
-              <Link to="/para-clinicas" className="relative text-foreground hover:text-primary transition-all duration-300 ease-out font-medium text-sm lg:text-sm xl:text-base py-2 px-2 lg:px-3 rounded-md hover:bg-primary/5 hover:shadow-sm group">
-                <span className="relative z-10">Para Clínicas</span>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out group-hover:w-full"></div>
-                <div className="absolute inset-0 bg-primary/5 rounded-md scale-0 transition-transform duration-300 ease-out group-hover:scale-100"></div>
+              <Link to="/para-clinicas" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3">
+                Para Clínicas
               </Link>
 
-              <div className="hidden xl:flex items-center space-x-2 ml-4 px-3 py-1.5 bg-secondary/30 hover:bg-secondary/40 rounded-full transition-all duration-300 ease-out hover:shadow-sm group">
-                <MapPin className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
-                <span className="text-sm text-muted-foreground group-hover:text-foreground font-medium transition-colors duration-300">
-                  {city && state ? `${city}, ${state}` : (city || state || 'Localização não definida')}
+              <div className="hidden xl:flex items-center space-x-2 ml-4 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
+                <MapPin className="h-4 w-4 text-[#E94560]" />
+                <span className="text-sm text-white/70 font-medium">
+                  {city && state ? `${city}, ${state}` : (city || state || 'Localização')}
                 </span>
               </div>
             </div>
@@ -123,19 +122,19 @@ const Navbar = () => {
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-2 lg:space-x-3 xl:space-x-4">
             {user && <NotificacoesDropdown />}
-            
+
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 hover:bg-secondary/80 transition-all duration-200 rounded-lg px-2 lg:px-3 py-2">
-                    <div className="w-7 lg:w-8 h-7 lg:h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="h-3.5 lg:h-4 w-3.5 lg:w-4 text-primary" />
+                  <Button variant="ghost" className="flex items-center space-x-2 hover:bg-white/5 transition-all duration-200 rounded-xl px-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] flex items-center justify-center text-white font-bold">
+                      {getDisplayName().charAt(0).toUpperCase()}
                     </div>
                     <div className="hidden xl:flex flex-col items-start">
-                      <span className="text-sm font-medium leading-none">{getDisplayName()}</span>
-                      <span className="text-xs text-muted-foreground capitalize">{role}</span>
+                      <span className="text-sm font-bold text-white leading-none">{getDisplayName()}</span>
+                      <span className="text-[10px] text-white/50 uppercase font-black tracking-widest">{role}</span>
                     </div>
-                    <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+                    <ChevronDown className="h-4 w-4 text-white/40" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-2 duration-200">
@@ -155,18 +154,12 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-1.5 lg:space-x-2 xl:space-x-3">
-                <Button asChild variant="outline" size="sm" className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-md hover:border-primary/30 text-xs lg:text-sm px-2 lg:px-3 group">
-                  <Link to="/patient-login">
-                    <span className="lg:hidden group-hover:text-primary transition-colors duration-300">Paciente</span>
-                    <span className="hidden lg:inline group-hover:text-primary transition-colors duration-300">Login Paciente</span>
-                  </Link>
+              <div className="flex items-center space-x-2">
+                <Button asChild variant="v2-outline" size="sm" className="hidden xl:flex">
+                  <Link to="/patient-login">Login Paciente</Link>
                 </Button>
-                <Button asChild size="sm" className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-md hover:brightness-110 text-xs lg:text-sm px-2 lg:px-3">
-                  <Link to="/clinic-login">
-                    <span className="lg:hidden">Clínica</span>
-                    <span className="hidden lg:inline">Login Clínica</span>
-                  </Link>
+                <Button asChild variant="v2-gradient" size="sm">
+                  <Link to="/clinic-login">Acesso Clínica</Link>
                 </Button>
               </div>
             )}
@@ -175,7 +168,7 @@ const Navbar = () => {
           {/* Tablet Actions */}
           <div className="hidden md:flex lg:hidden items-center space-x-2">
             {user && <NotificacoesDropdown />}
-            
+
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -234,7 +227,7 @@ const Navbar = () => {
                 </Button>
               </div>
             )}
-            
+
             {/* Location info for tablet */}
             <div className="hidden md:flex items-center space-x-1.5 ml-3 px-2 py-1 bg-secondary/30 hover:bg-secondary/40 rounded-full transition-all duration-300 ease-out hover:shadow-sm group">
               <MapPin className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
@@ -261,9 +254,8 @@ const Navbar = () => {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-        isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-      }`}>
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+        }`}>
         <div className="bg-white/98 backdrop-blur-sm border-t border-border shadow-lg">
           {/* Navigation Links */}
           <div className="px-4 pt-4 pb-2">
@@ -285,7 +277,7 @@ const Navbar = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Location info */}
           <div className="px-4 py-3 mx-4 mb-3 bg-gradient-to-r from-secondary/40 to-secondary/20 rounded-xl animate-in slide-in-from-bottom-3 fill-mode-both" style={{ animationDelay: '200ms' }}>
             <div className="flex items-center space-x-3">
@@ -298,7 +290,7 @@ const Navbar = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Mobile user actions */}
           <div className="px-4 pb-6">
             {user ? (
@@ -313,7 +305,7 @@ const Navbar = () => {
                     <p className="text-xs text-muted-foreground capitalize">{role} • Conectado</p>
                   </div>
                 </div>
-                
+
                 {/* User Menu Items */}
                 <div className="space-y-1">
                   {getUserMenuItems().map((item, index) => (
@@ -330,7 +322,7 @@ const Navbar = () => {
                     </Link>
                   ))}
                 </div>
-                
+
                 {/* Logout Button */}
                 <Button
                   onClick={() => {

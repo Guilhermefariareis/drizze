@@ -80,7 +80,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Dark Theme V2 Colors
+				'v2-dark': '#0F0F23',
+				'v2-elevated': '#1A1A2E',
+				'v2-primary': '#E94560',
+				'v2-orange': '#FB923C',
+				'v2-yellow': '#F9B500',
+				'v2-success': '#4ADE80',
+				'v2-blue': '#3B82F6',
+				'v2-purple': '#8B5CF6',
+				'v2-error': '#F87171',
+				'v2-warning': '#FBBF24',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -90,7 +101,11 @@ export default {
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-card': 'var(--gradient-card)'
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-v2': 'linear-gradient(to right, #E94560, #FB923C, #F9B500)',
+				'gradient-coral-orange': 'linear-gradient(to right, #E94560, #FB923C)',
+				'gradient-purple': 'linear-gradient(to right, #8B5CF6, #A855F7)',
+				'gradient-blue': 'linear-gradient(to right, #3B82F6, #60A5FA)',
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-sm)',
