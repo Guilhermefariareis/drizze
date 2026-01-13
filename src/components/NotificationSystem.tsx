@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Bell, X, Check, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
@@ -29,8 +29,14 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!userId) return;
+
     fetchNotifications();
-    setupRealtimeSubscription();
+    const unsubscribe = setupRealtimeSubscription();
+
+    return () => {
+      unsubscribe();
+    };
   }, [userId]);
 
   useEffect(() => {
@@ -74,7 +80,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
         (payload) => {
           const newNotification = payload.new as Notification;
           setNotifications(prev => [newNotification, ...prev]);
-          
+
           // Mostrar toast para nova notificação
           showNotificationToast(newNotification);
         }
@@ -89,7 +95,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
         },
         (payload) => {
           const updatedNotification = payload.new as Notification;
-          setNotifications(prev => 
+          setNotifications(prev =>
             prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
           );
         }
@@ -129,7 +135,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
         throw error;
       }
 
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
       );
     } catch (error) {
@@ -140,7 +146,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
   const markAllAsRead = async () => {
     try {
       const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
-      
+
       if (unreadIds.length === 0) return;
 
       const { error } = await supabase
@@ -152,7 +158,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
         throw error;
       }
 
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => ({ ...n, is_read: true }))
       );
 
@@ -189,7 +195,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
       warning: AlertCircle,
       error: AlertCircle
     };
-    
+
     const IconComponent = icons[type as keyof typeof icons] || Info;
     return IconComponent;
   };
@@ -201,7 +207,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
       warning: 'text-yellow-600',
       error: 'text-red-600'
     };
-    
+
     return colors[type as keyof typeof colors] || 'text-blue-600';
   };
 
@@ -209,7 +215,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) {
       return 'Agora';
     } else if (diffInMinutes < 60) {
@@ -234,8 +240,8 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
+          <Badge
+            variant="destructive"
             className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
           >
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -247,11 +253,11 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
       {isOpen && (
         <>
           {/* Overlay */}
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Painel */}
           <Card className="absolute right-0 top-full mt-2 w-80 max-h-96 z-50 shadow-lg">
             <div className="p-4 border-b">
@@ -279,7 +285,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
                 </div>
               </div>
             </div>
-            
+
             <CardContent className="p-0 max-h-80 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -295,22 +301,20 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
                   {notifications.map((notification) => {
                     const IconComponent = getNotificationIcon(notification.type);
                     const iconColor = getNotificationColor(notification.type);
-                    
+
                     return (
-                      <div 
-                        key={notification.id} 
-                        className={`p-4 hover:bg-gray-50 transition-colors ${
-                          !notification.is_read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                        }`}
+                      <div
+                        key={notification.id}
+                        className={`p-4 hover:bg-gray-50 transition-colors ${!notification.is_read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <IconComponent className={`w-5 h-5 mt-0.5 ${iconColor}`} />
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <h4 className={`text-sm font-medium ${
-                                !notification.is_read ? 'text-gray-900' : 'text-gray-700'
-                              }`}>
+                              <h4 className={`text-sm font-medium ${!notification.is_read ? 'text-gray-900' : 'text-gray-700'
+                                }`}>
                                 {notification.title}
                               </h4>
                               <Button
@@ -322,16 +326,16 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ userId, userTyp
                                 <X className="w-3 h-3" />
                               </Button>
                             </div>
-                            
+
                             <p className="text-sm text-gray-600 mt-1">
                               {notification.message}
                             </p>
-                            
+
                             <div className="flex items-center justify-between mt-2">
                               <span className="text-xs text-gray-500">
                                 {formatDate(notification.created_at)}
                               </span>
-                              
+
                               {!notification.is_read && (
                                 <Button
                                   variant="ghost"

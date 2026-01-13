@@ -76,15 +76,18 @@ export default function PatientCredit() {
         .eq('user_id', user!.id)
         .single();
 
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is code for 'no rows returned' for single()
         console.error('Erro ao buscar perfil do usuário:', profileError);
         toast.error('Erro ao carregar dados do perfil');
         return;
       }
 
-      if (!profile?.id) {
-        console.error('Perfil não encontrado ou sem ID');
-        toast.error('Erro ao carregar identificação do usuário');
+      if (!profile) {
+        console.warn('Perfil não encontrado no banco de dados. Usando dados básicos do Usuário Auth.');
+        // Se não houver perfil, ainda podemos tentar mostrar dados se o ID do Auth for usado como patient_id em algumas tabelas
+        // Ou simplesmente mostrar estado vazio. 
+        setLoanRequests([]);
+        setLoading(false);
         return;
       }
 

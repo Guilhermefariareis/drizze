@@ -6,12 +6,12 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { 
-  Upload, 
-  FileText, 
-  Trash2, 
-  Download, 
-  CheckCircle, 
+import {
+  Upload,
+  FileText,
+  Trash2,
+  Download,
+  CheckCircle,
   AlertCircle,
   Plus,
   X
@@ -86,7 +86,7 @@ const PatientDocuments: React.FC = () => {
 
     try {
       setLoading(true);
-      
+
       // Primeiro buscar o profile do usuário logado
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -101,7 +101,7 @@ const PatientDocuments: React.FC = () => {
       if (!profile) {
         throw new Error('Perfil não encontrado');
       }
-      
+
       // Buscar solicitações de crédito do paciente logado usando profile.id
       const { data, error } = await supabase
         .from('credit_requests')
@@ -124,7 +124,7 @@ const PatientDocuments: React.FC = () => {
       }
 
       setCreditRequests(data || []);
-      
+
       // Auto-selecionar a primeira solicitação se houver
       if (data && data.length > 0) {
         setSelectedRequestId(data[0].id);
@@ -190,9 +190,9 @@ const PatientDocuments: React.FC = () => {
   };
 
   const updateUploadingFileType = (fileId: string, documentType: string) => {
-    setUploadingFiles(prev => 
-      prev.map(file => 
-        file.id === fileId 
+    setUploadingFiles(prev =>
+      prev.map(file =>
+        file.id === fileId
           ? { ...file, document_type: documentType }
           : file
       )
@@ -213,11 +213,11 @@ const PatientDocuments: React.FC = () => {
       // Upload para Supabase Storage
       const fileName = `${Date.now()}_${uploadingFile.file.name}`;
       const filePath = `credit-documents/${selectedRequestId}/${fileName}`;
-      
+
       // Simular progresso de upload
-      setUploadingFiles(prev => 
-        prev.map(file => 
-          file.id === uploadingFile.id 
+      setUploadingFiles(prev =>
+        prev.map(file =>
+          file.id === uploadingFile.id
             ? { ...file, progress: 10 }
             : file
         )
@@ -236,9 +236,9 @@ const PatientDocuments: React.FC = () => {
       }
 
       // Atualizar progresso
-      setUploadingFiles(prev => 
-        prev.map(file => 
-          file.id === uploadingFile.id 
+      setUploadingFiles(prev =>
+        prev.map(file =>
+          file.id === uploadingFile.id
             ? { ...file, progress: 80 }
             : file
         )
@@ -278,16 +278,16 @@ const PatientDocuments: React.FC = () => {
       }
 
       // Marcar como concluído
-      setUploadingFiles(prev => 
-        prev.map(file => 
-          file.id === uploadingFile.id 
+      setUploadingFiles(prev =>
+        prev.map(file =>
+          file.id === uploadingFile.id
             ? { ...file, status: 'completed', progress: 100 }
             : file
         )
       );
 
       toast.success(`Documento "${uploadingFile.file.name}" enviado com sucesso!`);
-      
+
       // Remover da lista após 2 segundos
       setTimeout(() => {
         removeUploadingFile(uploadingFile.id);
@@ -296,9 +296,9 @@ const PatientDocuments: React.FC = () => {
 
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
-      setUploadingFiles(prev => 
-        prev.map(file => 
-          file.id === uploadingFile.id 
+      setUploadingFiles(prev =>
+        prev.map(file =>
+          file.id === uploadingFile.id
             ? { ...file, status: 'error' }
             : file
         )
@@ -384,8 +384,8 @@ const PatientDocuments: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Documentos do Crédito</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Documentos do Crédito</h1>
+        <p className="text-gray-600 text-sm md:text-base">
           Envie os documentos necessários para finalizar sua solicitação de crédito.
         </p>
       </div>
@@ -433,18 +433,17 @@ const PatientDocuments: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {selectedRequestId && (
                   <div>
                     <Label>Status da Solicitação</Label>
                     <div className="mt-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        creditRequests.find(r => r.id === selectedRequestId)?.status === 'approved' 
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${creditRequests.find(r => r.id === selectedRequestId)?.status === 'approved'
                           ? 'bg-green-100 text-green-800'
                           : creditRequests.find(r => r.id === selectedRequestId)?.status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {creditRequests.find(r => r.id === selectedRequestId)?.status === 'approved' && 'Aprovado'}
                         {creditRequests.find(r => r.id === selectedRequestId)?.status === 'rejected' && 'Rejeitado'}
                         {creditRequests.find(r => r.id === selectedRequestId)?.status === 'pending' && 'Pendente'}
@@ -506,15 +505,15 @@ const PatientDocuments: React.FC = () => {
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                          <div>
-                            <Label>Tipo do Documento</Label>
-                            <Select 
-                              value={uploadingFile.document_type} 
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                          <div className="space-y-2">
+                            <Label className="text-xs uppercase tracking-wider font-bold text-gray-400">Tipo do Documento</Label>
+                            <Select
+                              value={uploadingFile.document_type}
                               onValueChange={(value) => updateUploadingFileType(uploadingFile.id, value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="rounded-xl">
                                 <SelectValue placeholder="Selecione o tipo" />
                               </SelectTrigger>
                               <SelectContent>
@@ -526,38 +525,36 @@ const PatientDocuments: React.FC = () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => uploadFile(uploadingFile)}
-                              disabled={!uploadingFile.document_type || uploadingFile.status !== 'uploading'}
-                              size="sm"
-                              className="flex-1"
-                            >
-                              {uploadingFile.status === 'uploading' && uploadingFile.progress === 0 && 'Enviar'}
-                              {uploadingFile.status === 'uploading' && uploadingFile.progress > 0 && uploadingFile.progress < 100 && `${uploadingFile.progress}%`}
-                              {uploadingFile.status === 'completed' && (
-                                <>
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  Enviado
-                                </>
-                              )}
-                              {uploadingFile.status === 'error' && (
-                                <>
-                                  <AlertCircle className="w-4 h-4 mr-1" />
-                                  Erro
-                                </>
-                              )}
-                            </Button>
-                          </div>
+
+                          <Button
+                            onClick={() => uploadFile(uploadingFile)}
+                            disabled={!uploadingFile.document_type || uploadingFile.status !== 'uploading'}
+                            size="sm"
+                            className="w-full sm:flex-1 h-10 rounded-xl"
+                          >
+                            {uploadingFile.status === 'uploading' && uploadingFile.progress === 0 && 'Enviar'}
+                            {uploadingFile.status === 'uploading' && uploadingFile.progress > 0 && uploadingFile.progress < 100 && `${uploadingFile.progress}%`}
+                            {uploadingFile.status === 'completed' && (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Enviado
+                              </>
+                            )}
+                            {uploadingFile.status === 'error' && (
+                              <>
+                                <AlertCircle className="w-4 h-4 mr-1" />
+                                Erro
+                              </>
+                            )}
+                          </Button>
                         </div>
-                        
+
                         {/* Barra de progresso */}
                         {uploadingFile.status === 'uploading' && uploadingFile.progress > 0 && uploadingFile.progress < 100 && (
                           <div className="mt-3">
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                              <div
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${uploadingFile.progress}%` }}
                               ></div>
                             </div>
@@ -589,37 +586,34 @@ const PatientDocuments: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 gap-4">
                       <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div className="p-3 bg-blue-50 rounded-xl">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                        </div>
                         <div>
-                          <p className="font-medium">{getDocumentTypeLabel(doc.document_type)}</p>
-                          <p className="text-sm text-gray-500">{doc.file_name}</p>
-                          <p className="text-xs text-gray-400">
-                            Enviado em {new Date(doc.uploaded_at).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                          <p className="font-bold text-gray-900">{getDocumentTypeLabel(doc.document_type)}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-[200px]">{doc.file_name}</p>
+                          <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">
+                            {new Date(doc.uploaded_at).toLocaleDateString('pt-BR')} às {new Date(doc.uploaded_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(doc.file_url, '_blank')}
+                          className="flex-1 sm:flex-none rounded-xl h-10"
                         >
                           <Download className="w-4 h-4 mr-2" />
                           Baixar
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => deleteDocument(doc.id, doc.file_name)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl h-10 w-10 p-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

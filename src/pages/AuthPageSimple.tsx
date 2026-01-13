@@ -19,7 +19,7 @@ export default function AuthPageSimple() {
   const [activeTab, setActiveTab] = useState('login');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // Determine if this is clinic login based on URL params
   const isClinicLogin = searchParams.get('type') === 'clinic';
 
@@ -79,7 +79,7 @@ export default function AuthPageSimple() {
 
       // Get user session data
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user) {
         // Redirecionar baseado no perfil
         const { data: profile } = await supabase
@@ -87,7 +87,7 @@ export default function AuthPageSimple() {
           .select('role')
           .eq('user_id', user.id)
           .single();
-        
+
         // Redirecionar para a página principal após login
         navigate('/');
       }
@@ -162,10 +162,12 @@ export default function AuthPageSimple() {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
+            id: data.user.id,
             user_id: data.user.id,
             full_name: signupData.fullName,
             role: signupData.role,
-            email: signupData.email
+            email: signupData.email,
+            account_type: signupData.role
           });
 
         if (profileError) {
@@ -173,13 +175,13 @@ export default function AuthPageSimple() {
         }
 
         toast.success('Cadastro realizado com sucesso! Redirecionando...');
-        
+
         // Redirecionar diretamente para a página de planos
         setTimeout(() => {
           navigate(`/plans?type=${signupData.role}`);
         }, 1500);
       }
-      
+
     } catch (err) {
       setError('Erro inesperado. Tente novamente.');
     } finally {
@@ -191,192 +193,192 @@ export default function AuthPageSimple() {
     <>
       <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar ao início
-          </Link>
-          <div className="flex justify-center">
-            <DoutorizzeLogo className="h-16 w-auto" />
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar ao início
+            </Link>
+            <div className="flex justify-center">
+              <DoutorizzeLogo className="h-16 w-auto" />
+            </div>
           </div>
-        </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${isClinicLogin ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            <TabsTrigger value="login">{isClinicLogin ? 'Login Clínica' : 'Entrar'}</TabsTrigger>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className={`grid w-full ${isClinicLogin ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <TabsTrigger value="login">{isClinicLogin ? 'Login Clínica' : 'Entrar'}</TabsTrigger>
+              {!isClinicLogin && (
+                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              )}
+            </TabsList>
+
+            <TabsContent value="login">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fazer Login</CardTitle>
+                  <CardDescription>
+                    Entre com suas credenciais para acessar sua conta
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={loginData.email}
+                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={loginData.password}
+                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {isClinicLogin ? 'Acessando...' : 'Entrando...'}
+                        </>
+                      ) : (
+                        isClinicLogin ? 'Acessar Painel' : 'Entrar'
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {!isClinicLogin && (
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              <TabsContent value="signup">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Criar Conta</CardTitle>
+                    <CardDescription>
+                      Cadastro simplificado - complete em segundos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSignup} className="space-y-4">
+
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-name">Nome Completo</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="signup-name"
+                            type="text"
+                            placeholder="Seu nome completo"
+                            value={signupData.fullName}
+                            onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="seu@email.com"
+                            value={signupData.email}
+                            onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password">Senha</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="signup-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={signupData.password}
+                            onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="signup-confirm-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={signupData.confirmPassword}
+                            onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Criando conta...
+                          </>
+                        ) : (
+                          'Criar Conta'
+                        )}
+                      </Button>
+
+                      <p className="text-xs text-muted-foreground text-center">
+                        Cadastro instantâneo - sem confirmação de email necessária
+                      </p>
+                    </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             )}
-          </TabsList>
-
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Fazer Login</CardTitle>
-                <CardDescription>
-                  Entre com suas credenciais para acessar sua conta
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {isClinicLogin ? 'Acessando...' : 'Entrando...'}
-                      </>
-                    ) : (
-                      isClinicLogin ? 'Acessar Painel' : 'Entrar'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {!isClinicLogin && (
-            <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle>Criar Conta</CardTitle>
-                <CardDescription>
-                  Cadastro simplificado - complete em segundos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignup} className="space-y-4">
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Nome Completo</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Seu nome completo"
-                        value={signupData.fullName}
-                        onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={signupData.email}
-                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupData.password}
-                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupData.confirmPassword}
-                        onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Criando conta...
-                      </>
-                    ) : (
-                      'Criar Conta'
-                    )}
-                  </Button>
-                  
-                  <p className="text-xs text-muted-foreground text-center">
-                    Cadastro instantâneo - sem confirmação de email necessária
-                  </p>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          )}
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
-    </div>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -20,6 +20,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import NotificationSystem from '../../components/NotificationSystem';
 
 interface CreditRequest {
@@ -80,10 +81,10 @@ const PatientDashboard: React.FC = () => {
     documentsUploaded: 0
   });
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  // TODO: Substituir por ID do usuário logado
-  const currentPatientId = 'current-patient-id';
+  const currentPatientId = user?.id || '';
 
   useEffect(() => {
     fetchDashboardData();
@@ -333,68 +334,76 @@ const PatientDashboard: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Meu Dashboard</h1>
-          <p className="text-gray-600">Acompanhe suas solicitações de crédito e documentos</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Meu Dashboard</h1>
+          <p className="text-gray-600 text-sm md:text-base">Acompanhe suas solicitações de crédito e documentos</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <NotificationSystem userId={currentPatientId} userType="patient" />
-          <Button onClick={() => navigate('/patient/credit-request')}>
+          <Button onClick={() => navigate('/patient/credit-request')} className="flex-1 sm:flex-none">
             <Plus className="w-4 h-4 mr-2" />
-            Nova Solicitação
+            <span className="whitespace-nowrap">Nova Solicitação</span>
           </Button>
         </div>
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <Card className="shadow-sm">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total de Solicitações</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalRequests}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-600 uppercase tracking-wider">Total Solicitações</p>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{stats.totalRequests}</p>
               </div>
-              <CreditCard className="w-8 h-8 text-blue-600" />
+              <div className="p-3 bg-blue-50 rounded-2xl">
+                <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Em Andamento</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pendingRequests}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-600 uppercase tracking-wider">Em Andamento</p>
+                <p className="text-xl md:text-2xl font-bold text-yellow-600">{stats.pendingRequests}</p>
               </div>
-              <Clock className="w-8 h-8 text-yellow-600" />
+              <div className="p-3 bg-yellow-50 rounded-2xl">
+                <Clock className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Aprovadas</p>
-                <p className="text-2xl font-bold text-green-600">{stats.approvedRequests}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-600 uppercase tracking-wider">Aprovadas</p>
+                <p className="text-xl md:text-2xl font-bold text-green-600">{stats.approvedRequests}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="p-3 bg-green-50 rounded-2xl">
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="shadow-sm">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Valor Aprovado</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-xs md:text-sm font-medium text-gray-600 uppercase tracking-wider">Valor Aprovado</p>
+                <p className="text-xl md:text-2xl font-bold text-green-600">
                   {formatCurrency(stats.totalApprovedAmount)}
                 </p>
               </div>
-              <DollarSign className="w-8 h-8 text-green-600" />
+              <div className="p-3 bg-emerald-50 rounded-2xl">
+                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+              </div>
             </div>
           </CardContent>
         </Card>

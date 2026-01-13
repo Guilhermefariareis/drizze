@@ -176,22 +176,22 @@ function PatientAppointments() {
     <div className="flex min-h-screen bg-background text-foreground">
       <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-6 lg:p-10 relative overflow-hidden`}>
+      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} p-4 md:p-6 lg:p-10 relative overflow-hidden`}>
         {/* Background Aurora */}
         <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
         <div className="absolute bottom-[-10%] left-[-5%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[100px] -z-10"></div>
 
         <div className="max-w-5xl mx-auto space-y-8">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-border/50">
             <div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2">Minhas Consultas</h1>
-              <p className="text-muted-foreground text-lg">Gerencie seus agendamentos e histórico médico.</p>
+              <p className="text-muted-foreground text-base md:text-lg">Gerencie seus agendamentos e histórico médico.</p>
             </div>
             <Button
               onClick={() => navigate('/search')}
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 px-8"
+              className="bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 px-8 w-full sm:w-auto"
             >
               <Plus className="mr-2 h-5 w-5" />
               Nova Consulta
@@ -222,23 +222,23 @@ function PatientAppointments() {
                   key={appointment.id}
                   className="group border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 rounded-[2rem] overflow-hidden hover:shadow-xl hover:shadow-primary/5 cursor-default"
                 >
-                  <CardHeader className="p-6 md:p-8 flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-border/40">
+                  <CardHeader className="p-6 md:p-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border/40">
                     <div className="flex items-start gap-4">
                       <div
-                        className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                        className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform"
                         onClick={(e) => handleClinicClick(appointment.clinics.id, e)}
                       >
-                        <Building2 className="h-8 w-8 text-primary" />
+                        <Building2 className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                       </div>
                       <div>
                         <div
                           className="flex items-center gap-2 mb-1 group-hover:text-primary transition-colors cursor-pointer"
                           onClick={(e) => handleClinicClick(appointment.clinics.id, e)}
                         >
-                          <CardTitle className="text-2xl font-bold">{appointment.clinics.name}</CardTitle>
+                          <CardTitle className="text-xl md:text-2xl font-bold">{appointment.clinics.name}</CardTitle>
                           <ChevronRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                         </div>
-                        <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs md:text-sm">
                           {appointment.clinics.city && (
                             <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {appointment.clinics.city}</span>
                           )}
@@ -248,9 +248,9 @@ function PatientAppointments() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 w-full sm:w-auto">
                       {getStatusBadge(appointment.status)}
-                      <span className="text-xs text-muted-foreground font-mono uppercase tracking-wider opacity-60">ID: {appointment.id.slice(0, 8)}</span>
+                      <span className="text-[10px] md:text-xs text-muted-foreground font-mono uppercase tracking-wider opacity-60">ID: {appointment.id.slice(0, 8)}</span>
                     </div>
                   </CardHeader>
 
@@ -331,10 +331,10 @@ function PatientAppointments() {
                   </CardContent>
 
                   {(appointment.status === 'pendente' || appointment.status === 'confirmado') && (
-                    <CardFooter className="bg-muted/30 p-4 md:px-8 border-t border-border/40 flex flex-wrap gap-4 justify-end">
+                    <CardFooter className="bg-muted/30 p-4 md:px-8 border-t border-border/40 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-end">
                       <Button
                         variant="outline"
-                        className="rounded-xl hover:bg-background hover:text-primary hover:border-primary/50 transition-all"
+                        className="rounded-xl hover:bg-background hover:text-primary hover:border-primary/50 transition-all w-full sm:w-auto"
                         onClick={(e) => handleReschedule(appointment, e)}
                       >
                         <Calendar className="h-4 w-4 mr-2" />
@@ -342,7 +342,7 @@ function PatientAppointments() {
                       </Button>
                       <Button
                         variant="destructive"
-                        className="rounded-xl hover:bg-red-600 transition-all bg-red-500/10 text-red-500 hover:text-white border border-red-500/20"
+                        className="rounded-xl hover:bg-red-600 transition-all bg-red-500/10 text-red-500 hover:text-white border border-red-500/20 w-full sm:w-auto"
                         onClick={(e) => handleCancelClick(appointment.id, e)}
                       >
                         <X className="h-4 w-4 mr-2" />

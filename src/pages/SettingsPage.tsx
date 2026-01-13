@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Edit, Save, X, Eye, EyeOff, Shield, Bell, CreditCard, Users, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Edit, Save, X, Eye, EyeOff, Shield, Bell, CreditCard, Users, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,20 +9,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [profile, setProfile] = useState({
-    name: 'João Silva',
-    email: 'joao@email.com',
-    phone: '(11) 99999-9999',
-    birthDate: '1990-05-15',
-    address: 'Rua das Flores, 123',
-    city: 'São Paulo',
-    state: 'SP',
-    zipCode: '01234-567'
+    name: '',
+    email: '',
+    phone: '',
+    birthDate: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: ''
   });
 
   const [notifications, setNotifications] = useState({
@@ -46,6 +52,209 @@ export default function SettingsPage() {
     loginAlerts: true,
     passwordExpiry: '90'
   });
+
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch Profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') throw profileError;
+
+      if (profileData) {
+        const addressData = (profileData.address as any) || {};
+        setProfile({
+          name: profileData.full_name || profileData.name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          birthDate: profileData.birth_date || '',
+          address: addressData.street || '',
+          city: addressData.city || '',
+          state: addressData.state || '',
+          zipCode: addressData.zip_code || ''
+        });
+      }
+
+      // Fetch Preferences (using JSONB from profiles or new table if already migrated)
+      // For now, let's try to fetch from user_preferences table
+      const { data: prefData, error: prefError } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (prefError && prefError.code !== 'PGRST116') {
+        console.warn('user_preferences table might not exist yet:', prefError.message);
+      }
+
+      if (prefData) {
+        setNotifications({
+          email: prefData.email_notifications,
+          sms: prefData.sms_notifications,
+          whatsapp: prefData.whatsapp_notifications,
+          push: prefData.push_notifications,
+          marketing: prefData.marketing_emails,
+          reminders: prefData.appointment_reminders
+        });
+        setPrivacy({
+          profileVisibility: prefData.profile_visibility,
+          shareData: prefData.share_data,
+          analytics: prefData.analytics_enabled,
+          locationTracking: prefData.location_tracking
+        });
+        setSecurity({
+          twoFactor: prefData.two_factor_enabled,
+          loginAlerts: prefData.login_alerts_enabled,
+          passwordExpiry: String(prefData.password_expiry_days)
+        });
+      }
+    } catch (error: any) {
+      console.error('Error fetching settings:', error);
+      toast.error('Erro ao carregar configurações');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.name,
+          phone: profile.phone,
+          birth_date: profile.birthDate,
+          address: {
+            street: profile.address,
+            city: profile.city,
+            state: profile.state,
+            zip_code: profile.zipCode
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      toast.success('Perfil atualizado com sucesso!');
+      setEditMode(false);
+    } catch (error: any) {
+      toast.error('Erro ao salvar perfil: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSavePreferences = async (updatedNotifications?: typeof notifications) => {
+    try {
+      setSaving(true);
+      const currentNotifs = updatedNotifications || notifications;
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user?.id,
+          email_notifications: currentNotifs.email,
+          sms_notifications: currentNotifs.sms,
+          whatsapp_notifications: currentNotifs.whatsapp,
+          push_notifications: currentNotifs.push,
+          marketing_emails: currentNotifs.marketing,
+          appointment_reminders: currentNotifs.reminders,
+          profile_visibility: privacy.profileVisibility,
+          share_data: privacy.shareData,
+          analytics_enabled: privacy.analytics,
+          location_tracking: privacy.locationTracking,
+          two_factor_enabled: security.twoFactor,
+          login_alerts_enabled: security.loginAlerts,
+          password_expiry_days: security.passwordExpiry === 'never' ? null : parseInt(security.passwordExpiry),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      toast.success('Preferências salvas com sucesso!');
+    } catch (error: any) {
+      toast.error('Erro ao salvar preferências: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwords.new !== passwords.confirm) {
+      toast.error('As senhas não coincidem!');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { error } = await supabase.auth.updateUser({
+        password: passwords.new
+      });
+
+      if (error) throw error;
+      toast.success('Senha alterada com sucesso!');
+      setPasswords({ current: '', new: '', confirm: '' });
+    } catch (error: any) {
+      toast.error('Erro ao alterar senha: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCepSearch = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+
+    try {
+      setSaving(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error('CEP não encontrado');
+        return;
+      }
+
+      setProfile(prev => ({
+        ...prev,
+        address: `${data.logradouro}${data.bairro ? ` - ${data.bairro}` : ''}`,
+        city: data.localidade,
+        state: data.uf,
+        zipCode: cleanCep
+      }));
+
+      toast.success('Endereço preenchido automaticamente!');
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      toast.error('Erro ao buscar CEP');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +371,11 @@ export default function SettingsPage() {
 
                     <div>
                       <Label htmlFor="state">Estado</Label>
-                      <Select value={profile.state} disabled={!editMode}>
+                      <Select
+                        value={profile.state}
+                        onValueChange={(value) => setProfile({ ...profile, state: value })}
+                        disabled={!editMode}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -170,6 +383,10 @@ export default function SettingsPage() {
                           <SelectItem value="SP">São Paulo</SelectItem>
                           <SelectItem value="RJ">Rio de Janeiro</SelectItem>
                           <SelectItem value="MG">Minas Gerais</SelectItem>
+                          <SelectItem value="ES">Espírito Santo</SelectItem>
+                          <SelectItem value="SC">Santa Catarina</SelectItem>
+                          <SelectItem value="PR">Paraná</SelectItem>
+                          <SelectItem value="RS">Rio Grande do Sul</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -181,14 +398,15 @@ export default function SettingsPage() {
                         value={profile.zipCode}
                         disabled={!editMode}
                         onChange={(e) => setProfile({ ...profile, zipCode: e.target.value })}
+                        onBlur={(e) => handleCepSearch(e.target.value)}
                       />
                     </div>
                   </div>
 
                   {editMode && (
                     <div className="flex gap-2">
-                      <Button>
-                        <Save className="h-4 w-4 mr-2" />
+                      <Button onClick={handleSaveProfile} disabled={saving}>
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                         Salvar Alterações
                       </Button>
                       <Button variant="outline" onClick={() => setEditMode(false)}>
@@ -217,6 +435,8 @@ export default function SettingsPage() {
                         id="currentPassword"
                         type={showPassword ? "text" : "password"}
                         placeholder="Digite sua senha atual"
+                        value={passwords.current}
+                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                       />
                       <Button
                         variant="ghost"
@@ -235,6 +455,8 @@ export default function SettingsPage() {
                       id="newPassword"
                       type="password"
                       placeholder="Digite sua nova senha"
+                      value={passwords.new}
+                      onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
                     />
                   </div>
 
@@ -244,6 +466,8 @@ export default function SettingsPage() {
                       id="confirmPassword"
                       type="password"
                       placeholder="Confirme sua nova senha"
+                      value={passwords.confirm}
+                      onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                     />
                   </div>
 
@@ -277,7 +501,10 @@ export default function SettingsPage() {
 
                   <div>
                     <Label htmlFor="passwordExpiry">Expiração da senha</Label>
-                    <Select value={security.passwordExpiry}>
+                    <Select
+                      value={security.passwordExpiry}
+                      onValueChange={(value) => setSecurity({ ...security, passwordExpiry: value })}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
@@ -290,7 +517,10 @@ export default function SettingsPage() {
                     </Select>
                   </div>
 
-                  <Button>Atualizar Configurações de Segurança</Button>
+                  <Button onClick={handlePasswordChange} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Atualizar Configurações de Segurança
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -307,15 +537,19 @@ export default function SettingsPage() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="emailNotif">Notificações por e-mail</Label>
+                      <Label htmlFor="emailNotif">Notificações por Email</Label>
                       <p className="text-sm text-muted-foreground">
-                        Receba atualizações importantes por e-mail
+                        Receber notificações importantes por email
                       </p>
                     </div>
                     <Switch
                       id="emailNotif"
                       checked={notifications.email}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
+                      onCheckedChange={(checked) => {
+                        const newNotifs = { ...notifications, email: checked };
+                        setNotifications(newNotifs);
+                        handleSavePreferences(newNotifs);
+                      }}
                     />
                   </div>
 
@@ -323,13 +557,17 @@ export default function SettingsPage() {
                     <div>
                       <Label htmlFor="smsNotif">Notificações por SMS</Label>
                       <p className="text-sm text-muted-foreground">
-                        Receba lembretes por mensagem de texto
+                        Receber lembretes por mensagem de texto
                       </p>
                     </div>
                     <Switch
                       id="smsNotif"
                       checked={notifications.sms}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, sms: checked })}
+                      onCheckedChange={(checked) => {
+                        const newNotifs = { ...notifications, sms: checked };
+                        setNotifications(newNotifs);
+                        handleSavePreferences(newNotifs);
+                      }}
                     />
                   </div>
 
@@ -337,59 +575,78 @@ export default function SettingsPage() {
                     <div>
                       <Label htmlFor="whatsappNotif">Notificações por WhatsApp</Label>
                       <p className="text-sm text-muted-foreground">
-                        Receba confirmações e lembretes via WhatsApp
+                        Receber confirmações e lembretes via WhatsApp
                       </p>
                     </div>
                     <Switch
                       id="whatsappNotif"
                       checked={notifications.whatsapp}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, whatsapp: checked })}
+                      onCheckedChange={(checked) => {
+                        const newNotifs = { ...notifications, whatsapp: checked };
+                        setNotifications(newNotifs);
+                        handleSavePreferences(newNotifs);
+                      }}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="pushNotif">Notificações push</Label>
+                      <Label htmlFor="pushNotif">Notificações Push</Label>
                       <p className="text-sm text-muted-foreground">
-                        Receba notificações no navegador
+                        Receber notificações instantâneas no seu dispositivo
                       </p>
                     </div>
                     <Switch
                       id="pushNotif"
                       checked={notifications.push}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, push: checked })}
+                      onCheckedChange={(checked) => {
+                        const newNotifs = { ...notifications, push: checked };
+                        setNotifications(newNotifs);
+                        handleSavePreferences(newNotifs);
+                      }}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="marketingNotif">E-mails de marketing</Label>
+                      <Label htmlFor="remindersNotif">Lembretes de Consulta</Label>
                       <p className="text-sm text-muted-foreground">
-                        Receba ofertas especiais e novidades
-                      </p>
-                    </div>
-                    <Switch
-                      id="marketingNotif"
-                      checked={notifications.marketing}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, marketing: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="remindersNotif">Lembretes de consulta</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receba lembretes antes das consultas
+                        Receber lembretes antes das consultas agendadas
                       </p>
                     </div>
                     <Switch
                       id="remindersNotif"
                       checked={notifications.reminders}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, reminders: checked })}
+                      onCheckedChange={(checked) => {
+                        const newNotifs = { ...notifications, reminders: checked };
+                        setNotifications(newNotifs);
+                        handleSavePreferences(newNotifs);
+                      }}
                     />
                   </div>
 
-                  <Button>Salvar Preferências</Button>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="marketingNotif">Emails de Marketing</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receber ofertas exclusivas, novidades e promoções
+                      </p>
+                    </div>
+                    <Switch
+                      id="marketingNotif"
+                      checked={notifications.marketing}
+                      onCheckedChange={(checked) => {
+                        const newNotifs = { ...notifications, marketing: checked };
+                        setNotifications(newNotifs);
+                        handleSavePreferences(newNotifs);
+                      }}
+                    />
+                  </div>
+
+                  <Button onClick={handleSavePreferences} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Salvar Preferências
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -406,14 +663,17 @@ export default function SettingsPage() {
                 <CardContent className="space-y-6">
                   <div>
                     <Label htmlFor="profileVisibility">Visibilidade do perfil</Label>
-                    <Select value={privacy.profileVisibility}>
+                    <Select
+                      value={privacy.profileVisibility}
+                      onValueChange={(value) => setPrivacy({ ...privacy, profileVisibility: value })}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="public">Público</SelectItem>
                         <SelectItem value="private">Privado</SelectItem>
-                        <SelectItem value="friends">Apenas contatos</SelectItem>
+                        <SelectItem value="contacts">Apenas contatos</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -472,7 +732,10 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <Button>Salvar Configurações de Privacidade</Button>
+                  <Button onClick={handleSavePreferences} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Salvar Configurações de Privacidade
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>

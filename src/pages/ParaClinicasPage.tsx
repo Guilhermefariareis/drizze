@@ -319,11 +319,11 @@ const ParaClinicasPage = () => {
               <div className="space-y-10">
                 <div className="space-y-6">
                   <Badge variant="v2-blue" className="py-2 px-4 text-sm font-bold">SOLUÇÃO CORPORATIVA</Badge>
-                  <h1 className="text-5xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight">
+                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight">
                     Mais <span className="text-[#4ADE80]">pacientes.</span>
-                    <br />
+                    <br className="hidden sm:block" />
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#E94560] to-[#FB923C]">Crédito no ponto</span> de decisão.
-                    <br />
+                    <br className="hidden sm:block" />
                     Cresça com a <span className="text-[#3B82F6]">Doutorizze.</span>
                   </h1>
                   <p className="text-xl text-white/50 leading-relaxed font-medium max-w-xl">
@@ -341,36 +341,36 @@ const ParaClinicasPage = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-8 pt-10 border-t border-white/5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 pt-10 border-t border-white/5">
                   <div className="text-left">
-                    <div className="text-3xl font-black text-[#4ADE80] mb-1">+40%</div>
-                    <div className="text-sm text-white/40 font-bold uppercase tracking-wider">Conversão</div>
+                    <div className="text-2xl sm:text-3xl font-black text-[#4ADE80] mb-1">+40%</div>
+                    <div className="text-[10px] sm:text-sm text-white/40 font-bold uppercase tracking-wider">Conversão</div>
                   </div>
                   <div className="text-left">
-                    <div className="text-3xl font-black text-[#E94560] mb-1">-30%</div>
-                    <div className="text-sm text-white/40 font-bold uppercase tracking-wider">No-show</div>
+                    <div className="text-2xl sm:text-3xl font-black text-[#E94560] mb-1">-30%</div>
+                    <div className="text-[10px] sm:text-sm text-white/40 font-bold uppercase tracking-wider">No-show</div>
                   </div>
-                  <div className="text-left">
-                    <div className="text-3xl font-black text-[#3B82F6] mb-1">24h</div>
-                    <div className="text-sm text-white/40 font-bold uppercase tracking-wider">Retorno</div>
+                  <div className="text-left col-span-2 sm:col-span-1">
+                    <div className="text-2xl sm:text-3xl font-black text-[#3B82F6] mb-1">24h</div>
+                    <div className="text-[10px] sm:text-sm text-white/40 font-bold uppercase tracking-wider">Retorno</div>
                   </div>
                 </div>
               </div>
 
               <div className="relative">
-                <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-3xl rounded-[3rem] p-10 relative overflow-hidden shadow-2xl">
+                <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-3xl rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-10 relative overflow-hidden shadow-2xl">
                   <img
                     src="/modern_dental_clinic_interior_premium_1767985431838.png"
                     alt="Consultório odontológico moderno"
-                    className="w-full h-80 object-cover rounded-[2rem] opacity-80"
+                    className="w-full h-64 sm:h-80 object-cover rounded-[1.5rem] sm:rounded-[2rem] opacity-80"
                   />
-                  <div className="absolute -bottom-6 -right-6 w-40 h-56">
-                    <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] rounded-3xl p-6 text-white text-center shadow-2xl transform rotate-6 border border-white/20 flex flex-col items-center">
-                      <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 mb-4 flex items-center justify-center w-full">
-                        <img src="/logo-new.png" alt="Logo" className="w-6 h-6 object-contain filter invert brightness-0" />
+                  <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 w-32 h-44 sm:w-40 sm:h-56">
+                    <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white text-center shadow-2xl transform rotate-6 border border-white/20 flex flex-col items-center h-full">
+                      <div className="bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 mb-2 sm:mb-4 flex items-center justify-center w-full">
+                        <img src="/logo-new.png" alt="Logo" className="w-5 h-5 sm:w-6 sm:h-6 object-contain filter invert brightness-0" />
                       </div>
-                      <div className="text-sm font-bold mb-2">Agende sua consulta</div>
-                      <div className="text-xs font-black">CRÉDITO APROVADO!</div>
+                      <div className="text-[10px] sm:text-sm font-bold mb-1 sm:mb-2 leading-tight">Agende sua consulta</div>
+                      <div className="text-[9px] sm:text-xs font-black">CRÉDITO APROVADO!</div>
                     </div>
                   </div>
                 </div>
@@ -392,7 +392,7 @@ const ParaClinicasPage = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
               {benefits.map((benefit, index) => {
                 const Icon = benefit.icon;
                 return (
@@ -532,7 +532,7 @@ const ParaClinicasPage = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {testimonials.map((testimonial, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardContent className="pt-6">
@@ -570,7 +570,7 @@ const ParaClinicasPage = () => {
             </div>
 
             <div className="max-w-6xl mx-auto">
-              <div className="grid md:grid-cols-5 gap-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8">
                 {[
                   { step: "1", title: "Cadastro da clínica", icon: Building2 },
                   { step: "2", title: "Configuração da vitrine", icon: Globe },
@@ -581,14 +581,14 @@ const ParaClinicasPage = () => {
                   const Icon = item.icon;
                   return (
                     <div key={index} className="text-center group relative">
-                      <div className="bg-white/[0.03] border border-white/10 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-500 shadow-xl group-hover:border-[#4ADE80]/50 relative">
-                        <Icon className="h-10 w-10 text-white" />
-                        <div className="absolute -top-3 -right-3 bg-[#4ADE80] text-black w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-lg">
+                      <div className="bg-white/[0.03] border border-white/10 w-20 h-20 sm:w-24 sm:h-24 rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-all duration-500 shadow-xl group-hover:border-[#4ADE80]/50 relative">
+                        <Icon className="h-8 w-8 sm:h-10 sm:h-10 text-white" />
+                        <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 bg-[#4ADE80] text-black w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black text-[10px] sm:text-sm shadow-lg">
                           {item.step}
                         </div>
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-2 tracking-tight uppercase tracking-widest text-[11px] opacity-60">Passo {item.step}</h3>
-                      <h4 className="text-white font-black text-sm leading-tight px-2">{item.title}</h4>
+                      <h3 className="text-[10px] sm:text-lg font-bold text-white mb-1 sm:mb-2 tracking-tight uppercase tracking-widest opacity-60">Passo {item.step}</h3>
+                      <h4 className="text-white font-black text-[11px] sm:text-sm leading-tight px-1 sm:px-2">{item.title}</h4>
                     </div>
                   )
                 })}
@@ -611,7 +611,7 @@ const ParaClinicasPage = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
               {[
                 { v: "+40%", t: "Conversão", d: "Aumento médio no fechamento", c: "#4ADE80" },
                 { v: "-30%", t: "No-show", d: "Redução nas faltas de consultas", c: "#E94560" },

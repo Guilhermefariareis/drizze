@@ -63,6 +63,7 @@ export default function PatientProfile() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<Partial<PatientProfile>>({});
+  const [searchingCep, setSearchingCep] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -107,7 +108,7 @@ export default function PatientProfile() {
 
       const combinedProfile: PatientProfile = {
         id: profileBase?.id || user?.id,
-        full_name: profileBase?.full_name || profileBase?.name || user?.user_metadata?.full_name || '',
+        full_name: profileBase?.full_name || user?.user_metadata?.full_name || '',
         email: profileBase?.email || user?.email || '',
         phone: profileBase?.phone || '',
         cpf: profileBase?.cpf || '',
@@ -153,7 +154,6 @@ export default function PatientProfile() {
 
       const profileUpdates = {
         full_name: formData.full_name,
-        name: formData.full_name, // Sync both fields
         phone: formData.phone,
         cpf: formData.cpf, // Save CPF
         birth_date: formData.birth_date,
@@ -326,6 +326,37 @@ export default function PatientProfile() {
       .replace(/(-\d{3})\d+?$/, '$1');
   };
 
+  const handleCepSearch = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+
+    try {
+      setSearchingCep(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error('CEP não encontrado');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        address: `${data.logradouro}${data.bairro ? ` - ${data.bairro}` : ''}`,
+        city: data.localidade,
+        state: data.uf,
+        zip_code: maskCEP(cleanCep)
+      }));
+
+      toast.success('Endereço preenchido automaticamente!');
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      toast.error('Erro ao buscar CEP');
+    } finally {
+      setSearchingCep(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -338,7 +369,7 @@ export default function PatientProfile() {
     <div className="flex min-h-screen bg-background text-foreground">
       <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-6 lg:p-10 relative overflow-hidden`}>
+      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} p-4 md:p-6 lg:p-10 relative overflow-hidden`}>
         {/* Decorative Background */}
         <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-purple-500/5 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
         <div className="absolute bottom-[-10%] left-[-5%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[100px] -z-10"></div>
@@ -350,7 +381,7 @@ export default function PatientProfile() {
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">Meu Perfil</h1>
               <p className="text-muted-foreground text-lg">Gerencie suas informações pessoais e mantenha seu cadastro atualizado.</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               {editing ? (
                 <>
                   <Button variant="outline" onClick={handleCancel} disabled={saving} className="rounded-xl">
@@ -363,7 +394,7 @@ export default function PatientProfile() {
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setEditing(true)} size="lg" className="rounded-xl shadow-lg shadow-primary/20">
+                <Button onClick={() => setEditing(true)} size="lg" className="rounded-xl shadow-lg shadow-primary/20 w-full sm:w-auto">
                   <Edit className="h-4 w-4 mr-2" />
                   Editar Perfil
                 </Button>
@@ -372,13 +403,13 @@ export default function PatientProfile() {
           </div>
 
           {/* Profile Card (Avatar & Info) */}
-          <Card className="border-border/50 bg-card/60 backdrop-blur-sm shadow-xl rounded-[2rem] overflow-hidden">
-            <CardContent className="pt-8 pb-8 px-8">
-              <div className="flex flex-col md:flex-row items-center gap-8">
+          <Card className="border-border/50 bg-card/60 backdrop-blur-sm shadow-xl rounded-[1.5rem] md:rounded-[2rem] overflow-hidden">
+            <CardContent className="pt-6 pb-6 md:pt-8 md:pb-8 px-4 md:px-8">
+              <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
                 <div className="relative group">
-                  <Avatar className="h-32 w-32 border-4 border-background shadow-2xl">
+                  <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-2xl">
                     <AvatarImage src={editing ? (formData.avatar_url || '') : (profile?.avatar_url || '')} className="object-cover" />
-                    <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">
+                    <AvatarFallback className="text-3xl md:text-4xl font-bold bg-primary/10 text-primary">
                       {getInitials(formData.full_name || '')}
                     </AvatarFallback>
                   </Avatar>
@@ -404,25 +435,25 @@ export default function PatientProfile() {
                   )}
                 </div>
 
-                <div className="flex-1 text-center md:text-left space-y-2">
-                  <h2 className="text-3xl font-black tracking-tight">{formData.full_name || 'Nome não informado'}</h2>
-                  <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2">
+                <div className="flex-1 text-center md:text-left space-y-3">
+                  <h2 className="text-2xl md:text-3xl font-black tracking-tight">{formData.full_name || 'Nome não informado'}</h2>
+                  <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2 text-sm md:text-base">
                     <Mail className="h-4 w-4" /> {formData.email}
                   </p>
 
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 mt-4">
                     {formData.birth_date && (
-                      <Badge variant="secondary" className="px-3 py-1 text-sm bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
+                      <Badge variant="secondary" className="px-2 md:px-3 py-1 text-xs md:text-sm bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
                         🎂 {calculateAge(formData.birth_date)} anos
                       </Badge>
                     )}
                     {formData.gender && (
-                      <Badge variant="secondary" className="px-3 py-1 text-sm bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 border-0 capitalize">
+                      <Badge variant="secondary" className="px-2 md:px-3 py-1 text-xs md:text-sm bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 border-0 capitalize">
                         ⚧ {formData.gender === 'male' ? 'Masculino' : formData.gender === 'female' ? 'Feminino' : 'Outro'}
                       </Badge>
                     )}
                     {formData.cpf && (
-                      <Badge variant="outline" className="px-3 py-1 text-sm border-dashed">
+                      <Badge variant="outline" className="px-2 md:px-3 py-1 text-xs md:text-sm border-dashed">
                         🆔 {maskCPF(formData.cpf)}
                       </Badge>
                     )}
@@ -516,22 +547,41 @@ export default function PatientProfile() {
                 <CardDescription>Para correspondências e localização</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5 pt-6">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <div className="col-span-1 space-y-2">
                     <Label htmlFor="zip_code">CEP</Label>
-                    <div className="relative">
-                      <Input
-                        id="zip_code"
-                        value={formData.zip_code ? maskCEP(formData.zip_code) : ''}
-                        onChange={(e) => handleInputChange('zip_code', e.target.value)}
-                        disabled={!editing}
-                        placeholder="00000-000"
-                        maxLength={9}
-                      />
-                      {editing && <div className="absolute right-3 top-2.5 text-xs text-primary font-bold cursor-pointer hover:underline">Buscar</div>}
+                    <div className="flex gap-2">
+                      <div className="relative flex-1 group/cep">
+                        <Input
+                          id="zip_code"
+                          value={formData.zip_code ? maskCEP(formData.zip_code) : ''}
+                          onChange={(e) => handleInputChange('zip_code', e.target.value)}
+                          onBlur={(e) => handleCepSearch(e.target.value)}
+                          disabled={!editing || searchingCep}
+                          placeholder="00000-000"
+                          maxLength={9}
+                          className={`transition-all duration-300 ${searchingCep ? 'opacity-70' : ''}`}
+                        />
+                        {searchingCep && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          </div>
+                        )}
+                      </div>
+                      {editing && !searchingCep && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCepSearch(formData.zip_code || '')}
+                          className="h-10 px-3 font-bold text-primary border-primary/20 hover:bg-primary/5 rounded-xl transition-all whitespace-nowrap"
+                        >
+                          Buscar
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div className="col-span-2 space-y-2">
+                  <div className="col-span-1 md:col-span-2 space-y-2">
                     <Label htmlFor="address">Endereço</Label>
                     <Input
                       id="address"
@@ -539,6 +589,7 @@ export default function PatientProfile() {
                       onChange={(e) => handleInputChange('address', e.target.value)}
                       disabled={!editing}
                       placeholder="Rua, Av..."
+                      className="transition-all duration-300"
                     />
                   </div>
                 </div>

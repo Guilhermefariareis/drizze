@@ -30,6 +30,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import NotificationSystem from '@/components/NotificationSystem';
 
 interface PatientSettings {
   id: string;
@@ -73,11 +74,11 @@ export default function PatientSettings() {
     try {
       setLoading(true);
 
-      // Buscar configurações do paciente
+      // Buscar configurações do usuário na tabela centralizada user_preferences
       const { data: settingsData, error: settingsError } = await supabase
-        .from('patient_settings')
+        .from('user_preferences')
         .select('*')
-        .eq('id', user?.id)
+        .eq('user_id', user?.id)
         .maybeSingle();
 
       if (settingsError) {
@@ -85,13 +86,25 @@ export default function PatientSettings() {
       }
 
       if (settingsData) {
-        setSettings(settingsData);
+        // Mapear dados da tabela user_preferences para o estado do componente
+        setSettings({
+          id: settingsData.user_id,
+          email_notifications: settingsData.email_notifications,
+          sms_notifications: settingsData.sms_notifications,
+          appointment_reminders: settingsData.appointment_reminders,
+          marketing_emails: settingsData.marketing_emails,
+          language: 'pt-BR', // Default se não houver na tabela
+          timezone: 'America/Sao_Paulo', // Default se não houver na tabela
+          two_factor_enabled: settingsData.two_factor_enabled,
+          data_sharing: settingsData.share_data,
+          analytics_tracking: settingsData.analytics_enabled
+        });
       } else {
         // Criar configurações padrão se não existir
         const defaultSettings: PatientSettings = {
           id: user?.id || '',
           email_notifications: true,
-          sms_notifications: true,
+          sms_notifications: false,
           appointment_reminders: true,
           marketing_emails: false,
           language: 'pt-BR',
@@ -104,7 +117,16 @@ export default function PatientSettings() {
 
         // Tentar salvar o padrão no DB para criar a linha
         try {
-          await supabase.from('patient_settings').upsert(defaultSettings);
+          await supabase.from('user_preferences').upsert({
+            user_id: user?.id,
+            email_notifications: true,
+            sms_notifications: false,
+            appointment_reminders: true,
+            marketing_emails: false,
+            two_factor_enabled: false,
+            share_data: false,
+            analytics_enabled: true
+          });
         } catch (e) {
           console.log('Erro silencioso ao criar settings padrão:', e);
         }
@@ -132,26 +154,32 @@ export default function PatientSettings() {
       localStorage.setItem(`patient_settings_${user.id}`, JSON.stringify(newSettings));
     }
 
+    if (!newSettings || !user?.id) return;
+
     try {
       setSaving(true);
 
       const { error } = await supabase
-        .from('patient_settings')
+        .from('user_preferences')
         .upsert({
-          id: user?.id,
-          ...newSettings, // usar newSettings que já tem o valor novo
+          user_id: user.id,
+          email_notifications: newSettings.email_notifications,
+          sms_notifications: newSettings.sms_notifications,
+          appointment_reminders: newSettings.appointment_reminders,
+          marketing_emails: newSettings.marketing_emails,
+          two_factor_enabled: newSettings.two_factor_enabled,
+          share_data: newSettings.data_sharing,
+          analytics_enabled: newSettings.analytics_tracking,
           updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+        });
 
       if (error) throw error;
 
-      // Feedback sutil para não spammar toast
-      // toast.success('Salvo', { duration: 1000 });
+      toast.success('Alteração salva com sucesso', { duration: 2000 });
 
-    } catch (error) {
-      console.error('Erro ao salvar no servidor (usando local):', error);
-      // Não mostrar erro para o usuário pois já salvamos localmente
-      // Não reverter o UI para não frustrar o usuário visualmente, mas avisar.
+    } catch (error: any) {
+      console.error('Erro ao salvar no servidor:', error);
+      toast.error('Erro ao salvar no servidor: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setSaving(false);
     }
@@ -252,6 +280,31 @@ export default function PatientSettings() {
     }
   };
 
+  const handleTestNotification = async () => {
+    try {
+      setSaving(true);
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user?.id,
+          type: 'success',
+          title: 'Teste de Notificação',
+          message: 'Esta é uma notificação de teste disparada pelo site! Tudo funcionando perfeitamente.',
+          is_read: false
+        });
+
+      if (error) throw error;
+
+      toast.success('Notificação de teste enviada!');
+    } catch (error: any) {
+      console.error('Erro ao enviar notificação de teste:', error);
+      toast.error('Erro ao testar notificação: ' + (error.message || 'Verifique se a migration de notificações foi aplicada.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
       'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita e todos os seus dados serão permanentemente removidos.'
@@ -304,12 +357,15 @@ export default function PatientSettings() {
               <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
               <p className="text-muted-foreground">Gerencie suas preferências e configurações de conta</p>
             </div>
-            {saving && (
-              <Badge variant="outline" className="animate-pulse">
-                <Save className="h-3 w-3 mr-1" />
-                Salvando...
-              </Badge>
-            )}
+            <div className="flex items-center gap-4">
+              {user && <NotificationSystem userId={user.id} userType="patient" />}
+              {saving && (
+                <Badge variant="outline" className="animate-pulse">
+                  <Save className="h-3 w-3 mr-1" />
+                  Salvando...
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -370,6 +426,16 @@ export default function PatientSettings() {
                     checked={settings?.marketing_emails || false}
                     onCheckedChange={(checked) => handleSettingChange('marketing_emails', checked)}
                   />
+                </div>
+                <div className="pt-4 border-t mt-4">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleTestNotification}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    Enviar Notificação de Teste
+                  </Button>
                 </div>
               </CardContent>
             </Card>

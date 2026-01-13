@@ -102,7 +102,11 @@ const PatientDashboard = () => {
       if (profileError) throw profileError;
 
       if (profile) {
-        setUserName(profile.full_name || '');
+        setUserName(profile.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '');
+      } else if (user?.user_metadata?.full_name) {
+        setUserName(user.user_metadata.full_name);
+      } else if (user?.email) {
+        setUserName(user.email.split('@')[0]);
       }
 
       // Se não tiver perfil, não tem requests vinculados a ele ainda
