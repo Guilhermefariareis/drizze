@@ -6,17 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { 
-  Search, 
-  Filter, 
-  Calendar, 
-  Clock, 
-  User, 
-  Stethoscope, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  ChevronLeft, 
+import {
+  Search,
+  Filter,
+  Calendar,
+  Clock,
+  User,
+  Stethoscope,
+  Plus,
+  Edit,
+  Trash2,
+  ChevronLeft,
   ChevronRight,
   X,
   Menu,
@@ -24,19 +24,20 @@ import {
   ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import { Agendamento, useAgendamentos } from '@/hooks/useAgendamentos';
+import { useNotificacoes } from '@/hooks/useNotificacoes';
 import { toast } from 'sonner';
 import { format, parseISO, isSameDay, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppSidebar } from '@/components/AppSidebar';
-import Navbar from '@/components/Navbar';
 import FormularioAgendamento from '@/components/agendamento/FormularioAgendamento';
 import ModalAgendamento from '@/components/agendamento/ModalAgendamento';
 import { Paciente } from '@/types/paciente';
 import { Profissional } from '@/types/profissional';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClinicProfile } from '@/hooks/useClinicProfile';
 
 // Definições dos tipos
-export type AgendamentoStatus = 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
+export type AgendamentoStatus = 'pendente' | 'confirmado' | 'cancelado' | 'concluido' | 'no_show';
 export type AgendamentoTipo = 'consulta' | 'retorno' | 'exame' | 'cirurgia' | 'vacina';
 
 interface EstadisticasAgendamentos {
@@ -49,7 +50,13 @@ interface EstadisticasAgendamentos {
 
 const AgendamentosPage: React.FC = () => {
   const { user } = useAuth();
+  const { clinic } = useClinicProfile();
   const { agendamentos, loading, buscarAgendamentos, criarAgendamento, atualizarAgendamento, cancelarAgendamento } = useAgendamentos();
+
+  // ... (rest of state)
+
+  // Use the correct clinic ID
+  const clinicaId = clinic?.id || user?.id || '';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<AgendamentoStatus | 'todos'>('todos');
   const [tipoFilter, setTipoFilter] = useState<AgendamentoTipo | 'todos'>('todos');
@@ -71,8 +78,11 @@ const AgendamentosPage: React.FC = () => {
 
   const carregarAgendamentos = async () => {
     try {
-      if (user?.id) {
-        await buscarAgendamentos({ clinicaId: user.id });
+      if (clinicaId) {
+        console.log('📅 [DEBUG] AgendamentosPage - Carregando agendamentos para clínica:', clinicaId);
+        await buscarAgendamentos({ clinicaId: clinicaId });
+      } else {
+        console.warn('📅 [DEBUG] AgendamentosPage - clinicaId ainda não disponível');
       }
     } catch (error) {
       toast.error('Erro ao carregar agendamentos');
@@ -105,7 +115,7 @@ const AgendamentosPage: React.FC = () => {
         concluidos: 0,
         cancelados: 0
       });
-      
+
       setEstatisticas(stats);
     };
 
@@ -120,20 +130,48 @@ const AgendamentosPage: React.FC = () => {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    if (clinicaId) {
+      carregarAgendamentos();
+    }
+  }, [clinicaId]);
+
+  const { criarNotificacao } = useNotificacoes();
+
   const handleSalvarAgendamento = async (dados: any) => {
     try {
       if (agendamentoEdicao) {
         await atualizarAgendamento(agendamentoEdicao.id, dados);
         toast.success('Agendamento atualizado com sucesso!');
       } else {
-        await criarAgendamento(dados);
-        toast.success('Agendamento criado com sucesso!');
+        const novoAgendamento = await criarAgendamento({
+          ...dados,
+          status: 'confirmado' // Confirmar automaticamente como solicitado
+        });
+
+        if (novoAgendamento) {
+          // Criar notificação
+          try {
+            await criarNotificacao({
+              tipo: 'agendamento',
+              titulo: 'Novo Agendamento Confirmado',
+              mensagem: `Agendamento para ${dados.nome_paciente || 'Paciente'} em ${format(new Date(dados.data_hora), "dd/MM 'às' HH:mm")}`,
+              usuario_id: user?.id || '',
+              prioridade: 'alta'
+            });
+          } catch (notifError) {
+            console.error('Erro ao criar notificação:', notifError);
+          }
+
+          toast.success('Agendamento criado e confirmado!');
+        }
       }
-      
+
       setModalAberto(false);
       setAgendamentoEdicao(null);
       carregarAgendamentos();
     } catch (error) {
+      console.error('Erro ao salvar:', error);
       toast.error('Erro ao salvar agendamento');
     }
   };
@@ -171,13 +209,13 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const agendamentosFiltrados = agendamentos.filter(agendamento => {
-    const correspondeBusca = searchTerm === '' || 
+    const correspondeBusca = searchTerm === '' ||
       agendamento.paciente?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agendamento.profissional?.nome.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const correspondeStatus = statusFilter === 'todos' || agendamento.status === statusFilter;
     const correspondeTipo = tipoFilter === 'todos' || agendamento.tipo === tipoFilter;
-    
+
     return correspondeBusca && correspondeStatus && correspondeTipo;
   });
 
@@ -190,7 +228,7 @@ const AgendamentosPage: React.FC = () => {
 
   const diasDaSemana = [];
   const inicioSemana = startOfWeek(dataSelecionada, { weekStartsOn: 1 });
-  
+
   for (let i = 0; i < 7; i++) {
     diasDaSemana.push(addDays(inicioSemana, i));
   }
@@ -203,7 +241,7 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const getAgendamentosDoDia = (dia: Date) => {
-    return agendamentosFiltrados.filter(agendamento => 
+    return agendamentosFiltrados.filter(agendamento =>
       isSameDay(parseISO(agendamento.data_hora), dia)
     );
   };
@@ -227,7 +265,7 @@ const AgendamentosPage: React.FC = () => {
       'concluido': 'bg-blue-100 text-blue-800',
       'cancelado': 'bg-red-100 text-red-800'
     };
-    
+
     return <Badge className={cores[status]}>{status}</Badge>;
   };
 
@@ -239,7 +277,7 @@ const AgendamentosPage: React.FC = () => {
       'cirurgia': 'bg-red-100 text-red-800',
       'vacina': 'bg-green-100 text-green-800'
     };
-    
+
     return <Badge className={cores[tipo]}>{tipo}</Badge>;
   };
 
@@ -255,11 +293,11 @@ const AgendamentosPage: React.FC = () => {
         {mobileSidebarOpen && (
           <div className="fixed inset-0 z-50 flex">
             {/* Overlay */}
-            <div 
+            <div
               className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
               onClick={() => setMobileSidebarOpen(false)}
             />
-            
+
             {/* Sidebar Mobile */}
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-xl">
               <div className="absolute top-0 right-0 -mr-12 pt-2">
@@ -283,7 +321,6 @@ const AgendamentosPage: React.FC = () => {
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden ml-0 md:ml-64">
-          <Navbar />
           <div className="flex-1 overflow-auto pt-4 flex items-center justify-center">
             <div className="text-gray-500">Carregando agendamentos...</div>
           </div>
@@ -303,11 +340,11 @@ const AgendamentosPage: React.FC = () => {
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           {/* Overlay */}
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          
+
           {/* Sidebar Mobile */}
           <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-xl">
             <div className="absolute top-0 right-0 -mr-12 pt-2">
@@ -329,9 +366,8 @@ const AgendamentosPage: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       <div className="flex-1 flex flex-col overflow-hidden ml-0 md:ml-64">
-        <Navbar />
         <div className="flex-1 overflow-auto pt-4">
           <div className="container mx-auto px-4">
             {/* Cabeçalho com botão Novo Agendamento */}
@@ -369,7 +405,7 @@ const AgendamentosPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
@@ -399,7 +435,7 @@ const AgendamentosPage: React.FC = () => {
                       <SelectItem value="exame">Exame</SelectItem>
                       <SelectItem value="cirurgia">Cirurgia</SelectItem>
                       <SelectItem value="vacina">Vacina</SelectItem>
-                     </SelectContent>
+                    </SelectContent>
                   </Select>
                 </div>
 
@@ -431,7 +467,7 @@ const AgendamentosPage: React.FC = () => {
                   <div className="text-2xl font-bold">{estatisticas.total}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Confirmados</CardTitle>
@@ -441,7 +477,7 @@ const AgendamentosPage: React.FC = () => {
                   <div className="text-2xl font-bold text-green-600">{estatisticas.confirmados}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
@@ -451,7 +487,7 @@ const AgendamentosPage: React.FC = () => {
                   <div className="text-2xl font-bold text-yellow-600">{estatisticas.pendentes}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
@@ -461,7 +497,7 @@ const AgendamentosPage: React.FC = () => {
                   <div className="text-2xl font-bold text-blue-600">{estatisticas.concluidos}</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
@@ -538,11 +574,11 @@ const AgendamentosPage: React.FC = () => {
                                 <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                                 <div>
                                   <div className="text-sm text-gray-900">
-                                     {format(parseISO(agendamento.data_hora), 'dd/MM/yyyy', { locale: ptBR })}
-                                   </div>
-                                   <div className="text-sm text-gray-500">
-                                     {format(parseISO(agendamento.data_hora), 'HH:mm', { locale: ptBR })}
-                                   </div>
+                                    {format(parseISO(agendamento.data_hora), 'dd/MM/yyyy', { locale: ptBR })}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {format(parseISO(agendamento.data_hora), 'HH:mm', { locale: ptBR })}
+                                  </div>
                                 </div>
                               </div>
                             </td>
@@ -583,7 +619,7 @@ const AgendamentosPage: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
-                  
+
                   {agendamentosFiltrados.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       Nenhum agendamento encontrado
@@ -604,11 +640,11 @@ const AgendamentosPage: React.FC = () => {
                     <ChevronLeftIcon className="w-4 h-4 mr-1" />
                     Mês Anterior
                   </Button>
-                  
+
                   <div className="text-lg font-semibold">
                     {format(mesAtual, 'MMMM yyyy', { locale: ptBR })}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -629,7 +665,7 @@ const AgendamentosPage: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Dias do mês */}
                   <div className="grid grid-cols-7">
                     {(() => {
@@ -637,24 +673,20 @@ const AgendamentosPage: React.FC = () => {
                       const primeiroDia = dias[0];
                       const diaSemana = primeiroDia.getDay();
                       const diasVazios = Array(diaSemana).fill(null);
-                      
+
                       return [...diasVazios, ...dias].map((dia, index) => (
                         <div
                           key={index}
-                          className={`min-h-[100px] border-r border-b p-2 ${
-                            dia ? 'hover:bg-gray-50 cursor-pointer' : ''
-                          } ${
-                            dia && isToday(dia) ? 'bg-blue-50 border-blue-200' : ''
-                          } ${
-                            dia && !isSameMonth(dia, mesAtual) ? 'text-gray-300' : ''
-                          }`}
+                          className={`min-h-[100px] border-r border-b p-2 ${dia ? 'hover:bg-gray-50 cursor-pointer' : ''
+                            } ${dia && isToday(dia) ? 'bg-blue-50 border-blue-200' : ''
+                            } ${dia && !isSameMonth(dia, mesAtual) ? 'text-gray-300' : ''
+                            }`}
                           onClick={() => dia && setDataSelecionada(dia)}
                         >
                           {dia && (
                             <>
-                              <div className={`text-sm font-medium mb-1 ${
-                                isToday(dia) ? 'text-blue-600' : 'text-gray-900'
-                              }`}>
+                              <div className={`text-sm font-medium mb-1 ${isToday(dia) ? 'text-blue-600' : 'text-gray-900'
+                                }`}>
                                 {format(dia, 'd')}
                               </div>
                               <div className="space-y-1">
@@ -708,11 +740,11 @@ const AgendamentosPage: React.FC = () => {
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Semana Anterior
                   </Button>
-                  
+
                   <div className="text-lg font-semibold">
                     {format(inicioSemana, 'dd/MM', { locale: ptBR })} - {format(endOfWeek(dataSelecionada, { weekStartsOn: 1 }), 'dd/MM/yyyy', { locale: ptBR })}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -735,19 +767,19 @@ const AgendamentosPage: React.FC = () => {
                           {format(dia, 'dd/MM', { locale: ptBR })}
                         </div>
                       </div>
-                      
+
                       <div className="p-3 space-y-2 min-h-[200px]">
                         {agendamentosDaSemana
-                           .filter(agendamento => isSameDay(parseISO(agendamento.data_hora), dia))
-                           .map((agendamento) => (
-                             <div
-                               key={agendamento.id}
-                               className="p-2 bg-blue-50 rounded border border-blue-200 cursor-pointer hover:bg-blue-100"
-                               onClick={() => handleViewAgendamento(agendamento)}
-                             >
-                               <div className="text-xs font-medium text-blue-900">
-                                 {format(parseISO(agendamento.data_hora), 'HH:mm', { locale: ptBR })}
-                               </div>
+                          .filter(agendamento => isSameDay(parseISO(agendamento.data_hora), dia))
+                          .map((agendamento) => (
+                            <div
+                              key={agendamento.id}
+                              className="p-2 bg-blue-50 rounded border border-blue-200 cursor-pointer hover:bg-blue-100"
+                              onClick={() => handleViewAgendamento(agendamento)}
+                            >
+                              <div className="text-xs font-medium text-blue-900">
+                                {format(parseISO(agendamento.data_hora), 'HH:mm', { locale: ptBR })}
+                              </div>
                               <div className="text-xs text-blue-700 truncate">
                                 {agendamento.paciente?.nome || 'Paciente não encontrado'}
                               </div>
@@ -756,7 +788,7 @@ const AgendamentosPage: React.FC = () => {
                               </div>
                             </div>
                           ))}
-                          
+
                         {agendamentosDaSemana.filter(agendamento => isSameDay(parseISO(agendamento.data_hora), dia)).length === 0 && (
                           <div className="text-xs text-gray-400 text-center py-4">
                             Nenhum agendamento
@@ -810,36 +842,36 @@ const AgendamentosPage: React.FC = () => {
               </Card>
             </div>
 
-          {/* Modal de Formulário */}
-          <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {agendamentoEdicao ? 'Editar Agendamento' : 'Novo Agendamento'}
-                </DialogTitle>
-              </DialogHeader>
-              
-              <FormularioAgendamento
-                clinicaId={user?.id || ''}
-                agendamento={agendamentoEdicao}
-                onSalvar={handleSalvarAgendamento}
-                onCancelar={handleFecharModal}
-                modo={agendamentoEdicao ? 'editar' : 'criar'}
-                hideTypeSelection={true}
-              />
-            </DialogContent>
-          </Dialog>
+            {/* Modal de Formulário */}
+            <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {agendamentoEdicao ? 'Editar Agendamento' : 'Novo Agendamento'}
+                  </DialogTitle>
+                </DialogHeader>
 
-          {/* Modal de Visualização */}
-          <ModalAgendamento
-            agendamento={agendamentoVisualizando}
-            isOpen={showModal}
-            onClose={handleCloseModal}
-            onEdit={(agendamento) => {
-              handleCloseModal();
-              handleEditarAgendamento(agendamento);
-            }}
-          />
+                <FormularioAgendamento
+                  clinicaId={clinicaId}
+                  agendamento={agendamentoEdicao}
+                  onSalvar={handleSalvarAgendamento}
+                  onCancelar={handleFecharModal}
+                  modo={agendamentoEdicao ? 'editar' : 'criar'}
+                  hideTypeSelection={true}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* Modal de Visualização */}
+            <ModalAgendamento
+              agendamento={agendamentoVisualizando}
+              isOpen={showModal}
+              onClose={handleCloseModal}
+              onEdit={(agendamento) => {
+                handleCloseModal();
+                handleEditarAgendamento(agendamento);
+              }}
+            />
           </div>
         </div>
       </div>

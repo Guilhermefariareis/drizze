@@ -11,12 +11,11 @@ import { useNotificacoes } from '@/hooks/useNotificacoes';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const NotificacoesPage = () => {
   const navigate = useNavigate();
-  const { notificacoes, carregando, marcarComoLida, marcarTodasComoLidas } = useNotificacoes();
+  const { notificacoes, loading, marcarComoLida, marcarTodasComoLidas } = useNotificacoes();
   const [filtro, setFiltro] = useState<'todas' | 'nao_lidas' | 'lidas'>('todas');
 
   const notificacoesFiltradas = notificacoes.filter(notif => {
@@ -75,8 +74,7 @@ const NotificacoesPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <Navbar />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -128,7 +126,7 @@ const NotificacoesPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleMarcarTodasComoLidas}
-                disabled={carregando}
+                disabled={loading}
               >
                 <CheckCheck className="h-4 w-4 mr-2" />
                 Marcar todas como lidas
@@ -195,7 +193,7 @@ const NotificacoesPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {carregando ? (
+            {loading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="text-gray-500 mt-2">Carregando notificações...</p>
@@ -204,14 +202,14 @@ const NotificacoesPage = () => {
               <div className="p-8 text-center">
                 <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {filtro === 'todas' ? 'Nenhuma notificação' : 
-                   filtro === 'nao_lidas' ? 'Nenhuma notificação não lida' : 
-                   'Nenhuma notificação lida'}
+                  {filtro === 'todas' ? 'Nenhuma notificação' :
+                    filtro === 'nao_lidas' ? 'Nenhuma notificação não lida' :
+                      'Nenhuma notificação lida'}
                 </h3>
                 <p className="text-gray-500">
-                  {filtro === 'todas' ? 'Você não possui notificações ainda.' : 
-                   filtro === 'nao_lidas' ? 'Todas as suas notificações foram lidas.' : 
-                   'Você não possui notificações lidas.'}
+                  {filtro === 'todas' ? 'Você não possui notificações ainda.' :
+                    filtro === 'nao_lidas' ? 'Todas as suas notificações foram lidas.' :
+                      'Você não possui notificações lidas.'}
                 </p>
               </div>
             ) : (
@@ -220,9 +218,8 @@ const NotificacoesPage = () => {
                   {notificacoesFiltradas.map((notificacao, index) => (
                     <div
                       key={notificacao.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors ${
-                        !notificacao.lida ? 'bg-blue-50/50' : ''
-                      }`}
+                      className={`p-4 hover:bg-gray-50 transition-colors ${!notificacao.lida ? 'bg-blue-50/50' : ''
+                        }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -237,17 +234,17 @@ const NotificacoesPage = () => {
                               <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
                             )}
                           </div>
-                          
+
                           <h3 className="text-sm font-medium text-gray-900 mb-1">
                             {notificacao.titulo}
                           </h3>
-                          
+
                           <p className="text-sm text-gray-600 mb-2">
                             {notificacao.mensagem}
                           </p>
-                          
+
                           <p className="text-xs text-gray-400">
-                            {formatDistanceToNow(new Date(notificacao.data_envio), {
+                            {formatDistanceToNow(new Date(notificacao.data_criacao), {
                               addSuffix: true,
                               locale: ptBR
                             })}
@@ -275,7 +272,7 @@ const NotificacoesPage = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       <Footer />
     </div>
   );

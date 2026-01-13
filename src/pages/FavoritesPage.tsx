@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import Navbar from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
 const mockFavorites = [
@@ -85,8 +84,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8 pt-24">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
@@ -96,7 +94,7 @@ export default function FavoritesPage() {
                 Gerencie suas clínicas favoritas e agende rapidamente
               </p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Input
@@ -106,7 +104,7 @@ export default function FavoritesPage() {
                   className="w-64"
                 />
               </div>
-              
+
               <Badge variant="secondary" className="px-3 py-1">
                 {filteredFavorites.length} favoritos
               </Badge>
@@ -121,7 +119,7 @@ export default function FavoritesPage() {
                   {searchTerm ? 'Nenhum favorito encontrado' : 'Nenhuma clínica favorita ainda'}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  {searchTerm 
+                  {searchTerm
                     ? 'Tente buscar com outros termos'
                     : 'Adicione clínicas aos seus favoritos para acessá-las rapidamente'
                   }
@@ -166,10 +164,10 @@ export default function FavoritesPage() {
                       <div className="flex items-center gap-2 mb-3">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {clinic.address 
-                            ? (typeof clinic.address === 'object' 
-                                ? `${clinic.address.street || ''}, ${clinic.address.neighborhood || ''}`
-                                : clinic.address)
+                          {clinic.address
+                            ? (typeof clinic.address === 'object'
+                              ? `${clinic.address.street || ''}, ${clinic.address.neighborhood || ''}`
+                              : clinic.address)
                             : 'Endereço não informado'
                           }
                         </span>
@@ -206,24 +204,24 @@ export default function FavoritesPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Button 
+                        <Button
                           className="w-full"
                           onClick={() => navigate(`/booking/${clinic.id}`)}
                         >
                           <Calendar className="h-4 w-4 mr-2" />
                           Agendar Consulta
                         </Button>
-                        
+
                         <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="flex-1"
                             onClick={() => navigate(`/clinic/${clinic.id}`)}
                           >
                             Ver Perfil
                           </Button>
-                          
+
                           <Button variant="outline" size="sm">
                             <Phone className="h-4 w-4" />
                           </Button>
@@ -264,8 +262,8 @@ export default function FavoritesPage() {
               <div className="grid md:grid-cols-3 gap-4">
                 {['Clínica Nova Vista', 'Dental Care Plus', 'Sorriso Brilhante'].map((name, index) => (
                   <div key={index} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-secondary/50 cursor-pointer">
-                    <img 
-                      src="/api/placeholder/60/60" 
+                    <img
+                      src="/api/placeholder/60/60"
                       alt={name}
                       className="w-12 h-12 rounded-lg object-cover"
                     />

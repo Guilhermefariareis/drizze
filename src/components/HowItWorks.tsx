@@ -134,8 +134,8 @@ const HowItWorks = () => {
                     <Card className="h-full bg-white/[0.03] border-white/[0.06] hover:border-[#E94560]/30 transition-all duration-500 group overflow-hidden rounded-[2rem]">
                       <CardHeader className="text-center pb-6">
                         <div className="relative inline-flex items-center justify-center mb-4">
-                          <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] p-5 rounded-2xl text-white shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform duration-500">
-                            <IconComponent className="w-8 h-8" />
+                          <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] p-5 rounded-2xl shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform duration-500 w-16 h-16 flex items-center justify-center">
+                            <img src="/logo-white-final.png" alt="Logo" className="w-8 h-8 object-contain" />
                           </div>
                           <div className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center text-sm font-black">
                             {step.id}
@@ -204,8 +204,8 @@ const HowItWorks = () => {
                     <Card className="h-full bg-white/[0.03] border-white/[0.06] hover:border-[#8B5CF6]/30 transition-all duration-500 group overflow-hidden rounded-[2rem]">
                       <CardHeader className="text-center pb-6">
                         <div className="relative inline-flex items-center justify-center mb-4">
-                          <div className="bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] p-5 rounded-2xl text-white shadow-lg shadow-[#8B5CF6]/20 group-hover:scale-110 transition-transform duration-500">
-                            <IconComponent className="w-8 h-8" />
+                          <div className="bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] p-5 rounded-2xl shadow-lg shadow-[#8B5CF6]/20 group-hover:scale-110 transition-transform duration-500 w-16 h-16 flex items-center justify-center">
+                            <img src="/logo-white-final.png" alt="Logo" className="w-8 h-8 object-contain" />
                           </div>
                           <div className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center text-sm font-black">
                             {step.id}

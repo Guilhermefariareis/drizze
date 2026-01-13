@@ -2,15 +2,25 @@ import React from 'react';
 
 const ParaDentistasPage = () => {
   return (
-    <div className="pt-16 bg-[#0F0F23] text-white">
+    <div className="bg-[#0F0F23] text-white">
       {/* Hero Section */}
-      <div className="w-full relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#E94560]/10 to-transparent pointer-events-none"></div>
+      <div className="w-full relative h-[600px] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F0F23] via-[#0F0F23]/80 to-transparent z-10"></div>
         <img
-          src="/imagem-para-o-topo.png"
-          alt="Crédito Odontológico Descomplicado - Doutorizze"
-          className="w-full h-auto block opacity-80"
+          src="/hero-dentist-v2.png"
+          alt="Odontologia Moderna - Doutorizze"
+          className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
         />
+        <div className="absolute inset-0 flex items-center z-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight max-w-2xl">
+              O Futuro da <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E94560] to-[#FB923C]">Odontologia</span> é Agora
+            </h1>
+            <p className="text-xl md:text-2xl text-white/80 max-w-xl font-medium leading-relaxed">
+              Tecnologia, crédito e gestão integrados para potencializar sua clínica.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Seção de Título */}

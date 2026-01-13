@@ -33,7 +33,6 @@ import {
   ChevronUp,
   Lock
 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +41,7 @@ import MultiStepContactForm from '@/components/MultiStepContactForm';
 const ParaClinicasPage = () => {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState('solucoes');
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index);
@@ -63,6 +63,7 @@ const ParaClinicasPage = () => {
     const handleScroll = () => {
       const sections = ['solucoes', 'como-funciona', 'resultados', 'faq'];
       const scrollPosition = window.scrollY + 150;
+      setIsMenuVisible(window.scrollY > 600);
 
       for (const sectionId of sections) {
         const element = document.getElementById(sectionId);
@@ -130,7 +131,8 @@ const ParaClinicasPage = () => {
 
     return (
       <>
-        <div className="fixed top-20 left-0 right-0 z-40 bg-[#1A1A2E]/80 backdrop-blur-xl border-b border-white/[0.08] shadow-2xl">
+        <div className={`fixed top-20 left-0 right-0 z-40 bg-[#1A1A2E]/80 backdrop-blur-xl border-b border-white/[0.08] shadow-2xl transition-all duration-500 ${isMenuVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+          }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav className="flex items-center justify-between py-4">
               {/* Desktop Menu */}
@@ -303,7 +305,6 @@ const ParaClinicasPage = () => {
 
   return (
     <div className="min-h-screen bg-[#0F0F23]">
-      <Navbar />
       <SecondaryMenu />
       <div className="pt-24">
 
@@ -359,16 +360,16 @@ const ParaClinicasPage = () => {
               <div className="relative">
                 <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-3xl rounded-[3rem] p-10 relative overflow-hidden shadow-2xl">
                   <img
-                    src="https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20dental%20clinic%20office%20interior%20with%20blue%20dental%20chair%20and%20equipment%20clean%20professional%20lighting&image_size=landscape_4_3"
+                    src="/modern_dental_clinic_interior_premium_1767985431838.png"
                     alt="Consultório odontológico moderno"
                     className="w-full h-80 object-cover rounded-[2rem] opacity-80"
                   />
                   <div className="absolute -bottom-6 -right-6 w-40 h-56">
-                    <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] rounded-3xl p-6 text-white text-center shadow-2xl transform rotate-6 border border-white/20">
-                      <div className="text-xs font-black uppercase tracking-widest mb-3 opacity-60">App Doutorizze</div>
-                      <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 mb-4">
-                        <div className="text-sm font-bold">Agende sua consulta</div>
+                    <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] rounded-3xl p-6 text-white text-center shadow-2xl transform rotate-6 border border-white/20 flex flex-col items-center">
+                      <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 mb-4 flex items-center justify-center w-full">
+                        <img src="/logo-new.png" alt="Logo" className="w-6 h-6 object-contain filter invert brightness-0" />
                       </div>
+                      <div className="text-sm font-bold mb-2">Agende sua consulta</div>
                       <div className="text-xs font-black">CRÉDITO APROVADO!</div>
                     </div>
                   </div>

@@ -5,21 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">Entre em Contato</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Estamos aqui para ajudar! Entre em contato conosco através dos canais abaixo 
+              Estamos aqui para ajudar! Entre em contato conosco através dos canais abaixo
               ou envie uma mensagem diretamente.
             </p>
           </div>
@@ -194,7 +192,7 @@ export default function ContactPage() {
                   <div className="border-b pb-4">
                     <h4 className="font-semibold mb-2">Como faço para agendar uma consulta?</h4>
                     <p className="text-sm text-muted-foreground">
-                      Você pode agendar através da nossa plataforma online, selecionando a clínica, 
+                      Você pode agendar através da nossa plataforma online, selecionando a clínica,
                       serviço, data e horário de sua preferência.
                     </p>
                   </div>
@@ -202,7 +200,7 @@ export default function ContactPage() {
                   <div className="border-b pb-4">
                     <h4 className="font-semibold mb-2">Posso cancelar ou remarcar minha consulta?</h4>
                     <p className="text-sm text-muted-foreground">
-                      Sim, você pode cancelar ou remarcar com até 24 horas de antecedência 
+                      Sim, você pode cancelar ou remarcar com até 24 horas de antecedência
                       através do seu perfil ou entrando em contato conosco.
                     </p>
                   </div>
@@ -210,7 +208,7 @@ export default function ContactPage() {
                   <div className="border-b pb-4">
                     <h4 className="font-semibold mb-2">Como posso cadastrar minha clínica?</h4>
                     <p className="text-sm text-muted-foreground">
-                      Entre em contato conosco através dos canais de atendimento para 
+                      Entre em contato conosco através dos canais de atendimento para
                       iniciar o processo de cadastro da sua clínica.
                     </p>
                   </div>
@@ -218,7 +216,7 @@ export default function ContactPage() {
                   <div>
                     <h4 className="font-semibold mb-2">Quais formas de pagamento são aceitas?</h4>
                     <p className="text-sm text-muted-foreground">
-                      Aceitamos cartão de crédito, débito e PIX. Pagamentos via PIX 
+                      Aceitamos cartão de crédito, débito e PIX. Pagamentos via PIX
                       têm desconto de 5%.
                     </p>
                   </div>

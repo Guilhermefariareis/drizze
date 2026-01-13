@@ -2,342 +2,223 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ValueSlider } from '@/components/ui/value-slider';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PatientSidebar } from '@/components/patient/PatientSidebar';
-import Navbar from '@/components/Navbar';
-import { getUserLocation, filterClinicsDynamically, generateMockClinicsForLocation, type UserLocation, type ClinicWithDistance } from '@/utils/locationService';
-// ChatWidget removido do site
-import { 
-  Plus, 
-  CreditCard, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  FileText, 
-  Calendar, 
-  User, 
-  Star, 
+import {
+  Plus,
+  CreditCard,
+  Clock,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Calendar,
+  User,
+  TrendingUp,
   ArrowRight,
   Activity,
-  TrendingUp
+  DollarSign,
+  Building2,
+  ChevronRight,
+  ShieldCheck,
+  Bell,
+  Search,
+  LayoutDashboard
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-type LoanRequest = {
+interface CreditRequest {
   id: string;
-  treatment_description: string;
+  clinic_id: string;
   requested_amount: number;
   installments: number;
+  treatment_description: string;
   status: string;
-  clinic_notes: string | null;
-  admin_notes: string | null;
   created_at: string;
-  clinics?: { name?: string } | null;
-};
+  updated_at: string;
+  clinics: {
+    name: string;
+    city: string;
+  };
+}
 
-type Treatment = {
+interface Appointment {
   id: string;
-  name: string;
-  description: string;
-  estimated_cost_min: number;
-  estimated_cost_max: number;
-  typical_installments: number;
-};
+  data_hora: string;
+  status: string;
+  tipo_consulta?: string;
+  clinics: {
+    id: string;
+    name: string;
+  };
+}
 
-type Clinic = {
-  id: string;
-  name: string;
-  city: string;
-};
+type ActivityItem =
+  | { type: 'credit'; data: CreditRequest; date: string }
+  | { type: 'appointment'; data: Appointment; date: string };
 
-function PatientDashboard() {
+interface DashboardStats {
+  totalRequests: number;
+  pendingRequests: number;
+  approvedRequests: number;
+  totalApprovedAmount: number;
+}
+
+const PatientDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { loading: subscriptionLoading, hasActiveSubscription } = useSubscriptionCheck();
-  const [loanRequests, setLoanRequests] = useState<LoanRequest[]>([]);
-  const [treatments, setTreatments] = useState<Treatment[]>([]);
-  const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedTreatment, setSelectedTreatment] = useState<string>('');
-  const [selectedClinic, setSelectedClinic] = useState<string>('');
-  const [customTreatment, setCustomTreatment] = useState('');
-  const [requestedAmount, setRequestedAmount] = useState<string>('');
-  const [installments, setInstallments] = useState<number>(12);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [creditRequests, setCreditRequests] = useState<CreditRequest[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [userName, setUserName] = useState<string>('');
+  const [stats, setStats] = useState<DashboardStats>({
+    totalRequests: 0,
+    pendingRequests: 0,
+    approvedRequests: 0,
+    totalApprovedAmount: 0
+  });
 
   useEffect(() => {
-    console.log('PatientDashboard useEffect - user:', user);
-    if (user) {
-      fetchLoanRequests();
-      fetchTreatments();
-      fetchClinics();
-      fetchAppointments();
-    } else {
-      console.log('No user found, setting loading to false');
-      setLoading(false);
+    if (!user) {
+      navigate('/login-paciente');
+      return;
     }
-  }, [user]);
+    fetchDashboardData();
+  }, [user, navigate]);
 
-  const fetchLoanRequests = async () => {
+  const fetchDashboardData = async () => {
     try {
-      // Primeiro buscar o profile do usuário
+      setLoading(true);
+
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, full_name')
         .eq('user_id', user!.id)
-        .single();
+        .maybeSingle();
 
-      if (profileError) {
-        console.error('Erro ao buscar perfil do usuário:', profileError);
-        return;
+      if (profileError) throw profileError;
+
+      if (profile) {
+        setUserName(profile.full_name || '');
       }
 
-      const { data, error } = await supabase
-        .from('loan_requests')
-        .select(`
-          *,
-          clinics (name)
-        `)
-        .eq('patient_id', profile.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setLoanRequests((data || []) as any);
-    } catch (error) {
-      console.error('Error fetching loan requests:', error);
-      toast.error('Erro ao carregar solicitações');
-    }
-  };
-
-  const fetchTreatments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('treatments')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setTreatments((data || []) as any);
-    } catch (error) {
-      console.error('Error fetching treatments:', error);
-    }
-  };
-
-  const fetchClinics = async () => {
-    try {
-      console.log('🌍 [SISTEMA DINÂMICO] Iniciando busca de clínicas...');
-      
-      // Obter localização do usuário
-      const userLocation = await getUserLocation();
-      console.log('📍 [SISTEMA DINÂMICO] Localização detectada:', userLocation);
-      
-      // Buscar todas as clínicas ativas do banco
-      const { data, error } = await supabase
-        .from('clinics')
-        .select('id, name, city, state, address, latitude, longitude')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-      
-      let clinicsData: ClinicWithDistance[] = data || [];
-      console.log(`🏥 [SISTEMA DINÂMICO] Total de clínicas no banco: ${clinicsData.length}`);
-      
-      let filteredClinics: ClinicWithDistance[] = [];
-      
-      if (userLocation) {
-        // Usar filtragem dinâmica inteligente
-        filteredClinics = filterClinicsDynamically(clinicsData, userLocation, 100);
-        console.log(`✅ [SISTEMA DINÂMICO] Clínicas filtradas dinamicamente: ${filteredClinics.length}`);
-      } else {
-        // Fallback: usar estado do perfil do usuário
-        const userState = user?.user_metadata?.state || 'GO';
-        console.log(`🔄 [SISTEMA DINÂMICO] Fallback por estado: ${userState}`);
-        
-        filteredClinics = clinicsData.filter(clinic => 
-          clinic.state === userState
-        );
-      }
-      
-      // Se não encontrou clínicas, gerar clínicas mock baseadas na localização
-      if (filteredClinics.length === 0 && userLocation) {
-        console.log('🔧 [SISTEMA DINÂMICO] Gerando clínicas mock para a localização...');
-        filteredClinics = generateMockClinicsForLocation(userLocation);
-        
-        if (filteredClinics.length > 0) {
-          toast.info(`Exibindo clínicas disponíveis para ${userLocation.city}, ${userLocation.state}`);
-        }
-      }
-      
-      // Fallback final para Goiás se nada foi encontrado
-      if (filteredClinics.length === 0) {
-        console.log('🔧 [SISTEMA DINÂMICO] Usando fallback final para Goiás...');
-        const fallbackClinics: ClinicWithDistance[] = [
-          {
-            id: 'fallback-1',
-            name: 'Clínica Odontológica Trindade',
-            city: 'Trindade',
-            state: 'GO',
-            address: 'Centro de Trindade',
-            latitude: -16.6469,
-            longitude: -49.4871
-          },
-          {
-            id: 'fallback-2', 
-            name: 'Dental Care Goiânia',
-            city: 'Goiânia',
-            state: 'GO',
-            address: 'Setor Central, Goiânia',
-            latitude: -16.6869,
-            longitude: -49.2648
-          }
-        ];
-        filteredClinics = fallbackClinics;
-      }
-      
-      console.log(`🎯 [SISTEMA DINÂMICO] Clínicas finais: ${filteredClinics.length}`);
-      console.log('🎯 [SISTEMA DINÂMICO] Lista final:', filteredClinics.map(c => `${c.name} (${c.city}, ${c.state})`));
-      
-      setClinics(filteredClinics as any);
-    } catch (error) {
-      console.error('Error fetching clinics:', error);
-      toast.error('Erro ao carregar clínicas próximas');
-    }
-  };
-  
-  // Helper function to calculate distance between two points
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  const fetchAppointments = async () => {
-    try {
-      // Primeiro buscar o profile do usuário
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user!.id)
-        .single();
-
-      if (profileError) {
-        console.error('Erro ao buscar perfil do usuário:', profileError);
+      // Se não tiver perfil, não tem requests vinculados a ele ainda
+      if (!profile) {
+        setCreditRequests([]);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('appointments')
+      const { data: requests, error: requestsError } = await (supabase
+        .from('credit_requests' as any) as any)
         .select(`
-          *,
-          clinics!inner(name, phone, address, rating)
+          id,
+          clinic_id,
+          requested_amount,
+          installments,
+          treatment_description,
+          status,
+          created_at,
+          updated_at,
+          clinics (
+            name,
+            city
+          )
         `)
         .eq('patient_id', profile.id)
-        .order('scheduled_date', { ascending: false })
-        .limit(5);
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setAppointments((data || []) as any);
+      if (requestsError) throw requestsError;
+
+      const formattedRequests = (requests || []).map(r => ({
+        ...r,
+        clinics: r.clinics || { name: 'Clínica não informada', city: 'N/A' }
+      })) as CreditRequest[];
+
+      setCreditRequests(formattedRequests);
+
+      // BUSCAR AGENDAMENTOS
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('agendamentos')
+        .select(`
+          id,
+          data_hora,
+          status,
+          tipo_consulta,
+          clinics (
+            id,
+            name
+          )
+        `)
+        .eq('paciente_id', user!.id)
+        .order('data_hora', { ascending: false });
+
+      if (appointmentsError) throw appointmentsError;
+
+      const formattedAppointments = (appointmentsData || []).map(a => ({
+        ...a,
+        clinics: a.clinics || { id: '', name: 'Clínica não informada' }
+      })) as unknown as Appointment[];
+
+      setAppointments(formattedAppointments);
+
+      // UNIFICAR ATIVIDADES
+      // Usando created_at para agendamentos também, para refletir "Atividade Recente" (quando foi criado)
+      // Se preferir data do evento, usar a.data_hora. Mas para "Log de Atividades", created_at é mais preciso.
+      // Vou usar data_hora para appointments pois é o que o usuário espera ver (próximos compromissos)
+      // MAS vou garantir que a ordenação seja estritamente por DATA DE REFERÊNCIA.
+
+      const allActivities: ActivityItem[] = [
+        ...formattedRequests.map(r => ({ type: 'credit' as const, data: r, date: r.created_at })),
+        ...formattedAppointments.map(a => ({ type: 'appointment' as const, data: a, date: a.data_hora }))
+      ].sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        // Proteção contra datas inválidas
+        if (isNaN(dateA)) return 1;
+        if (isNaN(dateB)) return -1;
+        return dateB - dateA; // Decrescente (Mais recente no topo)
+      });
+
+      setActivities(allActivities);
+
+      // Calcular estatísticas
+      const totalRequests = formattedRequests.length;
+      const pendingRequests = formattedRequests.filter((r: any) => ['pending', 'clinic_reviewing', 'sent_to_admin', 'admin_analyzing'].includes(r.status)).length;
+      const approvedRequests = formattedRequests.filter((r: any) => ['approved', 'admin_approved', 'patient_accepted'].includes(r.status)).length;
+      const totalApprovedAmount = formattedRequests
+        .filter((r: any) => ['approved', 'admin_approved', 'patient_accepted'].includes(r.status))
+        .reduce((sum: number, r: any) => sum + (r.requested_amount || 0), 0);
+
+      setStats({
+        totalRequests,
+        pendingRequests,
+        approvedRequests,
+        totalApprovedAmount
+      });
+
     } catch (error) {
-      console.error('Error fetching appointments:', error);
+      console.error('Erro ao buscar dados do dashboard:', error);
+
+      toast.error('Erro ao carregar dados do dashboard');
     } finally {
       setLoading(false);
     }
   };
 
-  const createLoanRequest = async () => {
-    try {
-      // Verificar se o usuário tem assinatura ativa
-      if (!hasActiveSubscription('basic')) {
-        toast.error('Você precisa de um plano ativo para solicitar empréstimos');
-        navigate('/plans?type=patient');
-        return;
-      }
-
-      if (!selectedClinic || !requestedAmount) {
-        toast.error('Preencha todos os campos obrigatórios');
-        return;
-      }
-
-      const treatmentDescription = selectedTreatment === 'custom' 
-        ? customTreatment 
-        : treatments.find(t => t.id === selectedTreatment)?.name || '';
-
-      const { error } = await supabase
-        .from('loan_requests')
-        .insert({
-          patient_id: user?.id,
-          clinic_id: selectedClinic,
-          treatment_description: treatmentDescription,
-          requested_amount: parseFloat(requestedAmount),
-          installments: installments,
-          status: 'pending',
-          client_cpf: user?.user_metadata?.cpf || '',
-          client_full_name: user?.user_metadata?.full_name || user?.email || '',
-          client_birth_date: user?.user_metadata?.birthDate ? new Date(user.user_metadata.birthDate).toISOString().split('T')[0] : '1990-01-01',
-          client_email: user?.email || '',
-          client_phone: user?.user_metadata?.phone || '',
-          client_cep: user?.user_metadata?.address?.split(' ').pop() || '00000-000'
-        });
-
-      if (error) throw error;
-
-      toast.success('Solicitação enviada com sucesso!');
-      fetchLoanRequests();
-      
-      // Reset form
-      setSelectedTreatment('');
-      setSelectedClinic('');
-      setCustomTreatment('');
-      setRequestedAmount('');
-      setInstallments(12);
-    } catch (error) {
-      console.error('Error creating loan request:', error);
-      toast.error('Erro ao enviar solicitação');
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending_clinic': return 'bg-warning text-warning-foreground';
-      case 'approved_clinic': return 'bg-primary text-primary-foreground';
-      case 'rejected_clinic': return 'bg-destructive text-destructive-foreground';
-      case 'pending_admin': return 'bg-secondary text-secondary-foreground';
-      case 'sent_parcelamais': return 'bg-accent text-accent-foreground';
-      case 'approved': return 'bg-success text-success-foreground';
-      case 'rejected': return 'bg-destructive text-destructive-foreground';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending_clinic': return 'Aguardando Clínica';
-      case 'approved_clinic': return 'Aprovado pela Clínica';
-      case 'rejected_clinic': return 'Rejeitado pela Clínica';
-      case 'pending_admin': return 'Aguardando Admin';
-      case 'sent_parcelamais': return 'Enviado ao Clinicorp';
-      case 'approved': return 'Aprovado';
-      case 'rejected': return 'Rejeitado';
-      default: return status;
-    }
+  const getStatusConfig = (status: string) => {
+    const configs: any = {
+      pending: { label: 'Em Análise', color: 'text-amber-400', bg: 'bg-amber-400/10', icon: Clock },
+      clinic_approved: { label: 'Aprovado Clínica', color: 'text-blue-400', bg: 'bg-blue-400/10', icon: CheckCircle },
+      admin_approved: { label: 'Aprovado Final', color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: ShieldCheck },
+      approved: { label: 'Aprovado', color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: CheckCircle },
+      rejected: { label: 'Rejeitado', color: 'text-rose-400', bg: 'bg-rose-400/10', icon: XCircle },
+      admin_rejected: { label: 'Rejeitado', color: 'text-rose-400', bg: 'bg-rose-400/10', icon: XCircle },
+    };
+    return configs[status] || { label: status, color: 'text-white/40', bg: 'bg-white/5', icon: Activity };
   };
 
   const formatCurrency = (amount: number) => {
@@ -348,486 +229,266 @@ function PatientDashboard() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  }
-
-  // Navigation functions
-  const handleMakeAppointment = () => {
-    navigate('/search-clinics');
-  };
-
-  const handleViewAppointments = () => {
-    navigate('/patient/appointments');
-  };
-
-  const handleViewPlan = () => {
-    navigate('/plans?type=patient');
-  };
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="flex">
-        <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        
-        <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-          <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Painel do Cliente</h1>
-          <p className="text-muted-foreground">Gerencie seus agendamentos, planos e solicitações de crédito</p>
-        </div>
-
-        {/* Main Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={handleMakeAppointment}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="p-3 bg-primary/10 rounded-lg w-fit mb-3">
-                    <Calendar className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-1">Fazer Agendamento</h3>
-                  <p className="text-sm text-muted-foreground">Agende sua consulta</p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={handleViewAppointments}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="p-3 bg-blue-500/10 rounded-lg w-fit mb-3">
-                    <Clock className="h-6 w-6 text-blue-500" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-1">Meus Agendamentos</h3>
-                  <p className="text-sm text-muted-foreground">{appointments.length} consultas</p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={handleViewPlan}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className={`p-3 rounded-lg w-fit mb-3 ${
-                    hasActiveSubscription('basic') ? 'bg-green-500/10' : 'bg-red-500/10'
-                  }`}>
-                    <Star className={`h-6 w-6 ${
-                      hasActiveSubscription('basic') ? 'text-green-500' : 'text-red-500'
-                    }`} />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-1">Meu Plano</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {subscriptionLoading ? 'Carregando...' : 'Nenhum plano ativo'}
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
-            const creditTab = document.querySelector('[data-value="credit"]');
-            if (creditTab) {
-              (creditTab as HTMLElement).click();
-            }
-          }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="p-3 bg-orange-500/10 rounded-lg w-fit mb-3">
-                    <CreditCard className="h-6 w-6 text-orange-500" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-1">Solicitar Empréstimo</h3>
-                  <p className="text-sm text-muted-foreground">{loanRequests.length} solicitações</p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Activity className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Consultas Realizadas</p>
-                  <p className="text-2xl font-bold">{appointments.filter(a => a.status === 'completed').length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <Calendar className="h-4 w-4 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Próximas Consultas</p>
-                  <p className="text-2xl font-bold">{appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Star className="h-4 w-4 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status do Plano</p>
-                  <p className={`text-lg font-bold ${
-                    subscriptionLoading ? 'text-gray-500' :
-                    hasActiveSubscription('basic') ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {subscriptionLoading ? 'Carregando...' :
-                     hasActiveSubscription('basic') ? 'Ativo' : 'Inativo'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-orange-500/10 rounded-lg">
-                  <TrendingUp className="h-4 w-4 text-orange-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Créditos Pendentes</p>
-                  <p className="text-2xl font-bold">
-                    {loanRequests.filter(r => ['pending_clinic', 'pending_admin', 'sent_parcelamais'].includes(r.status)).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs for organized content */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="appointments">Consultas Recentes</TabsTrigger>
-            <TabsTrigger value="credit" data-value="credit">Solicitar Crédito</TabsTrigger>
-            <TabsTrigger value="requests">Minhas Solicitações</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Appointments */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Próximas Consultas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">
-                      Nenhuma consulta agendada
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {appointments
-                        .filter(a => a.status === 'scheduled' || a.status === 'confirmed')
-                        .slice(0, 3)
-                        .map(appointment => (
-                        <div key={appointment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <p className="font-medium">{appointment.clinics.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(appointment.scheduled_date).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                          <Badge variant="secondary">{appointment.status === 'scheduled' ? 'Agendada' : 'Confirmada'}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-4" 
-                    onClick={handleViewAppointments}
-                  >
-                    Ver Todas as Consultas
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Plan Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5" />
-                    Meu Plano
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {subscriptionLoading ? (
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="text-center text-gray-600">Carregando informações do plano...</p>
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <h3 className="font-semibold text-red-800">Nenhum plano ativo</h3>
-                        <p className="text-sm text-red-600 mt-1">Você não possui um plano ativo no momento</p>
-                        <div className="mt-3">
-                          <p className="text-sm font-medium text-red-800">Para acessar os benefícios:</p>
-                          <ul className="text-sm text-red-600 mt-1 space-y-1">
-                            <li>• Escolha um plano</li>
-                            <li>• Complete o pagamento via Stripe</li>
-                            <li>• Aguarde a confirmação do pagamento</li>
-                            <li>• Aproveite todos os benefícios</li>
-                          </ul>
-                        </div>
-                        <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                          <p className="text-xs text-yellow-800">
-                            ⚠️ Acesso aos benefícios requer assinatura ativa e pagamento confirmado
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={handleViewPlan}
-                    >
-                      {hasActiveSubscription('basic') ? 'Gerenciar Plano' : 'Escolher Plano'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="appointments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Histórico de Consultas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {appointments.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhuma consulta encontrada
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {appointments.slice(0, 5).map(appointment => (
-                      <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <h3 className="font-medium">{appointment.clinics.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(appointment.scheduled_date).toLocaleDateString('pt-BR')} às {new Date(appointment.scheduled_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{appointment.service_type || 'Consulta'}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant={appointment.status === 'completed' ? 'outline' : 'secondary'}>
-                            {appointment.status === 'completed' ? 'Concluída' : 
-                             appointment.status === 'confirmed' ? 'Confirmada' : 
-                             appointment.status === 'scheduled' ? 'Agendada' : 'Cancelada'}
-                          </Badge>
-                          {appointment.price && (
-                            <p className="text-sm font-medium mt-1">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(appointment.price)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4" 
-                  onClick={handleViewAppointments}
-                >
-                  Ver Todas as Consultas
-                </Button>
-                  </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="credit">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Nova Solicitação de Crédito
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="clinic">Clínica *</Label>
-                <Select value={selectedClinic} onValueChange={setSelectedClinic}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma clínica" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clinics.map(clinic => (
-                      <SelectItem key={clinic.id} value={clinic.id}>
-                        {clinic.name} - {clinic.city}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="treatment">Tratamento</Label>
-                <Select value={selectedTreatment} onValueChange={setSelectedTreatment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um tratamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {treatments.map(treatment => (
-                      <SelectItem key={treatment.id} value={treatment.id}>
-                        {treatment.name} - {formatCurrency(treatment.estimated_cost_min)} a {formatCurrency(treatment.estimated_cost_max)}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">Outro tratamento...</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {selectedTreatment === 'custom' && (
-              <div>
-                <Label htmlFor="customTreatment">Descrição do Tratamento *</Label>
-                <Textarea
-                  id="customTreatment"
-                  placeholder="Descreva o tratamento necessário..."
-                  value={customTreatment}
-                  onChange={(e) => setCustomTreatment(e.target.value)}
-                />
-              </div>
-            )}
-
-            <div className="space-y-6">
-              <div>
-                <Label className="text-base font-medium mb-4 block">Valor Solicitado *</Label>
-                <ValueSlider
-                  value={parseFloat(requestedAmount) || 1000}
-                  onChange={(value) => setRequestedAmount(value.toString())}
-                  min={100}
-                  max={50000}
-                  step={100}
-                  className="py-4"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="installments">Parcelas</Label>
-                  <Select value={installments.toString()} onValueChange={(value) => setInstallments(parseInt(value))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[6, 12, 18, 24, 36, 48].map(num => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num}x
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800 text-center font-medium">
-                💡 Para solicitar seu crédito, entre em contato com uma de nossas clínicas parceiras ou utilize nosso sistema de agendamento.
-              </p>
-            </div>
-
-            <Button 
-              onClick={createLoanRequest}
-              className="w-full"
-              size="lg"
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Solicitar Empréstimo
-            </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="requests">
-            <Card>
-              <CardHeader>
-                <CardTitle>Minhas Solicitações de Crédito</CardTitle>
-              </CardHeader>
-              <CardContent>
-            {loanRequests.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhuma solicitação encontrada. Faça sua primeira solicitação acima!
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tratamento</TableHead>
-                      <TableHead>Clínica</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Parcelas</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loanRequests.map(request => (
-                      <TableRow key={request.id}>
-                        <TableCell className="font-medium">
-                          {request.treatment_description}
-                        </TableCell>
-                        <TableCell>{request.clinics?.name || 'N/A'}</TableCell>
-                        <TableCell>{formatCurrency(request.requested_amount)}</TableCell>
-                        <TableCell>{request.installments}x</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(request.status)}>
-                            {getStatusLabel(request.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(request.created_at).toLocaleDateString('pt-BR')}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-          </div>
+    return (
+      <div className="flex h-screen bg-background items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+          <p className="text-muted-foreground font-medium">Carregando seu painel...</p>
         </div>
       </div>
-      
-      {/* Chat Widget removido */}
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+      <main className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-6 lg:p-10 relative overflow-hidden`}>
+        {/* Background Gradients/Aurora */}
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-accent/10 rounded-full blur-[100px] -z-10"></div>
+
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Top Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow">
+                  <LayoutDashboard className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-primary font-bold tracking-[0.2em] text-xs uppercase">Dashboard Executivo</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
+                Bem-vindo, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent active:scale-95 transition-transform inline-block cursor-default">
+                  {userName || 'Paciente'}
+                </span>
+                <span className="inline-block animate-bounce ml-2">👋</span>
+              </h1>
+              <p className="text-muted-foreground text-lg font-medium mt-2 max-w-xl">
+                Gerencie sua saúde financeira e seus tratamentos com a inteligência da <span className="text-foreground">Doutorizze</span>.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" className="w-14 h-14 rounded-2xl glass-effect p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all border-none">
+                <Bell className="w-6 h-6" />
+              </Button>
+              <Button
+                onClick={() => navigate('/patient/credit-request')}
+                className="bg-primary hover:bg-primary-hover text-white font-bold h-14 px-8 rounded-2xl transition-all shadow-glow shadow-primary/20 flex items-center gap-3 active:scale-95"
+              >
+                <Plus className="w-6 h-6" />
+                Nova Solicitação
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { label: 'Total de Pedidos', value: stats.totalRequests, icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
+              { label: 'Em Análise', value: stats.pendingRequests, icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
+              { label: 'Aprovadas', value: stats.approvedRequests, icon: CheckCircle, color: 'text-success', bg: 'bg-success/10' },
+              { label: 'Disponível', value: formatCurrency(stats.totalApprovedAmount), icon: DollarSign, color: 'text-accent', bg: 'bg-accent/10' },
+            ].map((stat, i) => (
+              <Card key={i} className="glass-effect rounded-[2.5rem] overflow-hidden group hover:translate-y-[-4px] transition-all border-none">
+                <CardContent className="p-8">
+                  <div className="flex flex-col gap-4">
+                    <div className={`w-14 h-14 rounded-2xl ${stat.bg} flex items-center justify-center shrink-0 shadow-lg shadow-black/20 group-hover:scale-110 transition-transform`}>
+                      <stat.icon className={`w-7 h-7 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em]">{stat.label}</p>
+                      <p className="text-3xl font-black text-white mt-1 font-outfit">{stat.value}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* Recent Requests */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="flex items-center justify-between px-2">
+                <h2 className="text-3xl font-black flex items-center gap-3 text-white">
+                  <Activity className="w-8 h-8 text-primary" />
+                  Atividades Recentes
+                </h2>
+                <Button variant="link" className="text-primary font-bold hover:text-primary-hover" onClick={() => navigate('/patient/credit')}>
+                  Ver todas <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+
+              {activities.length === 0 ? (
+                <Card className="glass-effect rounded-[3rem] border-dashed border-primary/20 bg-primary/5">
+                  <CardContent className="p-16 text-center">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-8 shadow-glow shadow-primary/20">
+                      <Activity className="w-12 h-12 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-3">Nenhuma atividade recente</h3>
+                    <p className="text-muted-foreground mb-10 max-w-sm mx-auto text-lg leading-relaxed">Você ainda não possui solicitações de crédito ou agendamentos realizados.</p>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      <Button onClick={() => navigate('/patient/credit-request')} className="bg-primary hover:bg-primary-hover text-white font-bold px-8 py-6 rounded-2xl transition-all shadow-glow shadow-primary/30 active:scale-95">
+                        Solicitar Crédito
+                      </Button>
+                      <Button onClick={() => navigate('/search')} variant="outline" className="border-white/10 text-white font-bold px-8 py-6 rounded-2xl hover:bg-white/5">
+                        Agendar Consulta
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {activities.slice(0, 5).map((activity) => {
+                    if (activity.type === 'credit') {
+                      const request = activity.data;
+                      const config = getStatusConfig(request.status);
+                      const StatusIcon = config.icon;
+                      return (
+                        <Card key={`credit-${request.id}`} className="glass-effect rounded-[2.5rem] overflow-hidden hover:bg-primary/5 transition-all cursor-pointer group border-none shadow-lg">
+                          <CardContent className="p-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                              <div className="flex items-center gap-6">
+                                <div className={`w-16 h-16 rounded-2xl ${config.bg} flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform`}>
+                                  <StatusIcon className={`w-8 h-8 ${config.color}`} />
+                                </div>
+                                <div>
+                                  <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">
+                                    {request.treatment_description || 'Solicitação de Crédito'}
+                                  </h3>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                      <Building2 className="w-4 h-4" />
+                                      <span>{request.clinics.name}</span>
+                                    </div>
+                                    <Badge className={`${config.bg} ${config.color} border-none rounded-lg px-3 py-1 font-bold text-[10px] uppercase tracking-wider`}>
+                                      CRÉDITO: {config.label}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center gap-3 border-t md:border-t-0 pt-6 md:pt-0 border-white/5">
+                                <div className="text-2xl font-black text-white font-outfit">{formatCurrency(request.requested_amount)}</div>
+                                <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em]">
+                                  {new Date(request.created_at).toLocaleDateString('pt-BR')}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    } else {
+                      const appointment = activity.data;
+                      return (
+                        <Card key={`appointment-${appointment.id}`} className="glass-effect rounded-[2.5rem] overflow-hidden hover:bg-primary/5 transition-all cursor-pointer group border-none shadow-lg" onClick={() => navigate('/patient/appointments')}>
+                          <CardContent className="p-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                              <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+                                  <Calendar className="w-8 h-8 text-blue-500" />
+                                </div>
+                                <div>
+                                  <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">
+                                    {appointment.tipo_consulta || 'Consulta Agendada'}
+                                  </h3>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                      <Building2 className="w-4 h-4" />
+                                      <span>{appointment.clinics?.name || 'Clínica'}</span>
+                                    </div>
+                                    <Badge className="bg-blue-500/10 text-blue-500 border-none rounded-lg px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+                                      AGENDAMENTO: {appointment.status}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center gap-3 border-t md:border-t-0 pt-6 md:pt-0 border-white/5">
+                                <div className="text-xl font-black text-white font-outfit">
+                                  {new Date(appointment.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em]">
+                                  {new Date(appointment.data_hora).toLocaleDateString('pt-BR')}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions & Tips */}
+            <div className="space-y-10">
+              <h2 className="text-2xl font-black px-2 text-white">Ações Rápidas</h2>
+
+              <div className="grid grid-cols-1 gap-5">
+                {[
+                  { label: 'Agendar Consulta', desc: 'Marque um novo horário', icon: Plus, color: 'text-primary', action: () => navigate('/search') },
+                  { label: 'Buscar Clínicas', desc: 'Encontre dentistas perto de você', icon: Search, color: 'text-blue-400', action: () => navigate('/search') },
+                  { label: 'Meus Agendamentos', desc: 'Gerencie suas consultas', icon: Calendar, color: 'text-warning', action: () => navigate('/patient/appointments') },
+                  { label: 'Meus Documentos', desc: 'Arquivos e exames', icon: FileText, color: 'text-success', action: () => navigate('/patient/documents') },
+                ].map((action, i) => (
+                  <Button
+                    key={i}
+                    variant="ghost"
+                    onClick={action.action}
+                    className="h-auto p-8 rounded-[2.5rem] glass-effect flex items-center gap-5 text-left hover:bg-white/[0.08] hover:border-primary/30 transition-all group border-none"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <action.icon className={`w-7 h-7 ${action.color}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-white text-lg">{action.label}</p>
+                      <p className="text-muted-foreground text-xs mt-1 leading-tight">{action.desc}</p>
+                    </div>
+                    <ChevronRight className="w-6 h-6 text-white/20 group-hover:text-primary transition-colors" />
+                  </Button>
+                ))}
+              </div>
+
+              {/* Tips Card */}
+              <div className="relative group p-1 rounded-[3rem] bg-gradient-to-br from-primary/40 to-accent/40 shadow-glow shadow-primary/10">
+                <div className="bg-[#0F0F23] rounded-[2.9rem] p-10 relative overflow-hidden h-full">
+                  <div className="absolute top-[-20%] right-[-20%] w-40 h-40 bg-primary/20 rounded-full blur-[40px] -z-10 group-hover:bg-primary/30 transition-all"></div>
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mb-8 shadow-inner">
+                    <TrendingUp className="w-8 h-8 text-primary" />
+                  </div>
+                  <h4 className="text-2xl font-black mb-4 text-white">Dica do Especialista</h4>
+                  <p className="text-base text-muted-foreground leading-relaxed mb-8">
+                    Mantenha seus documentos sempre atualizados. Isso agiliza a aprovação de qualquer procedimento em até <span className="text-primary font-bold">48 horas</span>.
+                  </p>
+                  <Button variant="link" className="text-primary font-bold p-0 h-auto hover:text-primary-hover flex items-center group-hover:translate-x-1 transition-transform" onClick={() => navigate('/patient/documents')}>
+                    Verificar documentos <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
-}
+};
 
 export default PatientDashboard;
+
+const Loader2 = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Navbar from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
@@ -17,13 +16,13 @@ export function SearchClinics() {
   const [clinics, setClinics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllClinics, setShowAllClinics] = useState(false);
-  
-  const { 
-    city, 
-    state, 
-    loading: locationLoading, 
-    requestLocation, 
-    clearCache 
+
+  const {
+    city,
+    state,
+    loading: locationLoading,
+    requestLocation,
+    clearCache
   } = useGeolocation();
 
   useEffect(() => {
@@ -32,10 +31,10 @@ export function SearchClinics() {
 
   const fetchClinics = async () => {
     setLoading(true);
-    
+
     try {
       let query = supabase.from('clinics').select('*');
-      
+
       if (!showAllClinics) {
         // Filtrar por proximidade usando cidade digitada ou detectada
         const targetCity = (location?.trim() || city || '').trim();
@@ -43,15 +42,15 @@ export function SearchClinics() {
           query = query.eq('city', targetCity);
         }
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Erro ao buscar clínicas:', error);
         setClinics([]);
         return;
       }
-      
+
       setClinics(data || []);
     } catch (error) {
       console.error('Erro na função fetchClinics:', error);
@@ -72,13 +71,12 @@ export function SearchClinics() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Search Header */}
         <div className="bg-gradient-primary rounded-lg p-8 mb-8 text-white">
           <h1 className="text-3xl font-bold mb-6">Encontre sua clínica ideal</h1>
-          
+
           <div className="grid md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -89,7 +87,7 @@ export function SearchClinics() {
                 className="pl-10 bg-white text-foreground"
               />
             </div>
-            
+
             <div className="relative">
               <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -99,7 +97,7 @@ export function SearchClinics() {
                 className="pl-10 bg-white text-foreground"
               />
             </div>
-            
+
             <Button className="bg-white text-primary hover:bg-white/90">
               Buscar
             </Button>
@@ -132,7 +130,7 @@ export function SearchClinics() {
                 </Button>
               </div>
             )}
-            
+
             {(city || state) && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="flex items-center gap-2">
@@ -160,7 +158,7 @@ export function SearchClinics() {
               </div>
             )}
           </div>
-          
+
           {!showAllClinics && (city || state) && (
             <p className="text-sm text-muted-foreground mt-2">
               Mostrando clínicas da sua região: {city && state ? `${city}, ${state}` : state || city}
@@ -204,17 +202,17 @@ export function SearchClinics() {
                         className="w-full h-32 object-cover rounded-lg"
                       />
                     </div>
-                    
+
                     <div className="md:col-span-2">
                       <h3 className="text-xl font-semibold mb-2">{clinic.name}</h3>
-                      
+
                       <div className="flex items-center gap-2 mb-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
                           {clinic.city ? `${clinic.city}` : 'Localização não informada'}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 mb-3">
                         <Star className="h-4 w-4 fill-warning text-warning" />
                         <span className="font-medium">{clinic.rating?.toFixed(1) || '0.0'}</span>
@@ -222,13 +220,13 @@ export function SearchClinics() {
                           ({clinic.total_reviews || 0} avaliações)
                         </span>
                       </div>
-                      
+
                       <div className="flex flex-wrap gap-2 mb-3">
                         <Badge variant="secondary">
                           Clínica Geral
                         </Badge>
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Phone className="h-4 w-4" />
@@ -240,24 +238,24 @@ export function SearchClinics() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="md:col-span-1 flex flex-col justify-between">
                       <div>
                         <p className="text-lg font-semibold text-primary mb-2">
                           {formatPrice()}
                         </p>
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Button 
+                        <Button
                           onClick={() => navigate(`/booking/${clinic.id}`)}
                           className="w-full"
                         >
                           <Calendar className="h-4 w-4 mr-2" />
                           Agendar
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full"
                           onClick={() => navigate(`/clinic/${clinic.id}`)}
                         >
@@ -270,18 +268,18 @@ export function SearchClinics() {
               </Card>
             ))
           )}
-          
+
           {!loading && filteredClinics.length === 0 && (
             <div className="text-center py-12">
               <div className="space-y-4">
                 <p className="text-muted-foreground text-lg">
-                  {!showAllClinics && (city || state) 
+                  {!showAllClinics && (city || state)
                     ? `Nenhuma clínica encontrada na sua região: ${city && state ? `${city}, ${state}` : state || city}`
                     : 'Nenhuma clínica encontrada com os filtros aplicados.'
                   }
                 </p>
                 {!showAllClinics && (city || state) && (
-                  <Button 
+                  <Button
                     onClick={() => setShowAllClinics(true)}
                     variant="outline"
                     className="mt-4"

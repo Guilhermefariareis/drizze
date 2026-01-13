@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import TesteHorarios from './TesteHorarios';
+
 
 interface Servico {
   id: string;
@@ -26,6 +26,7 @@ interface AgendamentoData {
   id?: string;
   servico_id: string;
   paciente_id?: string;
+  paciente_dados_id?: string;
   clinica_id: string;
   profissional_id?: string;
   data_hora: string;
@@ -57,11 +58,12 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
   hideTypeSelection = false
 }) => {
   const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState<AgendamentoData>({
     servico_id: hideTypeSelection ? '' : '',
     clinica_id: clinicaId || '',
     profissional_id: '',
+    paciente_id: user?.id || '',
     data_hora: '',
     horario: '',
     observacoes: '',
@@ -74,7 +76,7 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
   });
 
 
-  
+
   // Atualizar clinica_id no formData quando clinicaId prop mudar
   useEffect(() => {
     if (clinicaId && clinicaId !== formData.clinica_id) {
@@ -107,48 +109,88 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
 
   const { obterHorariosDisponiveis } = useHorariosDisponiveis(clinicaId);
 
-  // Carregar dados iniciais (serviços e profissionais)
-    useEffect(() => {
-      const carregarDados = async () => {
-        if (!clinicaId) {
-          setLoadingData(false);
-          return;
-        }
-
+  // Carregar dados do perfil do usuário para pre-fill
+  useEffect(() => {
+    const carregarPerfil = async () => {
+      // Só pre-encher se o usuário estiver logado e os campos estiverem vazios
+      if (user && (!formData.nome_paciente || !formData.email_paciente || !formData.telefone_paciente)) {
         try {
-          // Só carregar serviços se não for formulário interno
-          if (!hideTypeSelection) {
-            const { data: servicosData, error: servicosError } = await supabase
-              .from('servicos')
-              .select('*')
-              .eq('clinic_id', clinicaId);
-  
-            if (servicosError) throw servicosError;
-            setServicos(servicosData || []);
+          // Buscar perfil do usuário logado
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Erro ao buscar perfil para pre-fill:', error);
+            return;
           }
 
-          // Carregar profissionais
-          const { data: profissionaisData, error: profissionaisError } = await supabase
-            .from('clinic_professionals')
-            .select(`
+          if (data) {
+            setFormData(prev => ({
+              ...prev,
+              nome_paciente: prev.nome_paciente || data.full_name || '',
+              email_paciente: prev.email_paciente || data.email || user.email || '',
+              telefone_paciente: prev.telefone_paciente || data.phone || ''
+            }));
+          } else if (user.email && !formData.email_paciente) {
+            // Fallback para o email do auth se o perfil não tiver ou não existir
+            setFormData(prev => ({
+              ...prev,
+              email_paciente: prev.email_paciente || user.email || ''
+            }));
+          }
+        } catch (err) {
+          console.error('Erro na carga de perfil para pre-fill:', err);
+        }
+      }
+    };
+
+    carregarPerfil();
+  }, [user]); // Depender apenas do user para pre-fill inicial
+
+  // Carregar dados iniciais (serviços e profissionais)
+  useEffect(() => {
+    const carregarDados = async () => {
+      if (!clinicaId) {
+        setLoadingData(false);
+        return;
+      }
+
+      try {
+        // Só carregar serviços se não for formulário interno
+        if (!hideTypeSelection) {
+          const { data: servicosData, error: servicosError } = await (supabase as any).from('servicos')
+            .select('*')
+            .eq('clinic_id', clinicaId);
+
+          if (servicosError) throw servicosError;
+          setServicos(servicosData || []);
+        }
+
+        // Carregar profissionais
+        const { data: profissionaisData, error: profissionaisError } = await supabase
+          .from('clinic_professionals')
+          .select(`
               *,
               profiles!inner(full_name)
             `)
-            .eq('clinic_id', clinicaId);
+          .eq('clinic_id', clinicaId);
 
-          if (profissionaisError) throw profissionaisError;
-          setProfissionais(profissionaisData || []);
+        if (profissionaisError) throw profissionaisError;
+        setProfissionais(profissionaisData || []);
 
-        } catch (error) {
-          console.error('Erro ao carregar dados:', error);
-          toast.error('Erro ao carregar dados do formulário');
-        } finally {
-          setLoadingData(false);
-        }
-      };
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        toast.error('Erro ao carregar dados do formulário');
+      } finally {
+        setLoadingData(false);
+      }
+    };
 
-      carregarDados();
-    }, [clinicaId, hideTypeSelection]);
+    carregarDados();
+  }, [clinicaId, hideTypeSelection]);
 
   // Efeito para carregar horários quando data mudar
   useEffect(() => {
@@ -159,7 +201,7 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
       }
 
       setLoadingHorarios(true);
-      
+
       // Timeout de 5 segundos para evitar loading infinito
       const timeoutId = setTimeout(() => {
         console.error('Timeout ao carregar horários - usando horários padrão');
@@ -170,13 +212,13 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
       try {
         // Formatar a data corretamente (YYYY-MM-DD)
         const data = new Date(formData.data_hora);
-        const dataFormatada = data instanceof Date && !isNaN(data.getTime()) 
-          ? data.toISOString().split('T')[0] 
+        const dataFormatada = data instanceof Date && !isNaN(data.getTime())
+          ? data.toISOString().split('T')[0]
           : formData.data_hora.split('T')[0];
-        
+
         // Simplificar: sempre carregar horários quando tiver data
         const profissionalId = formData.profissional_id === 'any' ? undefined : formData.profissional_id;
-        
+
         const horarios = await obterHorariosDisponiveis(dataFormatada, profissionalId);
         clearTimeout(timeoutId);
         setHorariosDisponiveis(horarios);
@@ -201,7 +243,7 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
-    
+
     // Limpar erro do campo quando usuário começar a digitar
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -227,32 +269,94 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Por favor, preencha todos os campos obrigatórios');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       // Para agendamento interno, não precisa de serviço ou profissional
       const servicoSelecionado = !hideTypeSelection ? servicos.find(s => s.id === formData.servico_id) : null;
       const valorFinal = !hideTypeSelection ? (formData.valor || (servicoSelecionado?.preco || 0)) : 0;
-      
-      const agendamentoData: AgendamentoData = {
+
+      let profileId = formData.paciente_id;
+      let pacienteDadosId = (formData as any).paciente_dados_id;
+
+      // 1. [FIX] Manter o User ID (Auth ID) como paciente_id para garantir compatibilidade com RLS e queries
+      // O bloco anterior buscava o Profile ID (UUID aleatório) e substituía o Auth ID,
+      // causando mismatch com o Dashboard que busca pelo Auth ID.
+
+      /* 
+      // Lógica antiga removida:
+      if (user && formData.tipo_agendamento === 'paciente') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profile) {
+          profileId = profile.id;
+        }
+      } 
+      */
+
+      // Garantir que se for paciente logado, usa o ID do usuário
+      if (user && formData.tipo_agendamento === 'paciente') {
+        profileId = user.id;
+      }
+
+      // 2. Tentar encontrar ou criar o registro na tabela 'pacientes' para ter o paciente_dados_id
+      // Isso é CRÍTICO para que o nome apareça na agenda da clínica
+      if (formData.nome_paciente && !pacienteDadosId) {
+        // Tentar buscar por telefone ou email primeiro - Usando any para evitar erro de tipo se a tabela não estiver gerada
+        const { data: existente } = await (supabase as any).from('pacientes')
+          .select('id')
+          .or(`telefone.eq.${formData.telefone_paciente},email.eq.${formData.email_paciente}`)
+          .maybeSingle();
+
+        if (existente) {
+          pacienteDadosId = existente.id;
+        } else {
+          // Criar novo paciente
+          const { data: novo } = await (supabase as any).from('pacientes')
+            .insert([{
+              nome: formData.nome_paciente,
+              telefone: formData.telefone_paciente,
+              email: formData.email_paciente
+            }])
+            .select('id')
+            .single();
+
+          if (novo) {
+            pacienteDadosId = novo.id;
+          }
+        }
+      }
+
+      const agendamentoData: any = {
         ...formData,
+        paciente_id: profileId,
+        paciente_dados_id: pacienteDadosId,
         clinica_id: clinicaId,
         valor: valorFinal,
         status: formData.status || 'pendente',
         tipo_agendamento: hideTypeSelection ? 'interno' : formData.tipo_agendamento,
-        // Para agendamento interno, limpar campos não utilizados
-        servico_id: hideTypeSelection ? '' : formData.servico_id,
-        profissional_id: hideTypeSelection ? '' : formData.profissional_id
+        tipo_consulta: hideTypeSelection ? 'interno' : formData.tipo_agendamento, // Sincronizar com tipo_consulta
       };
 
-      await onSalvar(agendamentoData);
-      
+      // Limpar campos de ID vazios para evitar erro de UUID no banco
+      const dadosParaEnviar = { ...agendamentoData };
+      if (!dadosParaEnviar.servico_id) delete (dadosParaEnviar as any).servico_id;
+      if (!dadosParaEnviar.profissional_id || dadosParaEnviar.profissional_id === 'any') delete (dadosParaEnviar as any).profissional_id;
+      if (!dadosParaEnviar.paciente_id) delete (dadosParaEnviar as any).paciente_id;
+      if (!dadosParaEnviar.paciente_dados_id) delete (dadosParaEnviar as any).paciente_dados_id;
+
+      await onSalvar(dadosParaEnviar as any);
+
     } catch (error) {
       console.error('❌ Erro ao salvar agendamento:', error);
       toast.error('Erro ao salvar agendamento');
@@ -260,7 +364,6 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
       setLoading(false);
     }
   };
-
   if (loadingData) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -305,10 +408,10 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
             {/* Dados do Paciente - sempre mostrar */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Dados do Paciente</h3>
+                <User className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold text-white">Dados do Paciente</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome_paciente">Nome *</Label>
@@ -413,10 +516,11 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
                   id="data_hora"
                   type="date"
                   value={formData.data_hora ? formData.data_hora.split('T')[0] : ''}
+                  min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => {
                     const novaData = e.target.value;
                     if (novaData) {
-                      const dataHora = formData.horario 
+                      const dataHora = formData.horario
                         ? `${novaData}T${formData.horario}:00`
                         : `${novaData}T00:00:00`;
                       handleInputChange('data_hora', dataHora);
@@ -455,8 +559,8 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
                       </SelectItem>
                     ) : (
                       horariosDisponiveis.map((item) => (
-                        <SelectItem 
-                          key={item.horario} 
+                        <SelectItem
+                          key={item.horario}
                           value={item.horario}
                           disabled={!item.disponivel}
                         >
@@ -479,57 +583,6 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Dados do Paciente (só se for agendamento de paciente) */}
-            {formData.tipo_agendamento === 'paciente' && (
-              <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-medium text-blue-900 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Dados do Paciente
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome_paciente">Nome *</Label>
-                    <Input
-                      id="nome_paciente"
-                      value={formData.nome_paciente || ''}
-                      onChange={(e) => handleInputChange('nome_paciente', e.target.value)}
-                      placeholder="Nome completo do paciente"
-                      className={errors.nome_paciente ? 'border-red-500' : ''}
-                    />
-                    {errors.nome_paciente && (
-                      <p className="text-sm text-red-500">{errors.nome_paciente}</p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="telefone_paciente">Telefone *</Label>
-                    <Input
-                      id="telefone_paciente"
-                      value={formData.telefone_paciente || ''}
-                      onChange={(e) => handleInputChange('telefone_paciente', e.target.value)}
-                      placeholder="(00) 00000-0000"
-                      className={errors.telefone_paciente ? 'border-red-500' : ''}
-                    />
-                    {errors.telefone_paciente && (
-                      <p className="text-sm text-red-500">{errors.telefone_paciente}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email_paciente">Email</Label>
-                  <Input
-                    id="email_paciente"
-                    type="email"
-                    value={formData.email_paciente || ''}
-                    onChange={(e) => handleInputChange('email_paciente', e.target.value)}
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Descrição do Agendamento - só para agendamento interno */}
             {hideTypeSelection && (
@@ -584,7 +637,7 @@ const FormularioAgendamento: React.FC<FormularioAgendamentoProps> = ({
       </Card>
 
       {/* TESTE DE HORÁRIOS - AGORA VAI FUNCIONAR! */}
-      <TesteHorarios clinicaId={clinicaId} />
+
     </div>
   );
 }

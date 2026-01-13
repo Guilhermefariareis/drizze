@@ -1,10 +1,10 @@
 import React from 'react';
-import Navbar from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { UserPlus, CreditCard, MapPin, Heart, Star, CheckCircle, Users, TrendingUp, Search, Calendar, Calculator } from 'lucide-react';
+import { UserPlus, CreditCard, MapPin, Heart, Star, CheckCircle, Users, TrendingUp, Search, Calendar, Calculator, Quote, ArrowRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 
 const HowItWorksPage = () => {
@@ -62,77 +62,82 @@ const HowItWorksPage = () => {
     }
   ];
 
+  const logoUrl = "/logo-white-final.png"; // Assuming it will be served from public or root
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
+    <div className="min-h-screen bg-[#0F0F23] text-white">
+
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white py-20 pt-32"> {/* Adiciona pt-32 para compensar navbar fixa */}
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      <section className="relative py-24 pt-32 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E94560]/10 rounded-full blur-[120px] -mr-48 -mt-48 opacity-50"></div>
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#3B82F6]/10 rounded-full blur-[120px] -ml-48 -mb-48 opacity-50"></div>
+
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <Badge variant="v2-dark" className="mb-6 px-4 py-2">
             COMO FUNCIONA
+          </Badge>
+          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
+            É TUDO MUITO <span className="text-[#E94560]">SIMPLES</span> E FÁCIL!
           </h1>
-          <p className="text-xl md:text-2xl mb-8 opacity-90">
-            É TUDO MUITO SIMPLES E FÁCIL!
+          <p className="text-xl text-white/40 max-w-2xl mx-auto leading-relaxed font-medium mb-12">
+            Escolha como quer começar sua jornada para um sorriso perfeito.
           </p>
-          
-          <Tabs defaultValue="consultas" className="w-full max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/10 backdrop-blur-sm">
-              <TabsTrigger 
-                value="consultas" 
-                className="data-[state=active]:bg-white data-[state=active]:text-blue-600 text-white"
+
+          <Tabs defaultValue="consultas" className="w-full max-w-5xl mx-auto">
+            <TabsList className="grid w-64 grid-cols-2 mb-12 mx-auto bg-white/5 border border-white/10 p-1 rounded-2xl h-14">
+              <TabsTrigger
+                value="consultas"
+                className="rounded-xl data-[state=active]:bg-[#E94560] data-[state=active]:text-white transition-all font-bold"
               >
-                Fluxo de Consultas
+                Consultas
               </TabsTrigger>
-              <TabsTrigger 
-                value="credito" 
-                className="data-[state=active]:bg-white data-[state=active]:text-blue-600 text-white"
+              <TabsTrigger
+                value="credito"
+                className="rounded-xl data-[state=active]:bg-[#E94560] data-[state=active]:text-white transition-all font-bold"
               >
-                Fluxo de Crédito
+                Crédito
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="consultas">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {consultationSteps.map((step, index) => {
-                  const IconComponent = step.icon;
-                  return (
-                    <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300">
-                      <CardContent className="p-6 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
-                          <IconComponent className="w-8 h-8" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {consultationSteps.map((step, index) => (
+                  <Card key={index} className="bg-white/[0.03] border-white/[0.06] hover:border-[#E94560]/30 transition-all duration-500 group overflow-hidden rounded-[2rem]">
+                    <CardContent className="p-8 text-center flex flex-col items-center">
+                      <div className="relative mb-6">
+                        <div className="bg-gradient-to-br from-[#E94560] to-[#FB923C] p-5 rounded-2xl shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform duration-500 w-16 h-16 flex items-center justify-center">
+                          <img src="/logo-white-final.png" alt="Logo" className="w-8 h-8 object-contain" />
                         </div>
-                        <div className="text-lg font-bold mb-2 text-center">
-                          {index + 1}
+                        <div className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center text-sm font-black">
+                          {step.number}
                         </div>
-                        <h3 className="text-lg font-bold mb-2">{step.title}</h3>
-                        <p className="text-sm opacity-90">{step.description}</p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
+                      <p className="text-white/40 leading-relaxed font-medium text-sm">{step.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </TabsContent>
 
             <TabsContent value="credito">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {creditSteps.map((step, index) => {
-                  const IconComponent = step.icon;
-                  return (
-                    <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300">
-                      <CardContent className="p-6 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
-                          <IconComponent className="w-8 h-8" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {creditSteps.map((step, index) => (
+                  <Card key={index} className="bg-white/[0.03] border-white/[0.06] hover:border-[#8B5CF6]/30 transition-all duration-500 group overflow-hidden rounded-[2rem]">
+                    <CardContent className="p-8 text-center flex flex-col items-center">
+                      <div className="relative mb-6">
+                        <div className="bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] p-5 rounded-2xl shadow-lg shadow-[#8B5CF6]/20 group-hover:scale-110 transition-transform duration-500 w-16 h-16 flex items-center justify-center">
+                          <img src="/logo-white-final.png" alt="Logo" className="w-8 h-8 object-contain" />
                         </div>
-                        <div className="text-lg font-bold mb-2 text-center">
-                          {index + 1}
+                        <div className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center text-sm font-black">
+                          {step.number}
                         </div>
-                        <h3 className="text-lg font-bold mb-2">{step.title}</h3>
-                        <p className="text-sm opacity-90">{step.description}</p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
+                      <p className="text-white/40 leading-relaxed font-medium text-sm">{step.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </TabsContent>
           </Tabs>
@@ -140,69 +145,73 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Testimonial Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+      <section className="py-24 bg-[#1A1A2E] relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#0F0F23] to-transparent"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-6">
               QUEM TEM CLÍNICA ODONTOLÓGICA, TEM<br />
-              TRANSFORMAÇÃO GARANTIDA!
+              <span className="text-[#E94560]">TRANSFORMAÇÃO</span> GARANTIDA!
             </h2>
           </div>
-          
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center gap-8">
+
+          <div className="max-w-5xl mx-auto bg-white/[0.03] border border-white/[0.06] rounded-[3rem] p-10 md:p-16">
+            <div className="flex flex-col md:flex-row items-center gap-12">
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                  <img 
-                    src="https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20smiling%20dentist%20doctor%20with%20stethoscope%20white%20medical%20coat%20friendly%20portrait%20healthcare%20professional%20confident%20doltorizze&image_size=square" 
-                    alt="Dr. Izze" 
-                    className="w-full h-full object-cover"
+                <div className="w-48 h-48 rounded-[2.5rem] bg-white/5 border border-white/10 p-2 overflow-hidden shadow-2xl">
+                  <img
+                    src="/dentist_portrait_premium_1767984469045.png"
+                    alt="Dr. Izze"
+                    className="w-full h-full object-cover rounded-[2rem]"
                   />
                 </div>
-                <div className="text-center mt-4">
+                <div className="text-center mt-6">
                   <div className="flex justify-center mb-2">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <p className="text-sm text-gray-600">Avaliação dos pacientes</p>
+                  <p className="text-sm text-white/40 font-bold uppercase tracking-widest">Avaliação Real</p>
                 </div>
               </div>
-              
-              <div className="flex-1">
-                <blockquote className="text-lg text-gray-700 italic mb-4">
+
+              <div className="flex-1 space-y-6">
+                <Quote className="w-12 h-12 text-[#E94560] opacity-20" />
+                <blockquote className="text-2xl text-white/80 italic font-medium leading-relaxed">
                   "Através da nossa plataforma, conseguimos conectar milhares de pacientes com os melhores profissionais de saúde, oferecendo tratamentos de qualidade com condições de pagamento acessíveis. A transformação na vida dos nossos pacientes é nossa maior recompensa."
                 </blockquote>
-                <cite className="text-gray-600">
-                  <strong>Doutorizze</strong><br />
-                  Fundador e CEO
-                </cite>
+                <div>
+                  <h4 className="text-xl font-bold text-white">Doutorizze</h4>
+                  <p className="text-[#E94560] font-bold">Fundador e CEO</p>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="text-center mt-8">
-            <p className="text-blue-600 font-semibold">Mais de 10 bancos e locadoras parceiras</p>
-            <p className="text-blue-600 text-lg font-bold">&gt;&gt; clínica odontológica</p>
+
+          <div className="text-center mt-12 space-y-2">
+            <p className="text-white/40 font-medium tracking-wide">MAIS DE 10 BANCOS E LOCADORAS PARCEIRAS</p>
+            <p className="text-2xl font-black text-[#E94560]">&gt;&gt; CLÍNICA ODONTOLÓGICA</p>
           </div>
         </div>
       </section>
 
       {/* Statistics Section */}
-      <section className="py-16 bg-gray-100">
+      <section className="py-24 bg-[#0F0F23]">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            <Card className="bg-blue-600 text-white text-center">
-              <CardContent className="p-8">
-                <h3 className="text-lg font-semibold mb-2">CLIENTES ATENDIDOS</h3>
-                <p className="text-4xl font-bold">7.336</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="bg-white/[0.03] border-white/[0.06] border-l-4 border-l-[#E94560] rounded-3xl overflow-hidden group">
+              <CardContent className="p-10 text-center space-y-4">
+                <h3 className="text-sm font-black text-white/40 uppercase tracking-widest">CLIENTES ATENDIDOS</h3>
+                <p className="text-6xl font-black text-white group-hover:scale-110 transition-transform duration-500">7.336</p>
+                <div className="w-12 h-1 bg-[#E94560] mx-auto rounded-full"></div>
               </CardContent>
             </Card>
-            
-            <Card className="bg-blue-600 text-white text-center">
-              <CardContent className="p-8">
-                <h3 className="text-lg font-semibold mb-2">CLIENTES PAGOS</h3>
-                <p className="text-4xl font-bold">4.146</p>
+
+            <Card className="bg-white/[0.03] border-white/[0.06] border-l-4 border-l-[#4ADE80] rounded-3xl overflow-hidden group">
+              <CardContent className="p-10 text-center space-y-4">
+                <h3 className="text-sm font-black text-white/40 uppercase tracking-widest">CLIENTES PAGOS</h3>
+                <p className="text-6xl font-black text-white group-hover:scale-110 transition-transform duration-500">4.146</p>
+                <div className="w-12 h-1 bg-[#4ADE80] mx-auto rounded-full"></div>
               </CardContent>
             </Card>
           </div>
@@ -210,39 +219,45 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Map Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-6">
-                Clínicas credenciadas em todo<br />
-                o Brasil.
+      <section className="py-24 bg-[#1A1A2E] relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8">
+              <Badge variant="v2-blue" className="px-4 py-2">COBERTURA NACIONAL</Badge>
+              <h2 className="text-4xl md:text-6xl font-black text-white leading-tight">
+                Clínicas credenciadas em todo o <span className="text-[#3B82F6]">Brasil.</span>
               </h2>
-              <p className="text-gray-600 mb-8">
+              <p className="text-xl text-white/40 font-medium leading-relaxed">
                 Nossa rede de clínicas parceiras está presente em todas as regiões do país, garantindo que você encontre o melhor atendimento próximo a você.
               </p>
-              
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-sm">Mais de 500 clínicas</span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-[#4ADE80]/20 flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-[#4ADE80]" />
+                  </div>
+                  <span className="font-bold text-white/80">Mais de 500 clínicas</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-sm">Cobertura nacional</span>
+                <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-[#4ADE80]/20 flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-[#4ADE80]" />
+                  </div>
+                  <span className="font-bold text-white/80">Cobertura nacional</span>
                 </div>
               </div>
-              
-              <Button className="bg-black text-white hover:bg-gray-800">
+
+              <Button size="xl" variant="v2-gradient" className="px-10">
                 VER MAIS
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
-            
-            <div className="flex justify-center">
-              <img 
-                src="https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=3D%20isometric%20brazil%20map%20with%20dental%20clinic%20location%20markers%20pins%20healthcare%20network%20coverage%20modern%20blue%20green%20colors%20medical%20icons&image_size=square" 
-                alt="Mapa do Brasil com clínicas credenciadas" 
-                className="max-w-full h-auto"
+
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-[100px]"></div>
+              <img
+                src="/brazil_map_healthcare_isometric_1767984482926.png"
+                alt="Mapa do Brasil"
+                className="relative z-10 w-full hover:scale-105 transition-transform duration-700"
               />
             </div>
           </div>
@@ -250,20 +265,21 @@ const HowItWorksPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Pronto para começar sua transformação?
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-600/20"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight">
+            Pronto para começar sua <span className="text-[#E94560]">transformação?</span>
           </h2>
-          <p className="text-xl mb-8">
-            Cadastre-se agora e encontre o tratamento ideal para você!
+          <p className="text-xl text-white/60 mb-12 max-w-2xl mx-auto font-medium lead-relaxed">
+            Cadastre-se agora e encontre o tratamento ideal para você com condições exclusivas!
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Button asChild size="xl" variant="v2-gradient" className="px-12">
               <Link to="/patient-login">Cadastrar Agora</Link>
             </Button>
-            <Button asChild size="lg" className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600">
+            <Button asChild size="xl" variant="v2-outline" className="px-12">
               <Link to="/search">Buscar Clínicas</Link>
             </Button>
           </div>

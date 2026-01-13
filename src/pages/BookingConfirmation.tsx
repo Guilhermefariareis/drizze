@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function BookingConfirmation() {
@@ -23,8 +22,7 @@ export default function BookingConfirmation() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {/* Success Message */}
@@ -32,11 +30,11 @@ export default function BookingConfirmation() {
             <div className="w-20 h-20 bg-success rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="h-10 w-10 text-white" />
             </div>
-            
+
             <h1 className="text-3xl font-bold text-success mb-2">
               Agendamento Confirmado!
             </h1>
-            
+
             <p className="text-muted-foreground">
               Sua consulta foi agendada com sucesso. Você receberá um lembrete por WhatsApp.
             </p>
@@ -75,9 +73,9 @@ export default function BookingConfirmation() {
                   <p className="text-sm text-muted-foreground">{bookingData.clinic.phone}</p>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               {/* Service */}
               <div className="flex items-center gap-3">
                 <User className="h-5 w-5 text-primary" />
@@ -86,7 +84,7 @@ export default function BookingConfirmation() {
                   <p className="text-sm text-muted-foreground">{bookingData.service.name}</p>
                 </div>
               </div>
-              
+
               {/* Date & Time */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3">
@@ -103,7 +101,7 @@ export default function BookingConfirmation() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <Clock className="h-5 w-5 text-primary" />
                   <div>
@@ -112,9 +110,9 @@ export default function BookingConfirmation() {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               {/* Patient Info */}
               <div className="flex items-center gap-3">
                 <User className="h-5 w-5 text-primary" />
@@ -124,9 +122,9 @@ export default function BookingConfirmation() {
                   <p className="text-sm text-muted-foreground">{bookingData.patient.phone}</p>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               {/* Payment */}
               <div className="flex items-center gap-3">
                 <CreditCard className="h-5 w-5 text-primary" />
@@ -138,7 +136,7 @@ export default function BookingConfirmation() {
                     {bookingData.paymentMethod === 'pix' && 'PIX'}
                   </p>
                   <p className="text-sm font-semibold text-success">
-                    R$ {bookingData.paymentMethod === 'pix' 
+                    R$ {bookingData.paymentMethod === 'pix'
                       ? (bookingData.service.price * 0.95).toFixed(2).replace('.', ',')
                       : bookingData.service.price
                     } - Pago
@@ -150,23 +148,23 @@ export default function BookingConfirmation() {
 
           {/* Actions */}
           <div className="space-y-4">
-            <Button 
+            <Button
               className="w-full bg-green-600 hover:bg-green-700"
               onClick={() => window.open(`https://wa.me/5511999999999?text=${whatsappMessage}`, '_blank')}
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               Entrar em Contato via WhatsApp
             </Button>
-            
+
             <div className="grid grid-cols-2 gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => navigate('/profile')}
               >
                 Ver Minhas Consultas
               </Button>
-              
-              <Button 
+
+              <Button
                 variant="outline"
                 onClick={() => navigate('/search')}
               >
@@ -185,17 +183,17 @@ export default function BookingConfirmation() {
                 <Check className="h-4 w-4 text-success mt-0.5" />
                 <span>Chegue 15 minutos antes do horário agendado</span>
               </div>
-              
+
               <div className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-success mt-0.5" />
                 <span>Traga um documento com foto</span>
               </div>
-              
+
               <div className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-success mt-0.5" />
                 <span>Em caso de reagendamento, entre em contato com 24h de antecedência</span>
               </div>
-              
+
               <div className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-success mt-0.5" />
                 <span>Você receberá lembretes por WhatsApp</span>
@@ -207,7 +205,7 @@ export default function BookingConfirmation() {
           <Card className="mt-6">
             <CardContent className="text-center py-6">
               <div className="flex justify-center gap-1 mb-3">
-                {[1,2,3,4,5].map(star => (
+                {[1, 2, 3, 4, 5].map(star => (
                   <Star key={star} className="h-6 w-6 text-warning fill-warning" />
                 ))}
               </div>

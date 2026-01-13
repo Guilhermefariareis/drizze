@@ -9,11 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { CreditRequestModal } from '@/components/patient/CreditRequestModal';
 
 
-import { 
-  CreditCard, 
-  Plus, 
-  Clock, 
-  CheckCircle, 
+import {
+  CreditCard,
+  Plus,
+  Clock,
+  CheckCircle,
   XCircle,
   DollarSign,
   FileText,
@@ -68,7 +68,7 @@ export default function PatientCredit() {
   const fetchCreditData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Primeiro buscar o profile do usuário
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -81,7 +81,13 @@ export default function PatientCredit() {
         toast.error('Erro ao carregar dados do perfil');
         return;
       }
-      
+
+      if (!profile?.id) {
+        console.error('Perfil não encontrado ou sem ID');
+        toast.error('Erro ao carregar identificação do usuário');
+        return;
+      }
+
       // Buscar solicitações de crédito usando o profile.id
       const { data: loanData, error: loanError } = await supabase
         .from('credit_requests')
@@ -156,15 +162,15 @@ export default function PatientCredit() {
       'admin_rejected': { label: 'Rejeitado', variant: 'destructive' as const, icon: XCircle },
       'admin_analyzing': { label: 'Em Análise', variant: 'secondary' as const, icon: Clock }
     };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { 
-      label: status, 
-      variant: 'outline' as const, 
-      icon: AlertCircle 
+
+    const statusInfo = statusMap[status as keyof typeof statusMap] || {
+      label: status,
+      variant: 'outline' as const,
+      icon: AlertCircle
     };
-    
+
     const Icon = statusInfo.icon;
-    
+
     return (
       <Badge variant={statusInfo.variant} className="flex items-center gap-1">
         <Icon className="h-3 w-3" />
@@ -187,8 +193,8 @@ export default function PatientCredit() {
   const calculateMonthlyPayment = useCallback((amount: number, installments: number) => {
     const interestRate = 0.025; // 2.5% ao mês
     const monthlyRate = interestRate;
-    const payment = (amount * monthlyRate * Math.pow(1 + monthlyRate, installments)) / 
-                   (Math.pow(1 + monthlyRate, installments) - 1);
+    const payment = (amount * monthlyRate * Math.pow(1 + monthlyRate, installments)) /
+      (Math.pow(1 + monthlyRate, installments) - 1);
     return payment;
   }, []);
 
@@ -211,7 +217,7 @@ export default function PatientCredit() {
   return (
     <div className="flex h-screen bg-background">
       <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <div className="p-6 space-y-6">
           {/* Header */}
@@ -224,7 +230,7 @@ export default function PatientCredit() {
           </div>
 
           {/* Teste de Geolocalização */}
-  
+
 
           {/* Credit Summary */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -286,7 +292,7 @@ export default function PatientCredit() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">Histórico de Solicitações</h3>
-                    <CreditRequestModal 
+                    <CreditRequestModal
                       onSuccess={fetchCreditData}
                       trigger={
                         <Button size="sm" className="flex items-center gap-2">
@@ -329,7 +335,7 @@ export default function PatientCredit() {
                           )}
                         </div>
                       </div>
-                      
+
                       {(request.status === 'clinic_approved' || request.status === 'admin_approved') && (
                         <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                           <div className="flex items-center gap-2 text-green-800">
@@ -341,7 +347,7 @@ export default function PatientCredit() {
                           </p>
                         </div>
                       )}
-                      
+
                       {(request.status === 'clinic_rejected' || request.status === 'admin_rejected') && (
                         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                           <div className="flex items-center gap-2 text-red-800">
@@ -363,7 +369,7 @@ export default function PatientCredit() {
                   <p className="text-muted-foreground mb-4">
                     Você ainda não fez nenhuma solicitação de crédito odontológico.
                   </p>
-                  <CreditRequestModal 
+                  <CreditRequestModal
                     onSuccess={fetchCreditData}
                     trigger={
                       <Button className="flex items-center gap-2">

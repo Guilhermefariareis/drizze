@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +60,6 @@ export default function BookingPage() {
       <div className="min-h-screen bg-background">
         {/* Fixed Top Navbar */}
         <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b">
-          <Navbar />
         </div>
         <div className="w-full px-6 py-20 pt-24">
           <Card>
@@ -82,7 +80,6 @@ export default function BookingPage() {
     <div className="min-h-screen bg-background">
       {/* Fixed Top Navbar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b">
-        <Navbar />
       </div>
       <div className="w-full px-6 py-8 pt-24 space-y-6">
         <div className="flex items-center justify-between">
@@ -106,7 +103,7 @@ export default function BookingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <FormularioAgendamento 
+            <FormularioAgendamento
               clinicaId={clinicId}
               onSalvar={handleSalvarAgendamento}
               onCancelar={() => navigate(-1)}

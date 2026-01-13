@@ -8,69 +8,14 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-interface Clinic {
-  id: string;
-  name: string;
-}
-
-// Mock de clínicas para Trindade/GO
-const mockClinics: Clinic[] = [
-  { id: '1', name: 'Clínica Trindade' },
-  { id: '2', name: 'Centro Médico Trindade' },
-  { id: '3', name: 'Clínica Odontológica Trindade' },
-  { id: '4', name: 'Hospital Municipal Trindade' },
-  { id: '5', name: 'Clínica de Especialidades Trindade' }
-];
-
 const CreditSimulator = () => {
   const navigate = useNavigate();
-  const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [selectedClinic, setSelectedClinic] = useState<string>('');
   const [treatmentValue, setTreatmentValue] = useState([0]); // Valor inicial R$ 0,00
   const [installments, setInstallments] = useState([2]); // 12x inicial (índice 2 do array)
-  const [loadingClinics, setLoadingClinics] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
   // Opções de parcelas disponíveis
   const installmentOptions = [3, 6, 12, 18, 24, 36];
-
-  // Buscar clínicas do banco de dados
-  useEffect(() => {
-    fetchClinics();
-  }, []);
-
-  const fetchClinics = async () => {
-    try {
-      setLoadingClinics(true);
-
-      // Buscar apenas id e name das clínicas (colunas que existem)
-      const { data: clinicsData, error } = await supabase
-        .from('clinics')
-        .select('id, name')
-        .order('name');
-
-      if (error) {
-        console.error('Erro ao buscar clínicas:', error);
-        // Usar clínicas mock em caso de erro
-        setClinics(mockClinics);
-        return;
-      }
-
-      // Se tiver dados, usar eles. Senão, usar mocks
-      if (clinicsData && clinicsData.length > 0) {
-        setClinics(clinicsData);
-      } else {
-        setClinics(mockClinics);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar clínicas:', error);
-      toast.error('Erro ao carregar clínicas');
-      // Fallback para mocks
-      setClinics(mockClinics);
-    } finally {
-      setLoadingClinics(false);
-    }
-  };
 
   // Formatar valor em reais
   const formatCurrency = (value: number): string => {
@@ -88,10 +33,6 @@ const CreditSimulator = () => {
 
   // Simular crédito
   const handleSimulate = () => {
-    if (!selectedClinic) {
-      toast.error('Por favor, selecione uma clínica');
-      return;
-    }
 
     setShowResult(true);
     toast.success('Simulação realizada com sucesso!');
@@ -140,39 +81,6 @@ const CreditSimulator = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Seletor de Clínica */}
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-gray-700">
-                    Selecione a Clínica *
-                  </label>
-                  <Select value={selectedClinic} onValueChange={setSelectedClinic}>
-                    <SelectTrigger className="h-12 text-base">
-                      <SelectValue placeholder="Escolha uma clínica" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loadingClinics ? (
-                        <SelectItem value="loading" disabled>
-                          Carregando clínicas...
-                        </SelectItem>
-                      ) : clinics.length > 0 ? (
-                        clinics.map((clinic) => (
-                          <SelectItem key={clinic.id} value={clinic.id}>
-                            {clinic.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="none" disabled>
-                          Nenhuma clínica encontrada.
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {clinics.length === 0 && !loadingClinics && (
-                    <p className="text-xs text-muted-foreground">
-                      Nenhuma clínica disponível no momento.
-                    </p>
-                  )}
-                </div>
 
                 {/* Valor do Tratamento */}
                 <div className="space-y-4">

@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 interface Chat {
@@ -125,7 +124,7 @@ export default function MessagesPage() {
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
-    
+
     const message: Message = {
       id: Date.now().toString(),
       sender: 'patient',
@@ -133,19 +132,18 @@ export default function MessagesPage() {
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       type: 'text'
     };
-    
+
     setSelectedChat({
       ...selectedChat,
       messages: [...selectedChat.messages, message]
     });
-    
+
     setNewMessage('');
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -177,9 +175,8 @@ export default function MessagesPage() {
                       {filteredChats.map(chat => (
                         <div
                           key={chat.id}
-                          className={`p-3 cursor-pointer hover:bg-secondary transition-colors ${
-                            selectedChat.id === chat.id ? 'bg-secondary' : ''
-                          }`}
+                          className={`p-3 cursor-pointer hover:bg-secondary transition-colors ${selectedChat.id === chat.id ? 'bg-secondary' : ''
+                            }`}
                           onClick={() => setSelectedChat(chat)}
                         >
                           <div className="flex items-center gap-3">
@@ -194,7 +191,7 @@ export default function MessagesPage() {
                                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-background" />
                               )}
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-medium truncate">{chat.clinicName}</h4>
@@ -206,7 +203,7 @@ export default function MessagesPage() {
                                 {chat.lastMessage}
                               </p>
                             </div>
-                            
+
                             {chat.unreadCount > 0 && (
                               <Badge className="h-5 w-5 p-0 flex items-center justify-center text-xs">
                                 {chat.unreadCount}
@@ -239,7 +236,7 @@ export default function MessagesPage() {
                           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-success rounded-full border-2 border-background" />
                         )}
                       </div>
-                      
+
                       <div>
                         <h3 className="font-semibold">{selectedChat.clinicName}</h3>
                         <p className="text-sm text-muted-foreground">
@@ -247,7 +244,7 @@ export default function MessagesPage() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="sm">
                         <Phone className="h-4 w-4" />
@@ -271,16 +268,14 @@ export default function MessagesPage() {
                       {selectedChat.messages.map(message => (
                         <div
                           key={message.id}
-                          className={`flex ${
-                            message.sender === 'patient' ? 'justify-end' : 'justify-start'
-                          }`}
+                          className={`flex ${message.sender === 'patient' ? 'justify-end' : 'justify-start'
+                            }`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
-                              message.sender === 'patient'
+                            className={`max-w-[70%] rounded-lg p-3 ${message.sender === 'patient'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-secondary'
-                            }`}
+                              }`}
                           >
                             <p className="text-sm">{message.content}</p>
                             <span className="text-xs opacity-70 mt-1 block">
@@ -301,7 +296,7 @@ export default function MessagesPage() {
                     <Button variant="ghost" size="sm">
                       <Paperclip className="h-4 w-4" />
                     </Button>
-                    
+
                     <Input
                       placeholder="Digite sua mensagem..."
                       value={newMessage}
@@ -309,7 +304,7 @@ export default function MessagesPage() {
                       onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                       className="flex-1"
                     />
-                    
+
                     <Button onClick={sendMessage} disabled={!newMessage.trim()}>
                       <Send className="h-4 w-4" />
                     </Button>

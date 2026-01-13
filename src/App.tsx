@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
+import MainLayout from "./components/MainLayout";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPageSimple";
 import NotFound from "./pages/NotFound";
@@ -104,87 +105,74 @@ const App = () => (
                   <AuthRedirect />
                   {/* <ChatWidget /> */}
                   <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/debug-auth" element={<DebugAuth />} />
-                    <Route path="/auth" element={<AuthPage />} />
-                    <Route path="/auth/confirm" element={<AuthConfirm />} />
-                    <Route path="/search" element={<SearchClinics />} />
-                    <Route path="/clinic/:id" element={<ClinicProfile />} />
-                    <Route path="/booking/:clinicId" element={<BookingPage />} />
-                    <Route path="/payment" element={<PaymentPage />} />
-                    <Route path="/booking-confirmation" element={<BookingConfirmation />} />
-                    <Route path="/profile" element={<UserProfile />} />
-                    <Route path="/admin-profile" element={<UserProfile />} />
-                    <Route path="/master-profile" element={<UserProfile />} />
-                    <Route path="/patient-profile" element={<UserProfile />} />
-                    <Route path="/clinic-profile" element={<UserProfile />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/favorites" element={<FavoritesPage />} />
-                    <Route path="/messages" element={<MessagesPage />} />
-                    <Route path="/reviews" element={<ReviewsPage />} />
-                    <Route path="/specialties" element={<SpecialtiesPage />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                    <Route path="/para-clinicas" element={<ParaClinicasPage />} />
-                    <Route path="/para-dentistas" element={<ParaDentistasPage />} />
-                    <Route path="/parceria-clinicas" element={<ClinicPartnership />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                    <Route path="/loan-request" element={<LoanRequestPage />} />
-                    <Route path="/patient-dashboard" element={<PatientDashboard />} />
-                    <Route path="/clinic-dashboard" element={<NewClinicDashboard />} />
-                    <Route path="/clinic-booking" element={<ClinicBooking />} />
-                    <Route path="/loyalty-program" element={<LoyaltyProgram />} />
-                    <Route path="/preventive-care" element={<PreventiveCare />} />
-                    <Route path="/plans" element={<PlansPage />} />
-                    <Route path="/subscription" element={<SubscriptionPage />} />
-                    <Route path="/como-funciona" element={<HowItWorksPage />} />
-                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                    <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-                    <Route path="/admin/clinics" element={<AdminRoute><AdminClinics /></AdminRoute>} />
-                    <Route path="/admin/appointments" element={<AdminRoute><AdminAppointments /></AdminRoute>} />
-                    <Route path="/admin/finances" element={<AdminRoute><AdminFinances /></AdminRoute>} />
-                    <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
-                    <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-                    <Route path="/admin/site-config" element={<AdminRoute><AdminSiteConfig /></AdminRoute>} />
-                    <Route path="/admin/credentialing" element={<AdminRoute><AdminCredentialing /></AdminRoute>} />
-                    <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
-                    <Route path="/admin/security" element={<AdminRoute><AdminSecurity /></AdminRoute>} />
-                    <Route path="/admin/audit" element={<AdminRoute><AdminAudit /></AdminRoute>} />
+                    <Route element={<MainLayout />}>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/search" element={<SearchClinics />} />
+                      <Route path="/clinic/:id" element={<ClinicProfile />} />
+                      <Route path="/booking/:clinicId" element={<BookingPage />} />
+                      <Route path="/payment" element={<PaymentPage />} />
+                      <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+                      <Route path="/profile" element={<UserProfile />} />
+                      <Route path="/admin-profile" element={<UserProfile />} />
+                      <Route path="/master-profile" element={<UserProfile />} />
+                      <Route path="/patient-profile" element={<UserProfile />} />
+                      <Route path="/clinic-profile" element={<UserProfile />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/favorites" element={<FavoritesPage />} />
+                      <Route path="/messages" element={<MessagesPage />} />
+                      <Route path="/reviews" element={<ReviewsPage />} />
+                      <Route path="/specialties" element={<SpecialtiesPage />} />
+                      <Route path="/contact" element={<ContactPage />} />
+                      <Route path="/para-clinicas" element={<ParaClinicasPage />} />
+                      <Route path="/para-dentistas" element={<ParaDentistasPage />} />
+                      <Route path="/parceria-clinicas" element={<ClinicPartnership />} />
+                      <Route path="/about" element={<AboutPage />} />
+                      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                      <Route path="/loan-request" element={<LoanRequestPage />} />
+                      <Route path="/plans" element={<PlansPage />} />
+                      <Route path="/subscription" element={<SubscriptionPage />} />
+                      <Route path="/como-funciona" element={<HowItWorksPage />} />
+                      <Route path="/loyalty-program" element={<LoyaltyProgram />} />
+                      <Route path="/preventive-care" element={<PreventiveCare />} />
+                      <Route path="/notificacoes" element={<NotificacoesPage />} />
+                      <Route path="/agendamento/:clinicaId" element={<AgendamentoPage />} />
+                      <Route path="/agendamento-confirmacao" element={<AgendamentoConfirmacao />} />
+                      <Route path="/agendamentos" element={<AgendamentosPage />} />
+                      <Route path="/agendamentos/:clinicaId" element={<AgendamentosPage />} />
+                      <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
+                      <Route path="/configuracao-horarios" element={<AdminRoute><ConfiguracaoHorariosPage /></AdminRoute>} />
+                      <Route path="/relatorios-agendamentos" element={<AdminRoute><RelatoriosAgendamentosPage /></AdminRoute>} />
+                    </Route>
+
+                    {/* Dashboards - fora do layout principal ou com layout próprio */}
+                    {/* Dashboards - fora do layout principal ou com layout próprio */}
+                    <Route path="/patient-dashboard" element={<Navigate to="/patient/dashboard" replace />} />
                     <Route path="/patient/dashboard" element={<PatientDashboard />} />
-                    <Route path="/patient/plan" element={<PatientPlan />} />
-                    <Route path="/patient/credit" element={<PatientCredit />} />
+                    <Route path="/clinic-dashboard" element={<ClinicDashboard />} />
+                    <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+
+                    {/* Rotas de Paciente (Dashboard Links) */}
                     <Route path="/patient/credit-request" element={<PatientCreditRequest />} />
-                    <Route path="/patient/documents" element={<PatientDocuments />} />
-                    <Route path="/patient/profile" element={<PatientProfile />} />
-                    <Route path="/payment/:paymentId" element={<PatientPayment />} />
-                    <Route path="/patient/settings" element={<PatientSettings />} />
+                    <Route path="/patient/credit" element={<PatientCredit />} />
                     <Route path="/patient/appointments" element={<PatientAppointments />} />
-                    <Route path="/clinic/appointments" element={<ClinicAppointments />} />
-                    <Route path="/clinic/credit-analysis/:requestId" element={<ClinicCreditAnalysis />} />
-                    <Route path="/clinic-offers" element={<OffersPage />} />
-                    {/* Redirecionamento automático da rota antiga para o dashboard correto */}
-                    <Route path="/clinic/dashboard" element={<Navigate to="/clinic-dashboard?tab=credito" replace />} />
-                    <Route path="/admin/credit-management" element={<AdminRoute><AdminCreditManagement /></AdminRoute>} />
-                    <Route path="/admin/credit-details/:requestId" element={<AdminRoute><AdminCreditDetails /></AdminRoute>} />
-                    <Route path="/notificacoes" element={<NotificacoesPage />} />
-                    <Route path="/agendamento/:clinicaId" element={<AgendamentoPage />} />
-                    <Route path="/agendamento-confirmacao" element={<AgendamentoConfirmacao />} />
-                    <Route path="/agendamentos" element={<AgendamentosPage />} />
-                    <Route path="/agendamentos/:clinicaId" element={<AgendamentosPage />} />
-                    <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
-                    <Route path="/configuracao-horarios" element={<ConfiguracaoHorariosPage />} />
-                    <Route path="/relatorios-agendamentos" element={<RelatoriosAgendamentosPage />} />
+                    <Route path="/patient/appointments" element={<PatientAppointments />} />
+                    <Route path="/patient/documents" element={<PatientDocuments />} />
+                    <Route path="/patient/plan" element={<PatientPlan />} />
+                    <Route path="/patient/profile" element={<PatientProfile />} />
+                    <Route path="/patient/settings" element={<PatientSettings />} />
+                    <Route path="/patient/payment" element={<PatientPayment />} />
+
                     <Route path="/login-paciente" element={<PatientLoginPage />} />
                     <Route path="/login-clinica" element={<ClinicLoginPage />} />
                     <Route path="/patient-login" element={<PatientLoginPage />} />
                     <Route path="/clinic-login" element={<ClinicLoginPage />} />
                     <Route path="/admin-login" element={<AdminLoginPage />} />
                     <Route path="/chat-demo" element={<ChatDemo />} />
-                    <Route path="/stripe-test" element={<StripeTestPage />} />
-                    <Route path="/customer-portal-test" element={<CustomerPortalTestPage />} />
-                    <Route path="/test-credit" element={<TestCreditPage />} />
+                    <Route path="/stripe-test" element={<AdminRoute><StripeTestPage /></AdminRoute>} />
+                    <Route path="/customer-portal-test" element={<AdminRoute><CustomerPortalTestPage /></AdminRoute>} />
+                    <Route path="/test-credit" element={<AdminRoute><TestCreditPage /></AdminRoute>} />
                     <Route path="/proposal/:requestId" element={<ProposalDetailsPage />} />
-                    
+
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

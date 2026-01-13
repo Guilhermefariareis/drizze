@@ -34,6 +34,9 @@ const HeroSection = () => {
 
   const popularTreatments = allTreatments.filter(t => t.popular);
   const categorizedTreatments = allTreatments.reduce((acc, treatment) => {
+    // Evitar que tratamentos populares apareçam duplicados na categoria
+    if (treatment.popular) return acc;
+
     if (!acc[treatment.category]) {
       acc[treatment.category] = [];
     }
@@ -242,7 +245,11 @@ const HeroSection = () => {
                           return (
                             <SelectItem key={treatment.name} value={treatment.name}>
                               <div className="flex items-center gap-2">
-                                <IconComponent className="w-4 h-4" />
+                                {IconComponent === Zap ? (
+                                  <img src="/logo-white-final.png" alt="Logo" className="w-4 h-4 object-contain" />
+                                ) : (
+                                  <IconComponent className="w-4 h-4" />
+                                )}
                                 {treatment.name}
                               </div>
                             </SelectItem>
@@ -260,7 +267,11 @@ const HeroSection = () => {
                               return (
                                 <SelectItem key={`${category}-${treatment.name}`} value={treatment.name}>
                                   <div className="flex items-center gap-2">
-                                    <IconComponent className="w-4 h-4" />
+                                    {IconComponent === Zap ? (
+                                      <img src="/logo-white-final.png" alt="Logo" className="w-4 h-4 object-contain" />
+                                    ) : (
+                                      <IconComponent className="w-4 h-4" />
+                                    )}
                                     {treatment.name}
                                   </div>
                                 </SelectItem>
@@ -285,7 +296,8 @@ const HeroSection = () => {
                       }
                     }}
                   >
-                    ⚡ SIMULE SEU CRÉDITO
+                    <img src="/logo-white-final.png" alt="Logo" className="w-4 h-4 object-contain mr-2 invert brightness-0" />
+                    SIMULE SEU CRÉDITO
                   </Button>
                 </div>
               </div>

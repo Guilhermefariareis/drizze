@@ -1,10 +1,10 @@
-import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  Calendar, 
-  DollarSign, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Calendar,
+  DollarSign,
+  Settings,
   BarChart3,
   MessageSquare,
   Shield,
@@ -31,8 +31,8 @@ const menuItems = [
   { icon: FileCheck, label: 'Novo Credenciamento', path: '/admin/credentialing' },
   { icon: Calendar, label: 'Consultas', path: '/admin/appointments' },
   { icon: DollarSign, label: 'Financeiro', path: '/admin/financial' },
-    { icon: CreditCard, label: 'Gerenciamento de Crédito', path: '/admin/credit-management' },
-    { icon: BarChart3, label: 'Relatórios', path: '/admin/reports' },
+  { icon: CreditCard, label: 'Gerenciamento de Crédito', path: '/admin/credit-management' },
+  { icon: BarChart3, label: 'Relatórios', path: '/admin/reports' },
   { icon: Settings, label: 'Config. Site', path: '/admin/site-config' },
   { icon: MessageSquare, label: 'Tickets Suporte', path: '/admin/support' },
   { icon: Shield, label: 'Segurança', path: '/admin/security' },
@@ -53,9 +53,9 @@ export function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
         <div className="flex items-center justify-between">
           {open && (
             <div className="flex flex-col items-center">
-              <img 
-                src={config.site_logo?.url || "/doutorizze-uploads/e4e59e9c-6806-48a8-be4c-476ac461beb9.png"} 
-                alt="Logo" 
+              <img
+                src="/logo-white-final.png"
+                alt="Logo"
                 className="h-16 w-auto object-contain mb-2"
               />
               <p className="text-xs text-muted-foreground">Admin Panel</p>

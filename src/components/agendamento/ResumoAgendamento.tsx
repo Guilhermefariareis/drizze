@@ -17,6 +17,11 @@ interface ResumoAgendamentoProps {
   onConfirmar: () => void;
   onVoltar: () => void;
   loading?: boolean;
+  perfilPaciente?: {
+    nome: string;
+    email: string;
+    telefone: string;
+  } | null;
 }
 
 interface DadosClinica {
@@ -44,7 +49,8 @@ const ResumoAgendamento: React.FC<ResumoAgendamentoProps> = ({
   horarioSelecionado,
   onConfirmar,
   onVoltar,
-  loading = false
+  loading = false,
+  perfilPaciente = null
 }) => {
   const [dadosClinica, setDadosClinica] = useState<DadosClinica | null>(null);
   const [dadosProfissional, setDadosProfissional] = useState<DadosProfissional | null>(null);
@@ -58,7 +64,7 @@ const ResumoAgendamento: React.FC<ResumoAgendamentoProps> = ({
   const carregarDados = async () => {
     setCarregando(true);
     setError(null);
-    
+
     try {
       // Carregar dados da clínica
       const { data: clinica, error: clinicaError } = await supabase
@@ -131,16 +137,15 @@ const ResumoAgendamento: React.FC<ResumoAgendamentoProps> = ({
 
   const renderAvaliacao = (media?: number, total?: number) => {
     if (!media || !total) return null;
-    
+
     return (
       <div className="flex items-center gap-1 text-sm text-gray-600">
         <div className="flex items-center">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className={`w-3 h-3 ${
-                i < Math.round(media) ? 'text-yellow-400' : 'text-gray-300'
-              }`}
+              className={`w-3 h-3 ${i < Math.round(media) ? 'text-yellow-400' : 'text-gray-300'
+                }`}
             >
               ★
             </div>
@@ -183,8 +188,8 @@ const ResumoAgendamento: React.FC<ResumoAgendamentoProps> = ({
         <CardContent>
           <div className="text-center py-8 text-red-600">
             <p>{error}</p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={carregarDados}
               className="mt-2"
             >
@@ -227,6 +232,42 @@ const ResumoAgendamento: React.FC<ResumoAgendamentoProps> = ({
 
         <Separator />
 
+        {/* Informações do Paciente */}
+        <div>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+            <h3 className="font-semibold text-gray-900 text-responsive-sm">Seus Dados</h3>
+          </div>
+          <div className="space-y-1 sm:space-y-2">
+            <div className="flex items-center gap-2">
+              <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+              <p className="text-gray-900 text-responsive-sm font-medium">
+                {perfilPaciente?.nome || 'Carregando...'}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+              {perfilPaciente?.telefone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                  <p className="text-gray-600 text-responsive-xs sm:text-responsive-sm">
+                    {perfilPaciente.telefone}
+                  </p>
+                </div>
+              )}
+              {perfilPaciente?.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                  <p className="text-gray-600 text-responsive-xs sm:text-responsive-sm">
+                    {perfilPaciente.email}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
         {/* Profissional */}
         {dadosProfissional && (
           <div>
@@ -258,8 +299,6 @@ const ResumoAgendamento: React.FC<ResumoAgendamentoProps> = ({
             </div>
           </div>
         )}
-
-        <Separator />
 
         {/* Clínica */}
         {dadosClinica && (

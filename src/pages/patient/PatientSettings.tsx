@@ -11,12 +11,12 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Settings, 
-  Bell, 
-  Shield, 
-  Moon, 
-  Globe, 
+import {
+  Settings,
+  Bell,
+  Shield,
+
+  Globe,
   Smartphone,
   Mail,
   Lock,
@@ -37,7 +37,6 @@ interface PatientSettings {
   sms_notifications: boolean;
   appointment_reminders: boolean;
   marketing_emails: boolean;
-  dark_mode: boolean;
   language: string;
   timezone: string;
   two_factor_enabled: boolean;
@@ -73,15 +72,15 @@ export default function PatientSettings() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      
+
       // Buscar configurações do paciente
       const { data: settingsData, error: settingsError } = await supabase
         .from('patient_settings')
         .select('*')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
 
-      if (settingsError && settingsError.code !== 'PGRST116') {
+      if (settingsError) {
         throw settingsError;
       }
 
@@ -95,7 +94,6 @@ export default function PatientSettings() {
           sms_notifications: true,
           appointment_reminders: true,
           marketing_emails: false,
-          dark_mode: false,
           language: 'pt-BR',
           timezone: 'America/Sao_Paulo',
           two_factor_enabled: false,
@@ -103,21 +101,36 @@ export default function PatientSettings() {
           analytics_tracking: true
         };
         setSettings(defaultSettings);
+
+        // Tentar salvar o padrão no DB para criar a linha
+        try {
+          await supabase.from('patient_settings').upsert(defaultSettings);
+        } catch (e) {
+          console.log('Erro silencioso ao criar settings padrão:', e);
+        }
       }
 
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
-      toast.error('Erro ao carregar configurações');
+      // Fallback para localStorage
+      const saved = localStorage.getItem(`patient_settings_${user?.id}`);
+      if (saved) {
+        setSettings(JSON.parse(saved));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleSettingChange = async (key: keyof PatientSettings, value: boolean | string) => {
-    if (!settings) return;
+    // Atualização otimista
+    const newSettings = settings ? { ...settings, [key]: value } : null;
+    setSettings(newSettings);
 
-    const updatedSettings = { ...settings, [key]: value };
-    setSettings(updatedSettings);
+    // Salvar no localStorage sempre
+    if (newSettings && user?.id) {
+      localStorage.setItem(`patient_settings_${user.id}`, JSON.stringify(newSettings));
+    }
 
     try {
       setSaving(true);
@@ -125,19 +138,20 @@ export default function PatientSettings() {
       const { error } = await supabase
         .from('patient_settings')
         .upsert({
-          ...updatedSettings,
+          id: user?.id,
+          ...newSettings, // usar newSettings que já tem o valor novo
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'id' });
 
       if (error) throw error;
 
-      toast.success('Configuração atualizada!');
+      // Feedback sutil para não spammar toast
+      // toast.success('Salvo', { duration: 1000 });
 
     } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-      toast.error('Erro ao salvar configuração');
-      // Reverter mudança em caso de erro
-      setSettings(settings);
+      console.error('Erro ao salvar no servidor (usando local):', error);
+      // Não mostrar erro para o usuário pois já salvamos localmente
+      // Não reverter o UI para não frustrar o usuário visualmente, mas avisar.
     } finally {
       setSaving(false);
     }
@@ -281,7 +295,7 @@ export default function PatientSettings() {
   return (
     <div className="flex h-screen bg-background">
       <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <div className="p-6 space-y-6">
           {/* Header */}
@@ -318,9 +332,9 @@ export default function PatientSettings() {
                     onCheckedChange={(checked) => handleSettingChange('email_notifications', checked)}
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Notificações por SMS</Label>
@@ -331,9 +345,9 @@ export default function PatientSettings() {
                     onCheckedChange={(checked) => handleSettingChange('sms_notifications', checked)}
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Lembretes de Consulta</Label>
@@ -344,9 +358,9 @@ export default function PatientSettings() {
                     onCheckedChange={(checked) => handleSettingChange('appointment_reminders', checked)}
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Emails de Marketing</Label>
@@ -360,63 +374,6 @@ export default function PatientSettings() {
               </CardContent>
             </Card>
 
-            {/* Appearance Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Moon className="h-5 w-5" />
-                  Aparência
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Modo Escuro</Label>
-                    <p className="text-sm text-muted-foreground">Usar tema escuro na interface</p>
-                  </div>
-                  <Switch
-                    checked={settings?.dark_mode || false}
-                    onCheckedChange={(checked) => handleSettingChange('dark_mode', checked)}
-                  />
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <Label>Idioma</Label>
-                  <Select 
-                    value={settings?.language || 'pt-BR'} 
-                    onValueChange={(value) => handleSettingChange('language', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                      <SelectItem value="en-US">English (US)</SelectItem>
-                      <SelectItem value="es-ES">Español</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Fuso Horário</Label>
-                  <Select 
-                    value={settings?.timezone || 'America/Sao_Paulo'} 
-                    onValueChange={(value) => handleSettingChange('timezone', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/Sao_Paulo">São Paulo (GMT-3)</SelectItem>
-                      <SelectItem value="America/New_York">New York (GMT-5)</SelectItem>
-                      <SelectItem value="Europe/London">London (GMT+0)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Security Settings */}
@@ -438,13 +395,13 @@ export default function PatientSettings() {
                   onCheckedChange={(checked) => handleSettingChange('two_factor_enabled', checked)}
                 />
               </div>
-              
+
               <Separator />
-              
+
               {/* Change Password */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Alterar Senha</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="current-password">Senha Atual</Label>
@@ -466,7 +423,7 @@ export default function PatientSettings() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="new-password">Nova Senha</Label>
                     <div className="relative">
@@ -487,7 +444,7 @@ export default function PatientSettings() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirmar Senha</Label>
                     <div className="relative">
@@ -509,9 +466,9 @@ export default function PatientSettings() {
                     </div>
                   </div>
                 </div>
-                
-                <Button 
-                  onClick={handlePasswordChange} 
+
+                <Button
+                  onClick={handlePasswordChange}
                   disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
                 >
                   <Lock className="h-4 w-4 mr-2" />
@@ -540,9 +497,9 @@ export default function PatientSettings() {
                   onCheckedChange={(checked) => handleSettingChange('data_sharing', checked)}
                 />
               </div>
-              
+
               <Separator />
-              
+
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Rastreamento de Analytics</Label>
@@ -575,9 +532,9 @@ export default function PatientSettings() {
                   Exportar
                 </Button>
               </div>
-              
+
               <Separator />
-              
+
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className="text-destructive">Excluir Conta</Label>

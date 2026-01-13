@@ -6,7 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { Heart, Calendar, CheckCircle, Clock, Bell, ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const PreventiveCare = () => {
@@ -115,8 +114,7 @@ const PreventiveCare = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/profile">
@@ -151,7 +149,7 @@ const PreventiveCare = () => {
                     {Math.round(completionRate)}% completo
                   </Badge>
                 </div>
-                
+
                 <Progress value={completionRate} className="h-2 mb-4" />
                 <p className="text-xs text-muted-foreground">
                   Continue mantendo seus cuidados preventivos em dia para uma saúde bucal perfeita!
@@ -181,7 +179,7 @@ const PreventiveCare = () => {
                           {getStatusText(care.status)}
                         </Badge>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Frequência</p>
@@ -196,7 +194,7 @@ const PreventiveCare = () => {
                           <p className="font-medium">{care.nextDue}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-2 mt-3">
                         <Button size="sm" variant="outline" className="h-8 text-xs">
                           <Calendar className="h-3 w-3 mr-1" />
@@ -255,7 +253,7 @@ const PreventiveCare = () => {
                       <p className="text-xs text-red-700">Venceu em 10/01/2025</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <Clock className="h-4 w-4 text-yellow-600" />
                     <div>

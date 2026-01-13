@@ -2,7 +2,6 @@ import { Shield, Heart, Users, Award, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function AboutPage() {
@@ -59,8 +58,7 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       {/* Hero Section */}
       <section className="bg-gradient-hero py-20 pt-32"> {/* Adiciona pt-32 para compensar navbar fixa */}
         <div className="container mx-auto px-4">
@@ -68,17 +66,17 @@ export default function AboutPage() {
             <Badge className="mb-6 bg-white/20 text-white hover:bg-white/30">
               Sobre a Doutorizze
             </Badge>
-            
+
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Transformando sorrisos,
               <span className="text-accent block">conectando vidas</span>
             </h1>
-            
+
             <p className="text-xl mb-8 leading-relaxed opacity-90">
-              Somos a maior plataforma de agendamento odontológico do Brasil, 
+              Somos a maior plataforma de agendamento odontológico do Brasil,
               conectando pacientes aos melhores dentistas com segurança e praticidade.
             </p>
-            
+
             <Button size="lg" className="bg-white text-primary hover:bg-white/90">
               Conheça Nossa História
             </Button>
@@ -109,21 +107,21 @@ export default function AboutPage() {
               <div>
                 <h2 className="text-3xl font-bold mb-6">Nossa Missão</h2>
                 <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                  Democratizar o acesso à saúde bucal de qualidade no Brasil, conectando 
-                  pacientes aos melhores profissionais através de uma plataforma segura, 
+                  Democratizar o acesso à saúde bucal de qualidade no Brasil, conectando
+                  pacientes aos melhores profissionais através de uma plataforma segura,
                   transparente e fácil de usar.
                 </p>
                 <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                  Acreditamos que todo brasileiro merece um sorriso saudável e bonito, 
+                  Acreditamos que todo brasileiro merece um sorriso saudável e bonito,
                   e trabalhamos todos os dias para tornar isso realidade.
                 </p>
                 <Button>Faça Parte da Nossa Missão</Button>
               </div>
-              
+
               <div className="relative">
-                <img 
-                  src="/api/placeholder/500/400" 
-                  alt="Missão Doutorizze" 
+                <img
+                  src="/api/placeholder/500/400"
+                  alt="Missão Doutorizze"
                   className="rounded-2xl shadow-elegant"
                 />
                 <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">
@@ -150,11 +148,11 @@ export default function AboutPage() {
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold mb-4">Nossos Valores</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Os princípios que guiam cada decisão e ação em nossa jornada 
+                Os princípios que guiam cada decisão e ação em nossa jornada
                 para transformar a saúde bucal no Brasil.
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {values.map((value) => (
                 <Card key={value.title} className="text-center hover-lift">
@@ -179,17 +177,17 @@ export default function AboutPage() {
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold mb-4">Nossa Equipe</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Conheça as pessoas que trabalham incansavelmente para 
+                Conheça as pessoas que trabalham incansavelmente para
                 transformar a experiência odontológica no Brasil.
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               {team.map((member) => (
                 <Card key={member.name} className="text-center hover-lift">
                   <CardContent className="p-6">
-                    <img 
-                      src={member.image} 
+                    <img
+                      src={member.image}
                       alt={member.name}
                       className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
                     />
@@ -214,7 +212,7 @@ export default function AboutPage() {
                 A evolução da Doutorizze ao longo dos anos
               </p>
             </div>
-            
+
             <div className="space-y-8">
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
@@ -229,7 +227,7 @@ export default function AboutPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
                   <div className="w-4 h-4 bg-primary rounded-full"></div>
@@ -243,7 +241,7 @@ export default function AboutPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
                   <div className="w-4 h-4 bg-primary rounded-full"></div>
@@ -257,7 +255,7 @@ export default function AboutPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
                   <div className="w-4 h-4 bg-primary rounded-full"></div>
@@ -283,7 +281,7 @@ export default function AboutPage() {
               Pronto para Transformar seu Sorriso?
             </h2>
             <p className="text-xl mb-8 opacity-90">
-              Junte-se aos milhares de brasileiros que já encontraram 
+              Junte-se aos milhares de brasileiros que já encontraram
               o dentista ideal através da nossa plataforma.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

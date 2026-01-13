@@ -11,7 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 // ---- Tipos auxiliares ----
@@ -142,14 +141,14 @@ export default function UserProfile() {
             .select('logo_url, cover_image_url')
             .eq('clinic_id', clinicData.id)
             .maybeSingle();
-          
+
           // Combinar dados da clínica com dados do perfil
           const combinedData = {
             ...clinicData,
             logo_url: profileData?.logo_url || clinicData.logo_url,
             hero_image_url: profileData?.cover_image_url || clinicData.hero_image_url
           };
-          
+
           setClinic(combinedData as ClinicData);
           const addr = typeof clinicData.address === 'string'
             ? safeParseJSON(clinicData.address)
@@ -278,9 +277,9 @@ export default function UserProfile() {
       // Atualizar na tabela clinic_profiles em vez de clinics
       const { error: updErr } = await supabase
         .from('clinic_profiles')
-        .upsert({ 
+        .upsert({
           clinic_id: clinic.id,
-          [field]: publicUrl 
+          [field]: publicUrl
         }, {
           onConflict: 'clinic_id'
         });
@@ -304,7 +303,6 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
@@ -316,7 +314,7 @@ export default function UserProfile() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" /> 
+              <User className="w-5 h-5" />
               {clinic && (role === 'clinic' || role === 'admin') ? 'Meu Perfil & Clínica' : 'Meu Perfil'}
             </CardTitle>
           </CardHeader>

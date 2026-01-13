@@ -43,12 +43,11 @@ const AgendamentoPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { criarAgendamento } = useAgendamentos();
-  
+
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [clinicaInfo, setClinicaInfo] = useState<ClinicaInfo | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  // Estados do formulário
+
   const [dadosAgendamento, setDadosAgendamento] = useState({
     clinicaId: '',
     profissionalId: '',
@@ -56,13 +55,38 @@ const AgendamentoPage: React.FC = () => {
     horario: ''
   });
 
+  const [perfilPaciente, setPerfilPaciente] = useState<{
+    nome: string;
+    email: string;
+    telefone: string;
+  } | null>(null);
+
   useEffect(() => {
     const clinicaId = searchParams.get('clinica');
     if (clinicaId) {
       setDadosAgendamento(prev => ({ ...prev, clinicaId }));
       carregarDadosClinica(clinicaId);
     }
-  }, [searchParams]);
+
+    if (user) {
+      const carregarPerfil = async () => {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, email, phone')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (data) {
+          setPerfilPaciente({
+            nome: data.full_name || '',
+            email: data.email || user.email || '',
+            telefone: data.phone || ''
+          });
+        }
+      };
+      carregarPerfil();
+    }
+  }, [searchParams, user]);
 
   const carregarDadosClinica = async (clinicaId: string) => {
     setLoading(true);
@@ -128,12 +152,18 @@ const AgendamentoPage: React.FC = () => {
       const agendamentoData = {
         paciente_id: user.id,
         clinica_id: dadosAgendamento.clinicaId,
-        servico_id: 'default-service', // ✅ Campo obrigatório que estava faltando
+        servico_id: 'default-service',
         profissional_id: dadosAgendamento.profissionalId,
         data_hora: `${dadosAgendamento.data}T${dadosAgendamento.horario}:00`,
         status: 'confirmado' as const,
         observacoes: '',
-        valor: 0
+        valor: 0,
+        // Incluir dados do paciente para sincronização com a agenda da clínica
+        nome_paciente: perfilPaciente?.nome || user.user_metadata?.full_name || '',
+        email_paciente: perfilPaciente?.email || user.email || '',
+        telefone_paciente: perfilPaciente?.telefone || '',
+        tipo_agendamento: 'paciente',
+        tipo_consulta: 'paciente'
       };
 
       // Usar o mesmo hook que funciona na clínica
@@ -145,13 +175,13 @@ const AgendamentoPage: React.FC = () => {
       }
 
       // Criar notificação de confirmação
-       try {
-         await NotificacaoService.criarNotificacaoConfirmacao(
-           novoAgendamento,
-           clinicaInfo!,
-           { full_name: 'Profissional' }
-         );
-        
+      try {
+        await NotificacaoService.criarNotificacaoConfirmacao(
+          novoAgendamento,
+          clinicaInfo!,
+          { full_name: 'Profissional' }
+        );
+
         // Programar lembretes automáticos
         await NotificacaoService.programarLembretes(novoAgendamento.id);
       } catch (notifError) {
@@ -211,6 +241,7 @@ const AgendamentoPage: React.FC = () => {
             onConfirmar={confirmarAgendamento}
             onVoltar={etapaAnterior}
             loading={loading}
+            perfilPaciente={perfilPaciente}
           />
         );
 
@@ -275,11 +306,11 @@ const AgendamentoPage: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </button>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+
+          <h1 className="text-3xl font-bold text-white mb-2">
             Agendar Consulta
           </h1>
-          <p className="text-gray-600">
+          <p className="text-white/70">
             {clinicaInfo.name}
           </p>
         </div>
@@ -287,10 +318,10 @@ const AgendamentoPage: React.FC = () => {
         {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-white/90">
               Etapa {etapaAtual} de 4 - {getTituloEtapa()}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-white/50">
               {Math.round(getProgressoPercentual())}% concluído
             </span>
           </div>
@@ -335,6 +366,7 @@ const AgendamentoPage: React.FC = () => {
               onConfirmar={confirmarAgendamento}
               onVoltar={etapaAnterior}
               loading={loading}
+              perfilPaciente={perfilPaciente}
             />
           )}
         </div>
@@ -350,7 +382,7 @@ const AgendamentoPage: React.FC = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Anterior
             </Button>
-            
+
             <Button
               onClick={proximaEtapa}
               disabled={!podeAvancar()}

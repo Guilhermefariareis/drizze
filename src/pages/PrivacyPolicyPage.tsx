@@ -2,14 +2,12 @@ import { Shield, FileText, Eye, Download, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -64,13 +62,13 @@ export default function PrivacyPolicyPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="leading-relaxed">
-                  A Doutorizze ("nós", "nossa" ou "nosso") está comprometida em proteger e respeitar 
-                  sua privacidade. Esta Política de Privacidade explica como coletamos, usamos, 
+                  A Doutorizze ("nós", "nossa" ou "nosso") está comprometida em proteger e respeitar
+                  sua privacidade. Esta Política de Privacidade explica como coletamos, usamos,
                   processamos e protegemos suas informações pessoais quando você usa nossos serviços.
                 </p>
                 <p className="leading-relaxed">
-                  Ao usar nossa plataforma, você concorda com a coleta e uso de informações 
-                  de acordo com esta política. Recomendamos que você leia atentamente este 
+                  Ao usar nossa plataforma, você concorda com a coleta e uso de informações
+                  de acordo com esta política. Recomendamos que você leia atentamente este
                   documento antes de usar nossos serviços.
                 </p>
               </CardContent>
@@ -162,7 +160,7 @@ export default function PrivacyPolicyPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="leading-relaxed">
-                  Implementamos medidas de segurança técnicas e organizacionais para proteger 
+                  Implementamos medidas de segurança técnicas e organizacionais para proteger
                   suas informações pessoais:
                 </p>
                 <ul className="list-disc list-inside space-y-2 ml-4">
@@ -174,8 +172,8 @@ export default function PrivacyPolicyPage() {
                   <li>Backup seguro e planos de recuperação</li>
                 </ul>
                 <p className="text-sm text-muted-foreground">
-                  Embora implementemos medidas de segurança robustas, nenhum sistema é 100% seguro. 
-                  Recomendamos que você também tome precauções, como usar senhas fortes e não 
+                  Embora implementemos medidas de segurança robustas, nenhum sistema é 100% seguro.
+                  Recomendamos que você também tome precauções, como usar senhas fortes e não
                   compartilhar suas credenciais.
                 </p>
               </CardContent>
@@ -195,7 +193,7 @@ export default function PrivacyPolicyPage() {
                   <li>Personalizar conteúdo e anúncios</li>
                   <li>Melhorar a segurança</li>
                 </ul>
-                
+
                 <h4 className="font-semibold">Tipos de cookies:</h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -269,11 +267,11 @@ export default function PrivacyPolicyPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                   <p className="font-medium">Para exercer seus direitos:</p>
                   <p className="text-sm mt-1">
-                    Entre em contato conosco através do e-mail: <strong>privacidade@doutorizze.com.br</strong> 
+                    Entre em contato conosco através do e-mail: <strong>privacidade@doutorizze.com.br</strong>
                     ou através das configurações da sua conta.
                   </p>
                 </div>
@@ -287,13 +285,13 @@ export default function PrivacyPolicyPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="leading-relaxed">
-                  Nossos serviços não são direcionados a menores de 13 anos. Não coletamos 
+                  Nossos serviços não são direcionados a menores de 13 anos. Não coletamos
                   intencionalmente informações pessoais de crianças menores de 13 anos.
                 </p>
                 <p className="leading-relaxed">
-                  Para usuários entre 13 e 18 anos, é necessário o consentimento dos pais 
-                  ou responsáveis legais. Se tomarmos conhecimento de que coletamos dados 
-                  de uma criança menor de 13 anos, tomaremos medidas para excluir essas 
+                  Para usuários entre 13 e 18 anos, é necessário o consentimento dos pais
+                  ou responsáveis legais. Se tomarmos conhecimento de que coletamos dados
+                  de uma criança menor de 13 anos, tomaremos medidas para excluir essas
                   informações o mais rápido possível.
                 </p>
               </CardContent>
@@ -306,7 +304,7 @@ export default function PrivacyPolicyPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="leading-relaxed">
-                  Podemos atualizar nossa Política de Privacidade periodicamente. Quando 
+                  Podemos atualizar nossa Política de Privacidade periodicamente. Quando
                   fizermos alterações, notificaremos você através de:
                 </p>
                 <ul className="list-disc list-inside space-y-2 ml-4">
@@ -315,7 +313,7 @@ export default function PrivacyPolicyPage() {
                   <li>Notificação push (se habilitada)</li>
                 </ul>
                 <p className="leading-relaxed">
-                  Recomendamos que você revise esta política periodicamente para se manter 
+                  Recomendamos que você revise esta política periodicamente para se manter
                   informado sobre como protegemos suas informações.
                 </p>
               </CardContent>
@@ -328,7 +326,7 @@ export default function PrivacyPolicyPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="leading-relaxed">
-                  Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como 
+                  Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como
                   tratamos seus dados pessoais, entre em contato conosco:
                 </p>
                 <div className="grid md:grid-cols-2 gap-4">

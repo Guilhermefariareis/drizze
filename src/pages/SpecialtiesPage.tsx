@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 interface Specialty {
@@ -52,7 +51,7 @@ export default function SpecialtiesPage() {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,7 +61,7 @@ export default function SpecialtiesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Buscar especialidades
       const { data: specialtiesData, error: specialtiesError } = await supabase
         .from('specialties')
@@ -119,14 +118,14 @@ export default function SpecialtiesPage() {
   const filteredClinics = clinics.filter(clinic => {
     const matchesCity = !selectedCity || clinic.city === selectedCity;
     const matchesSpecialty = !selectedSpecialty || clinic.profile?.specialties?.includes(selectedSpecialty);
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       clinic.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesCity && matchesSpecialty && matchesSearch;
   });
 
   const getClinicCountForSpecialty = (specialtyName: string) => {
-    return clinics.filter(clinic => 
+    return clinics.filter(clinic =>
       clinic.profile?.specialties?.includes(specialtyName)
     ).length;
   };
@@ -140,8 +139,7 @@ export default function SpecialtiesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -163,7 +161,7 @@ export default function SpecialtiesPage() {
                 className="pl-10"
               />
             </div>
-            
+
             <Select value={selectedCity} onValueChange={setSelectedCity}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a cidade" />
@@ -175,7 +173,7 @@ export default function SpecialtiesPage() {
                 <SelectItem value="Belo Horizonte">Belo Horizonte</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
               <SelectTrigger>
                 <SelectValue placeholder="Especialidade" />
@@ -189,7 +187,7 @@ export default function SpecialtiesPage() {
                 ))}
               </SelectContent>
             </Select>
-            
+
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
@@ -198,42 +196,42 @@ export default function SpecialtiesPage() {
               Filtros
             </Button>
           </div>
-          
+
           {showFilters && (
             <div className="border-t pt-4">
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="verified"
                     checked={filters.verified}
-                    onCheckedChange={(checked) => setFilters({...filters, verified: checked as boolean})}
+                    onCheckedChange={(checked) => setFilters({ ...filters, verified: checked as boolean })}
                   />
                   <label htmlFor="verified" className="text-sm">Clínicas Verificadas</label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="featured"
                     checked={filters.featured}
-                    onCheckedChange={(checked) => setFilters({...filters, featured: checked as boolean})}
+                    onCheckedChange={(checked) => setFilters({ ...filters, featured: checked as boolean })}
                   />
                   <label htmlFor="featured" className="text-sm">Destaque</label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="weekend"
                     checked={filters.weekend}
-                    onCheckedChange={(checked) => setFilters({...filters, weekend: checked as boolean})}
+                    onCheckedChange={(checked) => setFilters({ ...filters, weekend: checked as boolean })}
                   />
                   <label htmlFor="weekend" className="text-sm">Atende Fins de Semana</label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="emergency"
                     checked={filters.emergency}
-                    onCheckedChange={(checked) => setFilters({...filters, emergency: checked as boolean})}
+                    onCheckedChange={(checked) => setFilters({ ...filters, emergency: checked as boolean })}
                   />
                   <label htmlFor="emergency" className="text-sm">Emergência 24h</label>
                 </div>
@@ -261,8 +259,8 @@ export default function SpecialtiesPage() {
               ))
             ) : (
               filteredSpecialties.map(specialty => (
-                <Card 
-                  key={specialty.id} 
+                <Card
+                  key={specialty.id}
                   className="hover-lift cursor-pointer"
                   onClick={() => setSelectedSpecialty(specialty.name)}
                 >
@@ -271,11 +269,11 @@ export default function SpecialtiesPage() {
                       <h3 className="font-semibold">{specialty.name}</h3>
                       <Badge variant="secondary">{getClinicCountForSpecialty(specialty.name)}</Badge>
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground mb-3">
                       {specialty.description || "Tratamento odontológico especializado"}
                     </p>
-                    
+
                     <div className="space-y-2 text-xs text-muted-foreground">
                       <div className="flex justify-between">
                         <span>Clínicas:</span>
@@ -295,7 +293,7 @@ export default function SpecialtiesPage() {
             <h2 className="text-2xl font-bold">
               Clínicas Encontradas ({filteredClinics.length})
             </h2>
-            
+
             <Select>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Ordenar por" />
@@ -308,7 +306,7 @@ export default function SpecialtiesPage() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid gap-6">
             {loading ? (
               Array.from({ length: 3 }).map((_, index) => (
@@ -344,12 +342,12 @@ export default function SpecialtiesPage() {
                           Verificada
                         </Badge>
                       </div>
-                      
+
                       <div className="md:col-span-2 p-6">
                         <div className="flex items-start justify-between mb-3">
                           <h3 className="text-xl font-semibold">{clinic.name}</h3>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 mb-3">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
@@ -369,7 +367,7 @@ export default function SpecialtiesPage() {
                             })()}
                           </span>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 mb-4">
                           <Star className="h-4 w-4 fill-warning text-warning" />
                           <span className="font-medium">{clinic.rating.toFixed(1)}</span>
@@ -377,7 +375,7 @@ export default function SpecialtiesPage() {
                             ({clinic.total_reviews} avaliações)
                           </span>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-2">
                           {clinic.profile?.specialties?.slice(0, 3).map(specialty => (
                             <Badge key={specialty} variant="outline">
@@ -386,23 +384,23 @@ export default function SpecialtiesPage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="p-6 flex flex-col justify-between">
                         <div className="mb-4">
                           <p className="text-lg font-semibold text-primary mb-2">
                             {formatPrice(clinic.services)}
                           </p>
                         </div>
-                        
+
                         <div className="space-y-2">
-                          <Button 
+                          <Button
                             className="w-full"
                             onClick={() => navigate(`/booking/${clinic.id}`)}
                           >
                             <Calendar className="h-4 w-4 mr-2" />
                             Agendar
                           </Button>
-                          
+
                           <div className="flex gap-2">
                             <Button variant="outline" size="sm" className="flex-1">
                               <Phone className="h-4 w-4 mr-1" />
@@ -419,7 +417,7 @@ export default function SpecialtiesPage() {
                 </Card>
               ))
             )}
-            
+
             {!loading && filteredClinics.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-lg">

@@ -12,20 +12,11 @@ import NotificacoesDropdown from "@/components/NotificacoesDropdown";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut } = useAuth();
   const { city, state } = useGeolocation();
   const { config } = useSiteConfig();
   const { role } = useUserRole();
 
-  // Handle scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Close mobile menu when clicking outside or on link
   useEffect(() => {
@@ -76,17 +67,14 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ease-out border-b ${isScrolled
-        ? 'bg-[#1A1A2E]/90 backdrop-blur-2xl border-white/[0.08] shadow-2xl'
-        : 'bg-[#1A1A2E]/70 backdrop-blur-xl border-white/[0.05]'
-      }`}>
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8">
-        <div className="flex justify-between items-center h-14 sm:h-16 md:h-18">
+    <nav className="sticky top-0 z-50 bg-[#1A1A2E]/90 backdrop-blur-2xl border-b border-white/[0.08] shadow-2xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20 flex-nowrap">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E94560] to-[#FB923C] flex items-center justify-center text-white font-black text-lg shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform">
-                D
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E94560] to-[#FB923C] flex items-center justify-center text-white shadow-lg shadow-[#E94560]/20 group-hover:scale-110 transition-transform">
+                <img src="/logo-white-final.png" alt="Logo" className="w-6 h-6 object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-black text-xl tracking-tight">Doutorizze</span>
@@ -100,41 +88,44 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:block">
             <div className="ml-4 xl:ml-10 flex items-center space-x-2 lg:space-x-3 xl:space-x-6">
-              <Link to="/" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3">
+              <Link to="/" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3 whitespace-nowrap">
                 Início
               </Link>
-              <Link to="/como-funciona" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3">
+              <Link to="/como-funciona" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3 whitespace-nowrap">
                 Como Funciona
               </Link>
-              <Link to="/para-clinicas" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3">
+              <Link to="/para-clinicas" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3 whitespace-nowrap">
                 Para Clínicas
               </Link>
+              <Link to="/para-dentistas" className="text-white/60 hover:text-white transition-colors font-semibold text-sm xl:text-base py-2 px-3 whitespace-nowrap">
+                Para Dentistas
+              </Link>
 
-              <div className="hidden xl:flex items-center space-x-2 ml-4 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
-                <MapPin className="h-4 w-4 text-[#E94560]" />
-                <span className="text-sm text-white/70 font-medium">
-                  {city && state ? `${city}, ${state}` : (city || state || 'Localização')}
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* Desktop Actions */}
-          <div className="hidden lg:flex items-center space-x-2 lg:space-x-3 xl:space-x-4">
+          <div className="hidden lg:flex items-center space-x-2 lg:space-x-3 xl:space-x-4 whitespace-nowrap shrink-0">
+            <div className="hidden xl:flex items-center space-x-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 shrink-0">
+              <MapPin className="h-4 w-4 text-[#E94560]" />
+              <span className="text-sm text-white/70 font-medium">
+                {city && state ? `${city}, ${state}` : (city || state || 'Localização')}
+              </span>
+            </div>
+
             {user && <NotificacoesDropdown />}
 
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 hover:bg-white/5 transition-all duration-200 rounded-xl px-2">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] flex items-center justify-center text-white font-bold">
+                  <Button variant="ghost" className="flex items-center space-x-2 hover:bg-white/5 h-10 px-2 rounded-xl border border-transparent hover:border-white/10 shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#A855F7] flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
                       {getDisplayName().charAt(0).toUpperCase()}
                     </div>
-                    <div className="hidden xl:flex flex-col items-start">
-                      <span className="text-sm font-bold text-white leading-none">{getDisplayName()}</span>
-                      <span className="text-[10px] text-white/50 uppercase font-black tracking-widest">{role}</span>
+                    <div className="hidden xl:flex flex-col items-start gap-0.5 min-w-0">
+                      <span className="text-sm font-bold text-white leading-none tracking-tight truncate max-w-[120px]">{getDisplayName()}</span>
+                      <span className="text-[9px] text-white/60 uppercase font-black tracking-widest leading-none truncate w-full">{role}</span>
                     </div>
-                    <ChevronDown className="h-4 w-4 text-white/40" />
+                    <ChevronDown className="h-4 w-4 text-white/40 shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-2 duration-200">
@@ -236,7 +227,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <Button
               variant="ghost"
               size="sm"
@@ -254,7 +245,7 @@ const Navbar = () => {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
         }`}>
         <div className="bg-white/98 backdrop-blur-sm border-t border-border shadow-lg">
           {/* Navigation Links */}
@@ -263,7 +254,8 @@ const Navbar = () => {
               {[
                 { to: '/', label: 'Início' },
                 { to: '/como-funciona', label: 'Como Funciona' },
-                { to: '/para-clinicas', label: 'Para Clínicas' }
+                { to: '/para-clinicas', label: 'Para Clínicas' },
+                { to: '/para-dentistas', label: 'Para Dentistas' }
               ].map((link, index) => (
                 <Link
                   key={link.to}

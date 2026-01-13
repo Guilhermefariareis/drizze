@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const mockReviews = [
@@ -66,7 +65,7 @@ export default function ReviewsPage() {
     service: ''
   });
 
-  const filteredReviews = mockReviews.filter(review => 
+  const filteredReviews = mockReviews.filter(review =>
     !selectedRating || review.rating.toString() === selectedRating
   );
 
@@ -91,8 +90,7 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -117,13 +115,12 @@ export default function ReviewsPage() {
                     </div>
                     <div className="flex justify-center mb-2">
                       {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star} 
-                          className={`h-5 w-5 ${
-                            star <= Math.round(averageRating) 
-                              ? 'text-warning fill-warning' 
+                        <Star
+                          key={star}
+                          className={`h-5 w-5 ${star <= Math.round(averageRating)
+                              ? 'text-warning fill-warning'
                               : 'text-muted-foreground'
-                          }`} 
+                            }`}
                         />
                       ))}
                     </div>
@@ -131,14 +128,14 @@ export default function ReviewsPage() {
                       Baseado em {mockReviews.length} avaliações
                     </p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     {ratingDistribution.map(({ rating, count, percentage }) => (
                       <div key={rating} className="flex items-center gap-2 text-sm">
                         <span className="w-8">{rating}★</span>
                         <div className="flex-1 bg-muted rounded-full h-2">
-                          <div 
-                            className="bg-warning rounded-full h-2" 
+                          <div
+                            className="bg-warning rounded-full h-2"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -174,7 +171,7 @@ export default function ReviewsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div>
                       <Label>Serviço</Label>
                       <Select>
@@ -188,7 +185,7 @@ export default function ReviewsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div>
                       <Label>Avaliação</Label>
                       <div className="flex gap-1 my-2">
@@ -197,30 +194,29 @@ export default function ReviewsPage() {
                             key={star}
                             variant="ghost"
                             size="sm"
-                            onClick={() => setNewReview({...newReview, rating: star})}
+                            onClick={() => setNewReview({ ...newReview, rating: star })}
                           >
-                            <Star 
-                              className={`h-5 w-5 ${
-                                star <= newReview.rating 
-                                  ? 'text-warning fill-warning' 
+                            <Star
+                              className={`h-5 w-5 ${star <= newReview.rating
+                                  ? 'text-warning fill-warning'
                                   : 'text-muted-foreground'
-                              }`} 
+                                }`}
                             />
                           </Button>
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label>Comentário</Label>
                       <Textarea
                         placeholder="Conte sobre sua experiência..."
                         rows={4}
                         value={newReview.comment}
-                        onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
+                        onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                       />
                     </div>
-                    
+
                     <Button className="w-full">Enviar Avaliação</Button>
                   </div>
                 </DialogContent>
@@ -251,7 +247,7 @@ export default function ReviewsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div>
                     <Label>Ordenar por</Label>
                     <Select value={sortBy} onValueChange={setSortBy}>
@@ -283,7 +279,7 @@ export default function ReviewsPage() {
                               {review.patientName.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          
+
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="font-semibold">{review.patientName}</h4>
@@ -298,17 +294,16 @@ export default function ReviewsPage() {
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="flex gap-1 mb-1">
                             {[1, 2, 3, 4, 5].map(star => (
-                              <Star 
-                                key={star} 
-                                className={`h-4 w-4 ${
-                                  star <= review.rating 
-                                    ? 'text-warning fill-warning' 
+                              <Star
+                                key={star}
+                                className={`h-4 w-4 ${star <= review.rating
+                                    ? 'text-warning fill-warning'
                                     : 'text-muted-foreground'
-                                }`} 
+                                  }`}
                               />
                             ))}
                           </div>
@@ -317,11 +312,11 @@ export default function ReviewsPage() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <p className="text-muted-foreground mb-4 leading-relaxed">
                         {review.comment}
                       </p>
-                      
+
                       {review.response && (
                         <div className="bg-muted p-4 rounded-lg mb-4">
                           <div className="flex items-center gap-2 mb-2">
@@ -334,7 +329,7 @@ export default function ReviewsPage() {
                           <p className="text-sm">{review.response.text}</p>
                         </div>
                       )}
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <Button variant="ghost" size="sm">
@@ -346,7 +341,7 @@ export default function ReviewsPage() {
                             Não útil
                           </Button>
                         </div>
-                        
+
                         <Button variant="ghost" size="sm">
                           Responder
                         </Button>
@@ -355,7 +350,7 @@ export default function ReviewsPage() {
                   </Card>
                 ))}
               </div>
-              
+
               {/* Load More */}
               <div className="text-center mt-8">
                 <Button variant="outline">

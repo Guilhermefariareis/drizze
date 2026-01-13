@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface StripeCheckoutProps {
   plan: StripePlan;
-  onSuccess?: () => void;
+  onSuccess?: (sessionId: string) => void;
   onCancel?: () => void;
 }
 
@@ -34,12 +34,12 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ plan, onSuccess, onCancel
     try {
       // Criar sessão de checkout no Stripe
       const sessionId = await createCheckoutSession(plan.stripePriceId);
-      
+
       // Redirecionar para o checkout do Stripe
       await redirectToCheckout(sessionId);
-      
+
       if (onSuccess) {
-        onSuccess();
+        onSuccess(sessionId);
       }
     } catch (err) {
       console.error('Erro no checkout:', err);
@@ -79,7 +79,7 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ plan, onSuccess, onCancel
           }).format(plan.price)}/{plan.interval === 'month' ? 'mês' : 'ano'}
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Resumo do plano */}
@@ -152,7 +152,7 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ plan, onSuccess, onCancel
                 Cancelar
               </Button>
             )}
-            
+
             <Button
               type="submit"
               disabled={!stripe || loading}

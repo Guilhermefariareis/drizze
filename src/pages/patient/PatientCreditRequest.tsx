@@ -8,45 +8,43 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ValueSlider } from '@/components/ui/value-slider';
 import { toast } from 'sonner';
-import { Loader2, CreditCard, FileText, DollarSign, Calendar } from 'lucide-react';
-import { Database } from '@/lib/supabase';
+import {
+  Loader2,
+  CreditCard,
+  FileText,
+  DollarSign,
+  Calendar,
+  Building2,
+  ChevronRight,
+  CheckCircle2,
+  ShieldCheck,
+  MapPin,
+  Clock
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface Clinic {
   id: string;
   name: string;
-  cnpj: string;
-  address: string;
-}
-
-interface CreditRequestData {
-  patient_id: string;
-  clinic_id: string;
-  requested_amount: number;
-  installments: number;
-  treatment_description: string;
-  status: string;
-  patient_name: string;
-  patient_email: string;
-  patient_phone?: string;
-  patient_cpf?: string;
-  patient_address_cep?: string;
-  patient_address_city?: string;
-  patient_address_state?: string;
+  cnpj?: string;
+  address?: any;
+  city?: string;
 }
 
 const PatientCreditRequest = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loadingClinics, setLoadingClinics] = useState(true);
-  
+  const [step, setStep] = useState(1);
+
   const [formData, setFormData] = useState({
     clinic_id: '',
-    requested_amount: '',
+    requested_amount: '1000',
     installments: '12',
     treatment_description: ''
   });
@@ -61,9 +59,10 @@ const PatientCreditRequest = () => {
 
   const fetchClinics = async () => {
     try {
+      setLoadingClinics(true);
       const { data, error } = await supabase
         .from('clinics')
-        .select('id, name, cnpj, address')
+        .select('id, name, cnpj, address, city')
         .eq('is_active', true)
         .order('name');
 
@@ -79,6 +78,14 @@ const PatientCreditRequest = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateStep1 = () => {
+    if (!formData.clinic_id) {
+      toast.error('Selecione uma clínica para continuar');
+      return false;
+    }
+    return true;
   };
 
   const validateForm = () => {
@@ -99,31 +106,26 @@ const PatientCreditRequest = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('🚀 Iniciando submissão do formulário...');
-    console.log('👤 Usuário logado:', { id: user?.id, email: user?.email });
-    console.log('📝 Dados do formulário:', formData);
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
+
     try {
-      // Buscar dados do perfil do usuário para preencher campos obrigatórios
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, phone, cpf, city, state, zip_code')
+        .select('id, full_name, email, phone, cpf, address')
         .eq('user_id', user!.id)
         .single();
 
       if (profileError) {
-        console.error('❌ Erro ao buscar perfil do usuário:', profileError);
         throw new Error('Erro ao buscar dados do perfil. Tente novamente.');
       }
 
-      // Criar a solicitação de crédito usando o profile.id
-      const creditRequestData: CreditRequestData = {
-        patient_id: profile.id, // Usar o ID do perfil, não o auth.uid()
+      const address = (profile.address as any) || {};
+
+      const creditRequestData = {
+        patient_id: profile.id,
         clinic_id: formData.clinic_id,
         requested_amount: parseFloat(formData.requested_amount),
         installments: parseInt(formData.installments),
@@ -133,228 +135,265 @@ const PatientCreditRequest = () => {
         patient_email: profile.email || user!.email || '',
         patient_phone: profile.phone || '',
         patient_cpf: profile.cpf || '',
-        // Endereço do paciente vindo do perfil
-        patient_address_city: (profile as any).city || undefined,
-        patient_address_state: (profile as any).state || undefined,
-        patient_address_cep: ((profile as any).zip_code as string | undefined)?.replace(/\D/g, '') || undefined,
+        patient_address_city: address.city || undefined,
+        patient_address_state: address.state || undefined,
+        patient_address_cep: (address.zip_code as string | undefined)?.replace(/\D/g, '') || undefined,
+        created_at: new Date().toISOString()
       };
 
-      console.log('💾 Dados que serão inseridos:', creditRequestData);
+      const { error: requestError } = await (supabase
+        .from('credit_requests' as any) as any)
+        .insert(creditRequestData);
 
-      const { data: insertedData, error: requestError } = await supabase
-        .from('credit_requests')
-        .insert(creditRequestData)
-        .select();
+      if (requestError) throw requestError;
 
-      if (requestError) {
-        console.error('❌ Erro detalhado ao inserir:', requestError);
-        throw requestError;
-      }
-
-      console.log('✅ Solicitação inserida com sucesso:', insertedData);
       toast.success('Solicitação de crédito enviada com sucesso!');
-      navigate('/patient/credit', { replace: true });
-      
+      navigate('/patient/credit');
+
     } catch (error: any) {
-      console.error('❌ Erro ao enviar solicitação:', error);
+      console.error('Erro ao enviar solicitação:', error);
       toast.error(error.message || 'Erro ao enviar solicitação de crédito');
     } finally {
       setLoading(false);
     }
   };
 
-  const installmentOptions = [
-    { value: '6', label: '6x' },
-    { value: '12', label: '12x' },
-    { value: '18', label: '18x' },
-    { value: '24', label: '24x' },
-    { value: '36', label: '36x' }
-  ];
+  const installmentOptions = [6, 12, 18, 24, 36];
 
-  if (!user) {
-    return null;
-  }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const selectedClinicData = clinics.find(c => c.id === formData.clinic_id);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <PatientSidebar />
-      
-      <div className="flex-1 p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Solicitação de Crédito
-            </h1>
-            <p className="text-gray-600">
-              Solicite crédito para financiar seu tratamento odontológico
-            </p>
+    <div className="flex min-h-screen bg-[#0F0F23] text-white">
+      <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+      <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'} p-6 lg:p-10`}>
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-blue-500" />
+                </div>
+                <span className="text-blue-500 font-bold tracking-widest text-xs uppercase">Simulação e Pedido</span>
+              </div>
+              <h1 className="text-4xl font-black tracking-tight mb-2">Solicitação de <span className="text-blue-500">Crédito</span></h1>
+              <p className="text-white/40 text-lg font-medium">Financie seu tratamento com as melhores condições do mercado.</p>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10">
+              <div className={`px-4 py-2 rounded-xl transition-all ${step === 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-white/40'}`}>
+                <span className="font-bold">1</span> Clínicas
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/20" />
+              <div className={`px-4 py-2 rounded-xl transition-all ${step === 2 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-white/40'}`}>
+                <span className="font-bold">2</span> Proposta
+              </div>
+            </div>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Dados da Solicitação
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Seleção da Clínica */}
-                <div className="space-y-2">
-                  <Label htmlFor="clinic">Clínica *</Label>
-                  {loadingClinics ? (
-                    <div className="flex items-center gap-2 p-3 border rounded-md">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-gray-500">Carregando clínicas...</span>
-                    </div>
-                  ) : (
-                    <Select
-                      value={formData.clinic_id}
-                      onValueChange={(value) => handleInputChange('clinic_id', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a clínica" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clinics.map((clinic) => (
-                          <SelectItem key={clinic.id} value={clinic.id}>
-                            {clinic.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                {/* Valor Solicitado */}
-                <div className="space-y-4">
-                  <Label className="flex items-center gap-2 text-base font-medium">
-                    <DollarSign className="h-5 w-5" />
-                    Valor Solicitado *
-                  </Label>
-                  <ValueSlider
-                    value={parseFloat(formData.requested_amount) || 1000}
-                    onChange={(value) => handleInputChange('requested_amount', value.toString())}
-                    min={100}
-                    max={50000}
-                    step={100}
-                    className="py-4"
-                  />
-                </div>
-
-                {/* Número de Parcelas */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Número de Parcelas *
-                  </Label>
-                  <Select
-                    value={formData.installments}
-                    onValueChange={(value) => handleInputChange('installments', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {installmentOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Descrição do Tratamento */}
-                <div className="space-y-2">
-                  <Label htmlFor="treatment" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Descrição do Tratamento *
-                  </Label>
-                  <Textarea
-                    id="treatment"
-                    placeholder="Descreva detalhadamente o tratamento que deseja realizar..."
-                    value={formData.treatment_description}
-                    onChange={(e) => handleInputChange('treatment_description', e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <p className="text-sm text-gray-500">
-                    Seja específico sobre o tratamento para agilizar a análise
-                  </p>
-                </div>
-
-                {/* Simulação de Parcelas */}
-                {formData.requested_amount && formData.installments && (
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-blue-900 mb-2">Simulação de Parcelas</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-blue-700">Valor Total:</span>
-                        <p className="font-semibold text-blue-900">
-                          R$ {parseFloat(formData.requested_amount).toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              {step === 1 ? (
+                <Card className="bg-white/[0.03] border-white/[0.06] backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+                  <CardHeader className="p-8 pb-4">
+                    <CardTitle className="text-xl font-bold text-white flex items-center gap-3">
+                      <Building2 className="w-5 h-5 text-blue-500" />
+                      Selecione a Clínica Parceira
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8 pt-4">
+                    {loadingClinics ? (
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
+                        <p className="text-white/40 font-medium">Carregando clínicas parceiras...</p>
                       </div>
-                      <div>
-                        <span className="text-blue-700">Parcela Estimada:</span>
-                        <p className="font-semibold text-blue-900">
-                          R$ {(parseFloat(formData.requested_amount) / parseInt(formData.installments)).toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-blue-600 mt-2">
-                      * Valores aproximados. A taxa de juros será definida após análise.
-                    </p>
-                  </div>
-                )}
-
-                {/* Aviso */}
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <h3 className="font-semibold text-yellow-800 mb-2">Importante</h3>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Sua solicitação será analisada pela clínica selecionada</li>
-                    <li>• Após aprovação da clínica, passará por análise administrativa</li>
-                    <li>• Você será notificado sobre o status da sua solicitação</li>
-                    <li>• Documentos adicionais podem ser solicitados</li>
-                  </ul>
-                </div>
-
-                {/* Botões */}
-                <div className="flex gap-4 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate('/patient/credit', { replace: true })}
-                    className="flex-1"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
-                      </>
                     ) : (
-                      'Enviar Solicitação'
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {clinics.map((clinic) => (
+                          <div
+                            key={clinic.id}
+                            onClick={() => handleInputChange('clinic_id', clinic.id)}
+                            className={`p-5 rounded-2xl border transition-all cursor-pointer group ${formData.clinic_id === clinic.id
+                              ? 'bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-500/10'
+                              : 'bg-white/5 border-white/10 hover:border-white/30'
+                              }`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className={`font-bold transition-colors ${formData.clinic_id === clinic.id ? 'text-blue-400' : 'text-white'}`}>
+                                {clinic.name}
+                              </h3>
+                              {formData.clinic_id === clinic.id && (
+                                <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-white/40 text-sm">
+                              <MapPin className="w-3 h-3" />
+                              <span>{clinic.city || 'Cidade não informada'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+                    <div className="mt-8 flex justify-end">
+                      <Button
+                        onClick={() => validateStep1() && setStep(2)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-6 rounded-2xl transition-all"
+                      >
+                        Próximo Passo <ChevronRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-white/[0.03] border-white/[0.06] backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+                  <CardHeader className="p-8 pb-4">
+                    <CardTitle className="text-xl font-bold text-white flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-blue-500" />
+                      Detalhes da Solicitação
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-8 pt-4">
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                      {/* Valor do Crédito */}
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-bold text-white/60 uppercase tracking-widest">Valor do Crédito</Label>
+                          <span className="text-3xl font-black text-blue-500">{formatCurrency(parseFloat(formData.requested_amount))}</span>
+                        </div>
+                        <ValueSlider
+                          value={parseFloat(formData.requested_amount)}
+                          onChange={(value) => handleInputChange('requested_amount', value.toString())}
+                          min={300}
+                          max={50000}
+                          step={100}
+                        />
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/20">
+                          <span>MÍN: R$ 300</span>
+                          <span>MÁX: R$ 50.000</span>
+                        </div>
+                      </div>
+
+                      {/* Parcelas */}
+                      <div className="space-y-4">
+                        <Label className="text-sm font-bold text-white/60 uppercase tracking-widest">Plano de Pagamento</Label>
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                          {installmentOptions.map((opt) => (
+                            <div
+                              key={opt}
+                              onClick={() => handleInputChange('installments', opt.toString())}
+                              className={`py-3 text-center rounded-xl border transition-all cursor-pointer font-bold ${formData.installments === opt.toString()
+                                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-105'
+                                : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'
+                                }`}
+                            >
+                              {opt}x
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Descrição */}
+                      <div className="space-y-4">
+                        <Label className="text-sm font-bold text-white/60 uppercase tracking-widest">O que você vai realizar no tratamento?</Label>
+                        <Textarea
+                          value={formData.treatment_description}
+                          onChange={(e) => handleInputChange('treatment_description', e.target.value)}
+                          placeholder="Ex: Implante dentário, limpeza geral, clareamento..."
+                          className="bg-white/5 border-white/10 rounded-2xl min-h-[120px] focus:border-blue-500/50 transition-all text-white placeholder:text-white/20"
+                        />
+                      </div>
+
+                      <div className="flex gap-4 pt-4">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setStep(1)}
+                          className="flex-1 py-6 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          Voltar
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={loading}
+                          className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 rounded-2xl transition-all shadow-lg shadow-blue-600/20"
+                        >
+                          {loading ? (
+                            <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processando...</>
+                          ) : (
+                            'Confirmar Solicitação'
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar de Informações */}
+            <div className="space-y-6">
+              <Card className="bg-white/[0.03] border-white/[0.06] backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="p-8 pb-4">
+                  <CardTitle className="text-xl font-bold text-white flex items-center gap-3">
+                    <ShieldCheck className="w-5 h-5 text-green-400" />
+                    Resumo do Pedido
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 pt-4 space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/40 text-sm font-medium">Clínica:</span>
+                      <span className="text-sm font-bold text-white text-right">{selectedClinicData?.name || 'Não selecionada'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/40 text-sm font-medium">Valor Total:</span>
+                      <span className="text-sm font-bold text-white">{formatCurrency(parseFloat(formData.requested_amount))}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/40 text-sm font-medium">Parcelas:</span>
+                      <span className="text-sm font-bold text-white">{formData.installments}x</span>
+                    </div>
+                    <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-white/40 text-sm font-medium">Parcela Estimada:</span>
+                      <span className="text-xl font-black text-amber-500">
+                        {formatCurrency(parseFloat(formData.requested_amount) / parseInt(formData.installments))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-4 h-4 text-blue-400 mt-1 shrink-0" />
+                      <p className="text-[11px] leading-relaxed text-white/60">
+                        O tempo médio de aprovação é de <strong>24 horas úteis</strong>. Após o envio, a clínica irá avaliar seu caso e entrar em contato.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dicas */}
+              <div className="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 p-8 rounded-[2rem] border border-blue-500/20 relative overflow-hidden group hover:border-blue-500/40 transition-all">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[40px] -z-10"></div>
+                <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" /> Dica Doutorizze
+                </h4>
+                <p className="text-sm text-white/60 leading-relaxed">
+                  Descreva detalhadamente o seu tratamento. Solicitações com descrições claras têm <strong>30% mais chance</strong> de aprovação rápida.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

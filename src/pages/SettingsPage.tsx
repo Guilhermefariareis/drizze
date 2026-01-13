@@ -8,13 +8,12 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function SettingsPage() {
   const [editMode, setEditMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [profile, setProfile] = useState({
     name: 'João Silva',
     email: 'joao@email.com',
@@ -50,8 +49,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -104,10 +102,10 @@ export default function SettingsPage() {
                         id="name"
                         value={profile.name}
                         disabled={!editMode}
-                        onChange={(e) => setProfile({...profile, name: e.target.value})}
+                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="email">E-mail</Label>
                       <Input
@@ -115,20 +113,20 @@ export default function SettingsPage() {
                         type="email"
                         value={profile.email}
                         disabled={!editMode}
-                        onChange={(e) => setProfile({...profile, email: e.target.value})}
+                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="phone">Telefone</Label>
                       <Input
                         id="phone"
                         value={profile.phone}
                         disabled={!editMode}
-                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="birthDate">Data de nascimento</Label>
                       <Input
@@ -136,21 +134,21 @@ export default function SettingsPage() {
                         type="date"
                         value={profile.birthDate}
                         disabled={!editMode}
-                        onChange={(e) => setProfile({...profile, birthDate: e.target.value})}
+                        onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })}
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="address">Endereço</Label>
                     <Input
                       id="address"
                       value={profile.address}
                       disabled={!editMode}
-                      onChange={(e) => setProfile({...profile, address: e.target.value})}
+                      onChange={(e) => setProfile({ ...profile, address: e.target.value })}
                     />
                   </div>
-                  
+
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="city">Cidade</Label>
@@ -158,10 +156,10 @@ export default function SettingsPage() {
                         id="city"
                         value={profile.city}
                         disabled={!editMode}
-                        onChange={(e) => setProfile({...profile, city: e.target.value})}
+                        onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="state">Estado</Label>
                       <Select value={profile.state} disabled={!editMode}>
@@ -175,18 +173,18 @@ export default function SettingsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="zipCode">CEP</Label>
                       <Input
                         id="zipCode"
                         value={profile.zipCode}
                         disabled={!editMode}
-                        onChange={(e) => setProfile({...profile, zipCode: e.target.value})}
+                        onChange={(e) => setProfile({ ...profile, zipCode: e.target.value })}
                       />
                     </div>
                   </div>
-                  
+
                   {editMode && (
                     <div className="flex gap-2">
                       <Button>
@@ -230,7 +228,7 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="newPassword">Nova senha</Label>
                     <Input
@@ -239,7 +237,7 @@ export default function SettingsPage() {
                       placeholder="Digite sua nova senha"
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
                     <Input
@@ -248,7 +246,7 @@ export default function SettingsPage() {
                       placeholder="Confirme sua nova senha"
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="twoFactor">Autenticação de dois fatores</Label>
@@ -259,10 +257,10 @@ export default function SettingsPage() {
                     <Switch
                       id="twoFactor"
                       checked={security.twoFactor}
-                      onCheckedChange={(checked) => setSecurity({...security, twoFactor: checked})}
+                      onCheckedChange={(checked) => setSecurity({ ...security, twoFactor: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="loginAlerts">Alertas de login</Label>
@@ -273,10 +271,10 @@ export default function SettingsPage() {
                     <Switch
                       id="loginAlerts"
                       checked={security.loginAlerts}
-                      onCheckedChange={(checked) => setSecurity({...security, loginAlerts: checked})}
+                      onCheckedChange={(checked) => setSecurity({ ...security, loginAlerts: checked })}
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="passwordExpiry">Expiração da senha</Label>
                     <Select value={security.passwordExpiry}>
@@ -291,7 +289,7 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <Button>Atualizar Configurações de Segurança</Button>
                 </CardContent>
               </Card>
@@ -317,10 +315,10 @@ export default function SettingsPage() {
                     <Switch
                       id="emailNotif"
                       checked={notifications.email}
-                      onCheckedChange={(checked) => setNotifications({...notifications, email: checked})}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="smsNotif">Notificações por SMS</Label>
@@ -331,10 +329,10 @@ export default function SettingsPage() {
                     <Switch
                       id="smsNotif"
                       checked={notifications.sms}
-                      onCheckedChange={(checked) => setNotifications({...notifications, sms: checked})}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, sms: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="whatsappNotif">Notificações por WhatsApp</Label>
@@ -345,10 +343,10 @@ export default function SettingsPage() {
                     <Switch
                       id="whatsappNotif"
                       checked={notifications.whatsapp}
-                      onCheckedChange={(checked) => setNotifications({...notifications, whatsapp: checked})}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, whatsapp: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="pushNotif">Notificações push</Label>
@@ -359,10 +357,10 @@ export default function SettingsPage() {
                     <Switch
                       id="pushNotif"
                       checked={notifications.push}
-                      onCheckedChange={(checked) => setNotifications({...notifications, push: checked})}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, push: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="marketingNotif">E-mails de marketing</Label>
@@ -373,10 +371,10 @@ export default function SettingsPage() {
                     <Switch
                       id="marketingNotif"
                       checked={notifications.marketing}
-                      onCheckedChange={(checked) => setNotifications({...notifications, marketing: checked})}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, marketing: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="remindersNotif">Lembretes de consulta</Label>
@@ -387,10 +385,10 @@ export default function SettingsPage() {
                     <Switch
                       id="remindersNotif"
                       checked={notifications.reminders}
-                      onCheckedChange={(checked) => setNotifications({...notifications, reminders: checked})}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, reminders: checked })}
                     />
                   </div>
-                  
+
                   <Button>Salvar Preferências</Button>
                 </CardContent>
               </Card>
@@ -419,7 +417,7 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="shareData">Compartilhar dados para pesquisa</Label>
@@ -430,10 +428,10 @@ export default function SettingsPage() {
                     <Switch
                       id="shareData"
                       checked={privacy.shareData}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, shareData: checked})}
+                      onCheckedChange={(checked) => setPrivacy({ ...privacy, shareData: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="analytics">Análise de uso</Label>
@@ -444,10 +442,10 @@ export default function SettingsPage() {
                     <Switch
                       id="analytics"
                       checked={privacy.analytics}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, analytics: checked})}
+                      onCheckedChange={(checked) => setPrivacy({ ...privacy, analytics: checked })}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="locationTracking">Rastreamento de localização</Label>
@@ -458,10 +456,10 @@ export default function SettingsPage() {
                     <Switch
                       id="locationTracking"
                       checked={privacy.locationTracking}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, locationTracking: checked})}
+                      onCheckedChange={(checked) => setPrivacy({ ...privacy, locationTracking: checked })}
                     />
                   </div>
-                  
+
                   <div className="border-t pt-4">
                     <h4 className="font-semibold mb-2">Gerenciar dados</h4>
                     <div className="space-y-2">
@@ -473,7 +471,7 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <Button>Salvar Configurações de Privacidade</Button>
                 </CardContent>
               </Card>
@@ -497,7 +495,7 @@ export default function SettingsPage() {
                       disabled
                     />
                   </div>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="expiry">Validade</Label>
@@ -508,7 +506,7 @@ export default function SettingsPage() {
                       <Input id="cvv" placeholder="123" />
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="billingAddress">Endereço de cobrança</Label>
                     <Textarea
@@ -517,7 +515,7 @@ export default function SettingsPage() {
                       rows={3}
                     />
                   </div>
-                  
+
                   <div className="border-t pt-4">
                     <h4 className="font-semibold mb-4">Histórico de pagamentos</h4>
                     <div className="space-y-2">
@@ -533,7 +531,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <Button>Atualizar Informações de Cobrança</Button>
                 </CardContent>
               </Card>

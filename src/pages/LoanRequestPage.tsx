@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Building2, MapPin, Star, ArrowLeft } from 'lucide-react';
 import parseToISO from '@/utils/dateFormatter';
@@ -34,22 +33,22 @@ export default function LoanRequestPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const clinicId = searchParams.get('clinic');
   const [clinic, setClinic] = useState<ClinicData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Form states
   const [amount, setAmount] = useState('');
   const [displayAmount, setDisplayAmount] = useState(''); // Para exibição durante digitação
   const [isTyping, setIsTyping] = useState(false); // Para controlar se está digitando
   const [installments, setInstallments] = useState('');
   const [treatmentDescription, setTreatmentDescription] = useState('');
-  
+
   // Refs para debounce
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Client data states
   const [clientFullName, setClientFullName] = useState('');
   const [clientCpf, setClientCpf] = useState('');
@@ -128,7 +127,7 @@ export default function LoanRequestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!clinic || !user) return;
 
     setSubmitting(true);
@@ -216,38 +215,38 @@ export default function LoanRequestPage() {
   const formatCurrency = (value: string) => {
     // Remove todos os caracteres não numéricos
     const numericValue = value.replace(/\D/g, '');
-    
+
     // Se não há valor, retorna vazio
     if (!numericValue) return '';
-    
+
     // Converte para número e formata
     const numberValue = parseInt(numericValue);
-    
+
     const formattedValue = new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(numberValue);
-    
+
     return formattedValue;
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/\D/g, '');
-    
+
     // Atualiza o valor interno (sem formatação)
     setAmount(rawValue);
-    
+
     // Durante a digitação, mostra apenas os números
     setDisplayAmount(rawValue);
     setIsTyping(true);
-    
+
     // Limpa o timeout anterior
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     // Define um novo timeout para formatar após parar de digitar
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
@@ -311,7 +310,7 @@ export default function LoanRequestPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -355,7 +354,7 @@ export default function LoanRequestPage() {
                   <p className="text-sm text-muted-foreground">
                     {clinic.description}
                   </p>
-                  
+
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     <span className="font-medium">{clinic.rating}</span>
@@ -437,7 +436,7 @@ export default function LoanRequestPage() {
                     {/* Client Data Section */}
                     <div className="space-y-4 border-t pt-6">
                       <h3 className="font-medium text-lg">Dados Pessoais</h3>
-                      
+
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="clientFullName">Nome Completo *</Label>
@@ -563,7 +562,7 @@ export default function LoanRequestPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

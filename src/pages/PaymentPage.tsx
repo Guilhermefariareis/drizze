@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import StripeCheckout from '@/components/StripeCheckout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +23,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
 
   const bookingData = location.state || {};
-  
+
   if (!bookingData.service) {
     navigate('/search');
     return null;
@@ -39,8 +38,8 @@ export default function PaymentPage() {
     if (paymentMethod === 'stripe') {
       try {
         setLoading(true);
-        const plans = await getStripePlans();
-        
+
+
         // Create a plan based on the booking data
         const bookingPlan = {
           id: 'booking-payment',
@@ -55,7 +54,7 @@ export default function PaymentPage() {
             `Clínica: ${bookingData.clinic?.name}`
           ]
         };
-        
+
         setSelectedPlan(bookingPlan);
         setShowStripeCheckout(true);
       } catch (error) {
@@ -67,8 +66,8 @@ export default function PaymentPage() {
     } else {
       // Handle other payment methods (PIX, etc.)
       setTimeout(() => {
-        navigate('/booking-confirmation', { 
-          state: { 
+        navigate('/booking-confirmation', {
+          state: {
             ...bookingData,
             paymentMethod,
             transactionId: 'TXN' + Date.now()
@@ -98,8 +97,7 @@ export default function PaymentPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -112,7 +110,7 @@ export default function PaymentPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
-            
+
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
@@ -120,18 +118,18 @@ export default function PaymentPage() {
                 </div>
                 <span className="text-sm">Dados</span>
               </div>
-              
+
               <div className="flex-1 h-px bg-border"></div>
-              
+
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-bold">2</span>
                 </div>
                 <span className="text-sm font-semibold">Pagamento</span>
               </div>
-              
+
               <div className="flex-1 h-px bg-border"></div>
-              
+
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
                   <span className="text-muted-foreground text-sm">3</span>
@@ -171,7 +169,7 @@ export default function PaymentPage() {
                           </div>
                         </Label>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2 p-4 border rounded-lg">
                         <RadioGroupItem value="pix" id="pix" />
                         <Label htmlFor="pix" className="flex-1 cursor-pointer">
@@ -193,11 +191,11 @@ export default function PaymentPage() {
                           <span className="text-sm font-semibold">Pagamento Seguro com Stripe</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Seus dados de pagamento são processados de forma segura pelo Stripe, 
+                          Seus dados de pagamento são processados de forma segura pelo Stripe,
                           líder mundial em processamento de pagamentos online.
                         </p>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-2">
                           <Check className="h-4 w-4 text-success" />
@@ -260,34 +258,34 @@ export default function PaymentPage() {
                       })()}
                     </p>
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Serviço:</span>
                       <span>{bookingData.service?.name}</span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span>Data:</span>
                       <span>{new Date(bookingData.date).toLocaleDateString('pt-BR')}</span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span>Horário:</span>
                       <span>{bookingData.time}</span>
                     </div>
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span>R$ {bookingData.service?.price}</span>
                     </div>
-                    
+
                     {paymentMethod === 'pix' && (
                       <div className="flex justify-between text-success">
                         <span>Desconto PIX:</span>
@@ -295,28 +293,28 @@ export default function PaymentPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
                     <span>
-                      R$ {paymentMethod === 'pix' 
+                      R$ {paymentMethod === 'pix'
                         ? (bookingData.service?.price * 0.95).toFixed(2).replace('.', ',')
                         : bookingData.service?.price
                       }
                     </span>
                   </div>
-                  
-                  <Button 
-                    className="w-full" 
+
+                  <Button
+                    className="w-full"
                     onClick={handlePayment}
                     disabled={loading}
                   >
                     <CreditCard className="h-4 w-4 mr-2" />
                     {loading ? 'Processando...' : 'Finalizar Pagamento'}
                   </Button>
-                  
+
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Lock className="h-3 w-3" />
                     <span>Pagamento 100% seguro</span>
@@ -329,7 +327,7 @@ export default function PaymentPage() {
       </div>
 
       <Footer />
-      
+
       {/* Stripe Checkout Modal */}
       {showStripeCheckout && selectedPlan && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -345,7 +343,7 @@ export default function PaymentPage() {
                   ✕
                 </Button>
               </div>
-              
+
               <StripeCheckout
                 plan={selectedPlan}
                 onSuccess={handleStripeSuccess}

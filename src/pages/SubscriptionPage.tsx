@@ -1,6 +1,5 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import CustomerPortal from '@/components/CustomerPortal'
 import { useAuth } from '@/contexts/AuthContext'
@@ -24,8 +23,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -36,11 +34,11 @@ export default function SubscriptionPage() {
               Gerencie sua assinatura, métodos de pagamento e visualize seu histórico de pagamentos.
             </p>
           </div>
-          
+
           <CustomerPortal />
         </div>
       </main>
-      
+
       <Footer />
     </div>
   )

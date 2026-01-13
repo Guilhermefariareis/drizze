@@ -103,7 +103,7 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
     if (agendamento.servico.duracao_minutos) {
       const horas = Math.floor(agendamento.servico.duracao_minutos / 60);
       const minutos = agendamento.servico.duracao_minutos % 60;
-      
+
       if (horas > 0) {
         return `${horas}h${minutos > 0 ? ` ${minutos}min` : ''}`;
       }
@@ -134,11 +134,11 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
                 <StatusIcon className="h-4 w-4 mr-2" />
                 {statusInfo?.label}
               </Badge>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-white/60">
                 {statusInfo?.description}
               </span>
             </div>
-            
+
             {onEdit && agendamento.status !== 'cancelado' && (
               <Button variant="outline" size="sm" onClick={() => onEdit(agendamento)}>
                 <Edit className="h-4 w-4 mr-2" />
@@ -152,17 +152,17 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
           {/* Informações do Paciente */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
+              <User className="h-5 w-5 text-primary" />
               Informações do Paciente
             </h3>
-            
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Nome</label>
-                  <p className="text-gray-900">{agendamento.paciente.nome}</p>
+                  <label className="text-sm font-medium text-white/50">Nome</label>
+                  <p className="text-white font-medium">{agendamento.paciente.nome}</p>
                 </div>
-                
+
                 {agendamento.paciente.email && (
                   <div>
                     <label className="text-sm font-medium text-gray-700">Email</label>
@@ -172,21 +172,21 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 {agendamento.paciente.telefone && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Telefone</label>
+                    <label className="text-sm font-medium text-white/50">Telefone</label>
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-900">{agendamento.paciente.telefone}</p>
+                      <Phone className="h-4 w-4 text-white/40" />
+                      <p className="text-white">{agendamento.paciente.telefone}</p>
                     </div>
                   </div>
                 )}
-                
+
                 {agendamento.paciente.data_nascimento && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Data de Nascimento</label>
-                    <p className="text-gray-900">
+                    <label className="text-sm font-medium text-white/50">Data de Nascimento</label>
+                    <p className="text-white">
                       {format(parseISO(agendamento.paciente.data_nascimento), 'dd/MM/yyyy')}
                     </p>
                   </div>
@@ -200,52 +200,52 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
           {/* Informações do Agendamento */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-green-600" />
+              <Calendar className="h-5 w-5 text-primary" />
               Informações do Agendamento
             </h3>
-            
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Data e Hora</label>
+                  <label className="text-sm font-medium text-white/50">Data e Hora</label>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <p className="text-gray-900 capitalize">
+                    <Calendar className="h-4 w-4 text-white/40" />
+                    <p className="text-white capitalize">
                       {formatarDataCompleta(agendamento.data_hora)}
                     </p>
                   </div>
                 </div>
-                
+
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Serviço</label>
-                  <p className="text-gray-900">{agendamento.servico.nome}</p>
+                  <label className="text-sm font-medium text-white/50">Serviço</label>
+                  <p className="text-white">{agendamento.servico.nome}</p>
                 </div>
-                
+
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Duração</label>
+                  <label className="text-sm font-medium text-white/50">Duração</label>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <p className="text-gray-900">{calcularDuracao()}</p>
+                    <Clock className="h-4 w-4 text-white/40" />
+                    <p className="text-white">{calcularDuracao()}</p>
                   </div>
                 </div>
-                
+
                 {agendamento.servico.preco && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Valor</label>
+                    <label className="text-sm font-medium text-white/50">Valor</label>
                     <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-900">
+                      <DollarSign className="h-4 w-4 text-white/40" />
+                      <p className="text-white">
                         R$ {agendamento.servico.preco.toFixed(2).replace('.', ',')}
                       </p>
                     </div>
                   </div>
                 )}
               </div>
-              
+
               {agendamento.servico.descricao && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Descrição do Serviço</label>
-                  <p className="text-gray-600 text-sm">{agendamento.servico.descricao}</p>
+                  <label className="text-sm font-medium text-white/50">Descrição do Serviço</label>
+                  <p className="text-white/70 text-sm">{agendamento.servico.descricao}</p>
                 </div>
               )}
             </div>
@@ -257,11 +257,11 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
               <Separator />
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-orange-600" />
+                  <FileText className="h-5 w-5 text-primary" />
                   Observações
                 </h3>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <p className="text-gray-700">{agendamento.observacoes}</p>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <p className="text-white/80">{agendamento.observacoes}</p>
                 </div>
               </div>
             </>
@@ -284,7 +284,7 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
                       Confirmar Agendamento
                     </Button>
                   )}
-                  
+
                   {agendamento.status === 'confirmado' && (
                     <Button
                       onClick={() => handleStatusChange('concluido')}
@@ -295,7 +295,7 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
                       Marcar como Concluído
                     </Button>
                   )}
-                  
+
                   {agendamento.status !== 'concluido' && (
                     <Button
                       variant="destructive"

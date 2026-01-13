@@ -21,72 +21,62 @@ export function useUserRole() {
 
   const fetchUserRole = async () => {
     try {
-      console.log('[useUserRole] Buscando role para usuário:', user?.id, user?.email);
-      
+      if (!user) return;
+
+      console.log('[useUserRole] Buscando role para usuário:', user.id, user.email);
+
       // Priorizar role do metadata imediatamente para evitar redirecionamento errado
-      const metaRoleRaw = user?.user_metadata?.role as string | undefined;
+      const metaRoleRaw = user.user_metadata?.role as string | undefined;
       const metaRoleMapped = metaRoleRaw === 'master' ? 'admin' : metaRoleRaw;
       const metaRoleValid = !!metaRoleMapped && ['admin', 'clinic', 'patient'].includes(metaRoleMapped as any);
+
       if (metaRoleValid) {
         setRole(metaRoleMapped as UserRole);
       }
-      
+
       // Buscar role da tabela profiles
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
 
       console.log('[useUserRole] Resultado da busca:', { profile, error });
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('[useUserRole] Erro na busca:', error);
-        // Em caso de erro, usar fallback do metadata ou heurística de email
-        if (metaRoleValid) {
-          setRole(metaRoleMapped as UserRole);
-        } else {
-          const email = user.email?.toLowerCase() || '';
-          if (email.includes('master') || email.includes('admin')) {
-            setRole('admin');
-          } else if (email.includes('clinic') || email.includes('edeventos')) {
-            setRole('clinic');
-          } else {
-            setRole('patient');
-          }
-        }
-      } else if (profile?.role) {
-        console.log('[useUserRole] Role encontrado:', profile.role);
+      if (profile?.role) {
+        console.log('[useUserRole] Role encontrado no perfil:', profile.role);
         const mappedRole = profile.role === 'master' ? 'admin' : profile.role;
-        // Se metadata não estava válido, usar o role do perfil
-        // Ou se metadata for 'patient' e perfil indicar algo mais elevado, confiar no perfil
-        if (!metaRoleValid || (metaRoleMapped === 'patient' && mappedRole !== 'patient')) {
-          setRole(mappedRole as UserRole);
-        }
-      } else {
-        console.log('[useUserRole] Nenhum role encontrado, usando metadata/heurística');
-        if (metaRoleValid) {
-          setRole(metaRoleMapped as UserRole);
-        } else {
-          const email = user.email?.toLowerCase() || '';
-          if (email.includes('master') || email.includes('admin')) {
-            setRole('admin');
-          } else if (email.includes('clinic') || email.includes('edeventos')) {
-            setRole('clinic');
-          } else {
-            setRole('patient');
-          }
-        }
+        setRole(mappedRole as UserRole);
+        return;
       }
-    } catch (error) {
-      console.error('[useUserRole] Erro geral:', error);
-      // Detectar role baseado no metadata ou email em caso de erro
-      const metaRoleRaw = user?.user_metadata?.role as string | undefined;
-      const metaRoleMapped = metaRoleRaw === 'master' ? 'admin' : metaRoleRaw;
-      const metaRoleValid = !!metaRoleMapped && ['admin', 'clinic', 'patient'].includes(metaRoleMapped as any);
-      if (metaRoleValid) {
-        setRole(metaRoleMapped as UserRole);
-      } else {
+
+      if (error && error.code === 'PGRST116') {
+        console.log('[useUserRole] Perfil não encontrado, tentando criar fallback...');
+
+        const fallbackRole = metaRoleValid ? (metaRoleMapped as UserRole) : 'patient';
+
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            email: user.email,
+            name: user.user_metadata?.full_name || 'Usuário',
+            full_name: user.user_metadata?.full_name || 'Usuário',
+            role: fallbackRole === 'master' ? 'admin' : fallbackRole
+          });
+
+        if (!insertError) {
+          console.log('[useUserRole] Perfil de fallback criado com sucesso!');
+          setRole(fallbackRole);
+          return;
+        }
+
+        console.error('[useUserRole] Erro ao criar perfil:', JSON.stringify(insertError, null, 2));
+      }
+
+      // Fallback final por heurística se nada mais funcionou
+      if (!metaRoleValid) {
         const email = user.email?.toLowerCase() || '';
         if (email.includes('master') || email.includes('admin')) {
           setRole('admin');
@@ -96,6 +86,8 @@ export function useUserRole() {
           setRole('patient');
         }
       }
+    } catch (err) {
+      console.error('[useUserRole] Erro geral:', err);
     } finally {
       setLoading(false);
     }

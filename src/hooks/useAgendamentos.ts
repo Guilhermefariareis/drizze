@@ -8,6 +8,7 @@ import { useCachedData } from './useDataCache.tsx';
 export interface Agendamento {
   id: string;
   paciente_id: string;
+  paciente_dados_id?: string;
   servico_id: string;
   profissional_id?: string;
   data_hora: string;
@@ -33,6 +34,13 @@ export interface Agendamento {
     id: string;
     nome: string;
     especialidade?: string;
+  };
+  clinica?: {
+    id: string;
+    name: string;
+    city?: string;
+    phone?: string;
+    address?: string;
   };
 }
 
@@ -87,13 +95,13 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
   console.log('🚨 [CRÍTICO] useAgendamentos INICIALIZADO');
   console.log('🚨 [CRÍTICO] Filtros iniciais:', JSON.stringify(filtrosIniciais, null, 2));
   console.log('🚨 [CRÍTICO] Options:', JSON.stringify(options, null, 2));
-  
+
   const {
     enableRealTime = true,
     enableAutoRefresh = true,
     autoRefreshInterval = 30000
   } = options || {};
-  
+
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,13 +120,17 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     console.log('🚨 [CRÍTICO] Filtros recebidos (custom):', JSON.stringify(filtrosCustom, null, 2));
     console.log('🚨 [CRÍTICO] Filtros atuais (state):', JSON.stringify(filtros, null, 2));
     console.log('🚨 [CRÍTICO] Filtros ativos (final):', JSON.stringify(filtrosAtivos, null, 2));
-    
+
     let query = supabase
       .from('agendamentos')
       .select(`
-        *
+        *,
+        paciente:paciente_dados_id(id, nome, email, telefone),
+        clinica:clinica_id(id, name, city, phone, address),
+        profissional:profissional_id(id, profiles(nome:full_name)),
+        servico:servico_id(id, nome, preco, duracao_minutos)
       `);
-    
+
     console.log('🔍 [DEBUG] Buscando agendamentos com filtros:', JSON.stringify(filtrosAtivos, null, 2));
 
     // Aplicar filtros
@@ -155,7 +167,17 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     console.log('📋 [DATA] Primeiros 2 agendamentos:', JSON.stringify(data?.slice(0, 2), null, 2));
     console.log('🚨 [CRÍTICO] TODOS os agendamentos retornados:', JSON.stringify(data, null, 2));
 
-    return data || [];
+    // Transformar dados para achatar o nome do profissional
+    const agendamentosFormatados = (data || []).map((item: any) => ({
+      ...item,
+      profissional: item.profissional ? {
+        id: item.profissional.id,
+        nome: item.profissional.profiles?.nome || 'Profissional não informado',
+        especialidade: item.profissional.especialidade
+      } : undefined
+    }));
+
+    return agendamentosFormatados;
   }, [filtros]);
 
   // Usar cache para os dados
@@ -163,8 +185,7 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     cacheKey,
     fetchAgendamentos,
     {
-      ttl: 60000, // 1 minuto de cache
-      staleWhileRevalidate: true
+      ttl: 60000 // 1 minuto de cache
     }
   );
 
@@ -215,11 +236,11 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     try {
       console.log('🔍 [DEBUG] useAgendamentos - Iniciando criação de agendamento');
       console.log('🔍 [DEBUG] useAgendamentos - Dados recebidos:', novoAgendamento);
-      
+
       // Campos válidos da tabela agendamentos conforme schema
       const camposValidos = [
         'paciente_id',
-        'clinica_id', 
+        'clinica_id',
         'profissional_id',
         'data_hora',
         'tipo_consulta',
@@ -235,75 +256,115 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
         'chat_session_id',
         'dados_coletados_chat'
       ];
-      
+
       // Filtrar apenas campos válidos e remover campos problemáticos
       const dadosLimpos: any = {};
-      
+
+      // Map tipo_agendamento to tipo_consulta if exists
+      if (novoAgendamento.hasOwnProperty('tipo_agendamento')) {
+        dadosLimpos.tipo_consulta = (novoAgendamento as any).tipo_agendamento;
+      }
+
       // Copiar apenas campos válidos
       camposValidos.forEach(campo => {
         if (novoAgendamento.hasOwnProperty(campo)) {
           dadosLimpos[campo] = (novoAgendamento as any)[campo];
         }
       });
-      
+
       console.log('🚨 [CRÍTICO] Campos removidos (não existem na tabela):');
       Object.keys(novoAgendamento).forEach(campo => {
         if (!camposValidos.includes(campo)) {
           console.log(`❌ Removido: ${campo} = ${(novoAgendamento as any)[campo]}`);
         }
       });
-      
+
+      // Preservar dados do paciente interno nas observações
+      let observacoesExtras = '';
+      if ((novoAgendamento as any).nome_paciente) {
+        observacoesExtras += `Paciente: ${(novoAgendamento as any).nome_paciente}\n`;
+      }
+      if ((novoAgendamento as any).telefone_paciente) {
+        observacoesExtras += `Telefone: ${(novoAgendamento as any).telefone_paciente}\n`;
+      }
+
+      if (observacoesExtras) {
+        dadosLimpos.observacoes = dadosLimpos.observacoes
+          ? `${observacoesExtras}\n${dadosLimpos.observacoes}`
+          : observacoesExtras;
+      }
+
       // Verificar clinica_id
       if (!dadosLimpos.clinica_id || dadosLimpos.clinica_id === '') {
         console.error('🚨 [CRÍTICO] clinica_id está vazio! BLOQUEANDO INSERÇÃO!');
         throw new Error('ID da clínica é obrigatório e não pode estar vazio');
       }
-      
+
       // Remover campos UUID vazios para evitar erro no Supabase
       if (dadosLimpos.paciente_id === '' || dadosLimpos.paciente_id === null) {
         console.log('🧹 Removendo paciente_id vazio');
         delete dadosLimpos.paciente_id;
       }
-      
+
       if (dadosLimpos.paciente_dados_id === '' || dadosLimpos.paciente_dados_id === null) {
         console.log('🧹 Removendo paciente_dados_id vazio');
         delete dadosLimpos.paciente_dados_id;
       }
-      
+
       if (dadosLimpos.servico_id === '' || dadosLimpos.servico_id === null) {
         console.log('🧹 Removendo servico_id vazio');
         delete dadosLimpos.servico_id;
       }
-      
-      if (dadosLimpos.profissional_id === '' || dadosLimpos.profissional_id === null) {
-        console.log('🧹 Removendo profissional_id vazio');
+
+      if (dadosLimpos.profissional_id === '' || dadosLimpos.profissional_id === null || dadosLimpos.profissional_id === 'any') {
+        console.log('🧹 Removendo profissional_id vazio ou inválido');
         delete dadosLimpos.profissional_id;
       }
-      
+
       console.log('🚨 [CRÍTICO] Dados limpos para inserção:', JSON.stringify(dadosLimpos, null, 2));
-      
+
       setError(null);
-      
+
       const { data, error: insertError } = await supabase
         .from('agendamentos')
         .insert([dadosLimpos])
-        .select('*')
+        .select(`
+          *,
+          paciente:paciente_dados_id(id, nome, email, telefone),
+          clinica:clinica_id(id, name, city, phone, address),
+          profissional:profissional_id(id, profiles(nome:full_name)),
+          servico:servico_id(id, nome, preco, duracao_minutos)
+        `)
         .single();
 
       if (insertError) {
         console.error('🚨 [CRÍTICO] ERRO NA INSERÇÃO:', insertError);
         console.error('🚨 [CRÍTICO] Dados que causaram o erro:', JSON.stringify(dadosLimpos, null, 2));
+        setError(JSON.stringify(insertError));
         throw insertError;
       }
 
-      console.log('🚨 [CRÍTICO] AGENDAMENTO CRIADO COM SUCESSO:', data);
-      
+      // Transformar dados para achatar o nome do profissional
+      const item: any = data;
+      const agendamentoFormatado = {
+        ...item,
+        profissional: item.profissional ? {
+          id: item.profissional.id,
+          nome: item.profissional.profiles?.nome || 'Profissional não informado',
+          especialidade: item.profissional.especialidade
+        } : undefined
+      };
+
+      console.log('🚨 [CRÍTICO] AGENDAMENTO CRIADO COM SUCESSO:', agendamentoFormatado);
+
       // Atualizar lista local
-      setAgendamentos(prev => [...prev, data]);
-      
+      if (agendamentoFormatado) {
+        setAgendamentos(prev => [...prev, agendamentoFormatado]);
+      }
+
       toast.success('Agendamento criado com sucesso!');
-      return data;
-      
+      return agendamentoFormatado;
+
     } catch (err) {
       console.error('🚨 [CRÍTICO] ERRO AO CRIAR AGENDAMENTO:', err);
       console.error('🚨 [CRÍTICO] Dados originais:', JSON.stringify(novoAgendamento, null, 2));
@@ -319,7 +380,7 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     try {
       console.log('🔍 [DEBUG] useAgendamentos - Iniciando atualização do agendamento:', id);
       console.log('🔍 [DEBUG] useAgendamentos - Dados para atualização:', dados);
-      
+
       setError(null);
 
       // Fazer o update e buscar o resultado atualizado em uma única operação
@@ -338,8 +399,8 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
       console.log('✅ [DEBUG] useAgendamentos - Agendamento atualizado:', agendamentoAtualizado);
 
       // Atualizar lista local com os dados completos
-      setAgendamentos(prev => 
-        prev.map(agendamento => 
+      setAgendamentos(prev =>
+        prev.map(agendamento =>
           agendamento.id === id ? agendamentoAtualizado : agendamento
         )
       );
@@ -446,36 +507,36 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     const hoje = new Date();
     const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-    
+
     const total = agendamentos.length;
     const confirmados = agendamentos.filter(a => a.status === 'confirmado').length;
     const pendentes = agendamentos.filter(a => a.status === 'pendente').length;
     const concluidos = agendamentos.filter(a => a.status === 'concluido').length;
     const cancelados = agendamentos.filter(a => a.status === 'cancelado').length;
     const noShow = agendamentos.filter(a => a.status === 'no_show').length;
-    
+
     const faturamentoTotal = agendamentos
       .filter(a => a.status === 'concluido' && a.valor)
       .reduce((total, a) => total + (a.valor || 0), 0);
-    
+
     const agendamentosMes = agendamentos.filter(a => {
       const dataAgendamento = new Date(a.data_hora);
       return dataAgendamento >= inicioMes && dataAgendamento <= fimMes;
     });
-    
+
     const faturamentoMes = agendamentosMes
       .filter(a => a.status === 'concluido' && a.valor)
       .reduce((total, a) => total + (a.valor || 0), 0);
-    
+
     const proximosAgendamentos = agendamentos.filter(a => {
       const dataAgendamento = new Date(a.data_hora);
       return dataAgendamento >= hoje && (a.status === 'confirmado' || a.status === 'pendente');
     }).length;
-    
+
     // Calcular taxa de ocupação (agendamentos confirmados/concluídos vs total de slots disponíveis)
     const agendamentosAtivos = confirmados + concluidos;
     const taxaOcupacao = total > 0 ? (agendamentosAtivos / total) * 100 : 0;
-    
+
     return {
       total,
       confirmados,
@@ -520,8 +581,8 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
       });
     },
     onAgendamentoAtualizado: (agendamentoAtualizado) => {
-      setAgendamentos(prev => 
-        prev.map(ag => 
+      setAgendamentos(prev =>
+        prev.map(ag =>
           ag.id === agendamentoAtualizado.id ? agendamentoAtualizado : ag
         )
       );

@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Star, 
-  MapPin, 
-  Phone, 
-  Clock, 
-  Calendar, 
-  Heart, 
-  Share2, 
-  Shield, 
-  Award, 
-  CheckCircle, 
-  Users, 
+import {
+  Star,
+  MapPin,
+  Phone,
+  Clock,
+  Calendar,
+  Heart,
+  Share2,
+  Shield,
+  Award,
+  CheckCircle,
+  Users,
   TrendingUp,
   CreditCard,
   FileText,
@@ -30,7 +30,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { BaseClinic, ClinicProfile } from '@/types/clinic';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -109,37 +108,37 @@ export default function ClinicProfile() {
         refreshClinicData();
       }
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [id, refreshClinicData]);
 
   const fetchClinicData = async () => {
     if (!id) return;
-    
+
     try {
       setLoading(true);
       setError(null); // Limpar erro anterior
-      
+
       console.log('🔍 Buscando dados da clínica com ID:', id);
-      
+
       // Verificar se há invalidação de cache e timestamp
       const cacheInvalidated = localStorage.getItem(`clinic_cache_invalidated_${id}`);
       const cacheTimestamp = cacheInvalidated ? parseInt(cacheInvalidated) : 0;
       const now = Date.now();
       const cacheAge = now - cacheTimestamp;
       const maxCacheAge = 5 * 60 * 1000; // 5 minutos
-      
+
       if (cacheInvalidated) {
         console.log('🗑️ Cache foi invalidado em:', new Date(cacheTimestamp));
         console.log('⏰ Idade do cache:', Math.round(cacheAge / 1000), 'segundos');
-        
+
         if (cacheAge > maxCacheAge) {
           console.log('🧹 Cache muito antigo, limpando...');
           localStorage.removeItem(`clinic_cache_invalidated_${id}`);
         }
       }
-      
+
       // Buscar dados da clínica
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
@@ -215,11 +214,11 @@ export default function ClinicProfile() {
 
       // Calcular estatísticas reais
       const totalReviews = reviewsData?.length || 0;
-      const averageRating = totalReviews > 0 
-        ? reviewsData.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
+      const averageRating = totalReviews > 0
+        ? reviewsData.reduce((sum, review) => sum + review.rating, 0) / totalReviews
         : 0;
-      const recommendationRate = totalReviews > 0 
-        ? (reviewsData.filter(review => review.would_recommend).length / totalReviews) * 100 
+      const recommendationRate = totalReviews > 0
+        ? (reviewsData.filter(review => review.would_recommend).length / totalReviews) * 100
         : 0;
 
       console.log('📊 Estatísticas calculadas:', {
@@ -250,7 +249,7 @@ export default function ClinicProfile() {
       });
 
       console.log('✅ Dados da clínica carregados com sucesso!');
-      
+
     } catch (error) {
       console.error('❌ Erro geral ao carregar dados da clínica:', error);
       setError('Erro ao carregar dados da clínica');
@@ -273,7 +272,6 @@ export default function ClinicProfile() {
     return (
       <div className="min-h-screen bg-background">
         <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b">
-          <Navbar />
         </div>
         <div className="w-full px-6 py-8 pt-24">
           <div className="flex items-center justify-center h-64">
@@ -292,7 +290,6 @@ export default function ClinicProfile() {
     return (
       <div className="min-h-screen bg-background">
         <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b">
-          <Navbar />
         </div>
         <div className="w-full px-6 py-8 pt-24">
           <div className="text-center">
@@ -317,7 +314,6 @@ export default function ClinicProfile() {
     return (
       <div className="min-h-screen bg-background">
         <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b">
-          <Navbar />
         </div>
         <div className="w-full px-6 py-8 pt-24">
           <div className="text-center">
@@ -352,9 +348,8 @@ export default function ClinicProfile() {
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Top Navbar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b">
-        <Navbar />
       </div>
-      
+
       <div className="pt-20">
         {/* Botão Voltar alinhado à esquerda */}
         <div className="container mx-auto px-6 mb-4">
@@ -364,10 +359,10 @@ export default function ClinicProfile() {
           </Button>
         </div>
         {/* Header com Imagem de Capa */}
-        <div 
+        <div
           className="text-white relative overflow-hidden min-h-[400px]"
           style={{
-            backgroundImage: clinic.hero_image_url || clinic.profile?.hero_image_url 
+            backgroundImage: clinic.hero_image_url || clinic.profile?.hero_image_url
               ? `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${clinic.hero_image_url || clinic.profile?.hero_image_url})`
               : 'linear-gradient(to right, #2563eb, #3b82f6)',
             backgroundSize: 'cover',
@@ -390,7 +385,7 @@ export default function ClinicProfile() {
                 Atualizar
               </Button>
             </div>
-            
+
             <div className="flex flex-col lg:flex-row items-start gap-8">
               {/* Logo e Informações da Clínica */}
               <div className="flex items-start gap-6 flex-1">
@@ -401,7 +396,7 @@ export default function ClinicProfile() {
                     className="w-full h-full object-cover rounded-full"
                   />
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <h1 className="text-3xl lg:text-4xl font-bold">{clinic.name}</h1>
@@ -418,7 +413,7 @@ export default function ClinicProfile() {
                       </Badge>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2 text-blue-100">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
@@ -429,10 +424,10 @@ export default function ClinicProfile() {
                       <span className="text-green-300 font-medium">Aberto agora</span>
                     </div>
                   </div>
-                  
+
                   <p className="mt-4 text-blue-50 text-lg leading-relaxed max-w-2xl">
-                    {clinic.description || clinic.profile?.description || 
-                     'Clínica odontológica moderna com tecnologia de ponta e profissionais especializados. Atendimento humanizado e tratamentos de qualidade para toda a família.'}
+                    {clinic.description || clinic.profile?.description ||
+                      'Clínica odontológica moderna com tecnologia de ponta e profissionais especializados. Atendimento humanizado e tratamentos de qualidade para toda a família.'}
                   </p>
                 </div>
               </div>
@@ -440,9 +435,9 @@ export default function ClinicProfile() {
               {/* Cards de Ação */}
               <div className="w-full lg:w-80 bg-white rounded-xl shadow-xl p-6 text-gray-900">
                 <h3 className="text-lg font-semibold mb-4 text-center">O que você precisa?</h3>
-                
+
                 <div className="space-y-3">
-                  <Button 
+                  <Button
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 h-auto"
                     onClick={() => {
                       console.log('🔘 Redirecionando para página de agendamento:', `/booking/${clinic.id}`);
@@ -484,8 +479,8 @@ export default function ClinicProfile() {
                     </DialogContent>
                   </Dialog>
 
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full border-green-200 hover:bg-green-50 py-3 h-auto"
                     onClick={handleCreditRedirect}
                   >
@@ -540,8 +535,8 @@ export default function ClinicProfile() {
                     <Users className="h-8 w-8 text-blue-500" />
                   </div>
                   <div className="text-3xl font-bold text-gray-900">
-                    {statistics.patients_served >= 1000 
-                      ? `+${Math.floor(statistics.patients_served / 1000)}k` 
+                    {statistics.patients_served >= 1000
+                      ? `+${Math.floor(statistics.patients_served / 1000)}k`
                       : `+${statistics.patients_served}`
                     }
                   </div>
@@ -551,18 +546,18 @@ export default function ClinicProfile() {
             )}
 
             {/* Mensagem quando não há estatísticas */}
-            {(!statistics?.rating || statistics.rating === 0) && 
-             !statistics?.patients_served && 
-             (statistics?.recommendation_rate === null || statistics?.recommendation_rate === undefined) && (
-              <Card className="text-center shadow-lg col-span-full">
-                <CardContent className="p-6">
-                  <div className="text-gray-500">
-                    <div className="text-lg font-medium mb-2">Clínica em crescimento</div>
-                    <div className="text-sm">Seja um dos primeiros a avaliar esta clínica!</div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {(!statistics?.rating || statistics.rating === 0) &&
+              !statistics?.patients_served &&
+              (statistics?.recommendation_rate === null || statistics?.recommendation_rate === undefined) && (
+                <Card className="text-center shadow-lg col-span-full">
+                  <CardContent className="p-6">
+                    <div className="text-gray-500">
+                      <div className="text-lg font-medium mb-2">Clínica em crescimento</div>
+                      <div className="text-sm">Seja um dos primeiros a avaliar esta clínica!</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
           </div>
         </div>
 
@@ -602,7 +597,7 @@ export default function ClinicProfile() {
                     </div>
                     <div>
                       <div className="font-semibold text-purple-700">
-                        {verification.years_in_market > 1 
+                        {verification.years_in_market > 1
                           ? `Mais de ${verification.years_in_market} anos no mercado`
                           : `${verification.years_in_market} ano no mercado`
                         }
@@ -684,12 +679,12 @@ export default function ClinicProfile() {
     </div>
   );
 }
-  const handleBack = () => {
-    if (role === 'clinic') {
-      navigate('/clinic-dashboard');
-    } else if (role === 'patient') {
-      navigate('/patient-dashboard');
-    } else {
-      navigate('/search');
-    }
-  };
+const handleBack = () => {
+  if (role === 'clinic') {
+    navigate('/clinic-dashboard');
+  } else if (role === 'patient') {
+    navigate('/patient-dashboard');
+  } else {
+    navigate('/search');
+  }
+};

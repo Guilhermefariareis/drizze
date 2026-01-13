@@ -4,12 +4,12 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { 
-  CreditCard, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  CreditCard,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Plus,
   Eye,
@@ -25,7 +25,8 @@ import NotificationSystem from '../../components/NotificationSystem';
 interface CreditRequest {
   id: string;
   clinic_id: string;
-  amount: number;
+  amount: number; // Keep for compatibility if needed elsewhere, but DB uses requested_amount
+  requested_amount?: number;
   installments: number;
   treatment_description: string;
   status: 'pending' | 'clinic_reviewing' | 'sent_to_admin' | 'admin_analyzing' | 'approved' | 'rejected' | 'cancelled' | 'awaiting_documents' | 'admin_approved' | 'admin_rejected' | 'sent_to_patient' | 'patient_accepted' | 'patient_rejected';
@@ -91,14 +92,14 @@ const PatientDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Buscar solicitações de crédito
-      const { data: requests, error: requestsError } = await supabase
-        .from('credit_requests')
+      const { data: requests, error: requestsError } = await (supabase
+        .from('credit_requests' as any) as any)
         .select(`
           id,
           clinic_id,
-          amount,
+          requested_amount,
           installments,
           treatment_description,
           status,
@@ -181,7 +182,7 @@ const PatientDashboard: React.FC = () => {
     try {
       const { error } = await supabase
         .from('credit_requests')
-        .update({ 
+        .update({
           status: 'patient_accepted',
           updated_at: new Date().toISOString()
         })
@@ -206,7 +207,7 @@ const PatientDashboard: React.FC = () => {
     try {
       const { error } = await supabase
         .from('credit_requests')
-        .update({ 
+        .update({
           status: 'patient_rejected',
           updated_at: new Date().toISOString()
         })
@@ -228,48 +229,48 @@ const PatientDashboard: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { 
-        label: 'Pendente', 
+      pending: {
+        label: 'Pendente',
         color: 'bg-yellow-100 text-yellow-800',
         icon: Clock
       },
-      clinic_approved: { 
-        label: 'Aprovado pela Clínica', 
+      clinic_approved: {
+        label: 'Aprovado pela Clínica',
         color: 'bg-blue-100 text-blue-800',
         icon: CheckCircle
       },
-      clinic_rejected: { 
-        label: 'Rejeitado pela Clínica', 
+      clinic_rejected: {
+        label: 'Rejeitado pela Clínica',
         color: 'bg-red-100 text-red-800',
         icon: XCircle
       },
-      admin_analyzing: { 
-        label: 'Em Análise', 
+      admin_analyzing: {
+        label: 'Em Análise',
         color: 'bg-purple-100 text-purple-800',
         icon: AlertCircle
       },
-      admin_approved: { 
-        label: 'Aprovado', 
+      admin_approved: {
+        label: 'Aprovado',
         color: 'bg-green-100 text-green-800',
         icon: CheckCircle
       },
-      admin_rejected: { 
-        label: 'Rejeitado', 
+      admin_rejected: {
+        label: 'Rejeitado',
         color: 'bg-red-100 text-red-800',
         icon: XCircle
       },
-      sent_to_patient: { 
-        label: 'Ofertas Disponíveis', 
+      sent_to_patient: {
+        label: 'Ofertas Disponíveis',
         color: 'bg-purple-100 text-purple-800',
         icon: CreditCard
       },
-      patient_accepted: { 
-        label: 'Aceito por Você', 
+      patient_accepted: {
+        label: 'Aceito por Você',
         color: 'bg-emerald-100 text-emerald-800',
         icon: CheckCircle
       },
-      patient_rejected: { 
-        label: 'Rejeitado por Você', 
+      patient_rejected: {
+        label: 'Rejeitado por Você',
         color: 'bg-orange-100 text-orange-800',
         icon: XCircle
       }
@@ -406,8 +407,8 @@ const PatientDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto p-4 flex flex-col items-center gap-2"
               onClick={() => navigate('/patient/credit-request')}
             >
@@ -416,8 +417,8 @@ const PatientDashboard: React.FC = () => {
               <span className="text-sm text-gray-500">Solicitar novo crédito</span>
             </Button>
 
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto p-4 flex flex-col items-center gap-2"
               onClick={() => navigate('/patient/documents')}
             >
@@ -426,8 +427,8 @@ const PatientDashboard: React.FC = () => {
               <span className="text-sm text-gray-500">Upload de documentos</span>
             </Button>
 
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto p-4 flex flex-col items-center gap-2"
               onClick={() => navigate('/credit-simulator')}
             >
@@ -470,7 +471,7 @@ const PatientDashboard: React.FC = () => {
                         </h3>
                         {getStatusBadge(request.status)}
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                         <div className="flex items-center gap-1">
                           <Building2 className="w-4 h-4" />
@@ -481,9 +482,9 @@ const PatientDashboard: React.FC = () => {
                           <span>{formatDate(request.created_at)}</span>
                         </div>
                       </div>
-                      
+
                       <p className="text-gray-700 mb-3">{request.treatment_description}</p>
-                      
+
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <p className="text-sm text-blue-800">
                           {getStatusDescription(request.status)}
@@ -497,7 +498,7 @@ const PatientDashboard: React.FC = () => {
                             <CreditCard className="w-5 h-5 text-purple-600" />
                             Ofertas Disponíveis
                           </h4>
-                          
+
                           {creditOffers[request.id].map((offer) => (
                             <div key={offer.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
                               <div className="flex items-center justify-between mb-3">
@@ -509,7 +510,7 @@ const PatientDashboard: React.FC = () => {
                                   Aprovado
                                 </Badge>
                               </div>
-                              
+
                               <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                                 <div>
                                   <span className="text-purple-600">Valor Aprovado:</span>
@@ -532,16 +533,16 @@ const PatientDashboard: React.FC = () => {
                                   </p>
                                 </div>
                               </div>
-                              
+
                               {offer.conditions && (
                                 <div className="mb-3 p-2 bg-white rounded border">
                                   <span className="text-purple-600 text-xs font-medium">Condições:</span>
                                   <p className="text-xs text-gray-600 mt-1">{offer.conditions}</p>
                                 </div>
                               )}
-                              
+
                               <div className="flex space-x-2">
-                                <Button 
+                                <Button
                                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                                   size="sm"
                                   onClick={() => acceptOffer(request.id)}
@@ -549,8 +550,8 @@ const PatientDashboard: React.FC = () => {
                                   <CheckCircle className="w-4 h-4 mr-2" />
                                   Aceitar Oferta
                                 </Button>
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   className="flex-1 border-red-600 text-red-600 hover:bg-red-50"
                                   size="sm"
                                   onClick={() => rejectOffer(request.id)}
@@ -565,12 +566,12 @@ const PatientDashboard: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="text-sm text-gray-500">
                       Última atualização: {formatDate(request.updated_at)}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -580,7 +581,7 @@ const PatientDashboard: React.FC = () => {
                         <Upload className="w-4 h-4 mr-2" />
                         Documentos
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"

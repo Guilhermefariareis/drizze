@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,15 +11,27 @@ import { toast } from 'sonner';
 interface Agendamento {
   id: string;
   data_hora: string;
-  status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
+  status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido' | 'no_show';
   observacoes: string | null;
   valor: number | null;
   tipo_consulta: string;
   codigo_confirmacao: string | null;
-  clinics: {
+  clinicas: {
     name: string;
     phone: string | null;
     address: string | null;
+  } | null;
+  servico: {
+    nome: string;
+    valor: number | null;
+    duracao_minutos: number | null;
+  } | null;
+  profissional: {
+    id: string;
+    profiles: {
+      nome: string;
+    } | null;
+    especialidade?: string | null;
   } | null;
 }
 
@@ -39,9 +50,9 @@ const MeusAgendamentos = () => {
   const fetchAgendamentos = async () => {
     try {
       setLoading(true);
-      
+
       console.log('🔍 [MeusAgendamentos] Buscando agendamentos para usuário:', user?.id);
-      
+
       // Primeiro buscar o profile do usuário
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -54,26 +65,18 @@ const MeusAgendamentos = () => {
         toast.error('Erro ao carregar dados do perfil');
         return;
       }
-      
+
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
-          id,
-          data_hora,
-          status,
-          observacoes,
-          valor,
-          tipo_consulta,
-          codigo_confirmacao,
-          clinics (
-            name,
-            phone,
-            address
-          )
+          *,
+          clinicas:clinics(name, phone, address),
+          servico:servico_id(nome, preco, duracao_minutos),
+          profissional:profissional_id(id, profiles(nome:full_name))
         `)
         .eq('paciente_id', profile.id)
         .order('data_hora', { ascending: false });
-        
+
       console.log('🔍 [MeusAgendamentos] Resultado da query:', { data, error, userID: user?.id });
 
       if (error) {
@@ -82,7 +85,7 @@ const MeusAgendamentos = () => {
         return;
       }
 
-      setAgendamentos(data || []);
+      setAgendamentos(((data as any) as Agendamento[]) || []);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       toast.error('Erro ao carregar agendamentos');
@@ -94,7 +97,7 @@ const MeusAgendamentos = () => {
   const handleCancelAgendamento = async (agendamentoId: string) => {
     try {
       setCancellingId(agendamentoId);
-      
+
       const { error } = await supabase
         .from('agendamentos')
         .update({ status: 'cancelado' })
@@ -160,7 +163,6 @@ const MeusAgendamentos = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -176,7 +178,6 @@ const MeusAgendamentos = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -209,7 +210,7 @@ const MeusAgendamentos = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-lg font-semibold text-gray-900">
-                            {agendamento.clinics?.name || 'Clínica não informada'}
+                            {agendamento.clinicas?.name || 'Clínica não informada'}
                           </CardTitle>
                           <p className="text-sm text-gray-600 mt-1">
                             {agendamento.tipo_consulta.replace('_', ' ').toUpperCase()}
@@ -228,28 +229,40 @@ const MeusAgendamentos = () => {
                           <Clock className="h-4 w-4 text-blue-600" />
                           <span className="text-sm font-medium">{time}</span>
                         </div>
-                        {agendamento.clinics?.phone && (
-                           <div className="flex items-center space-x-2">
-                             <Phone className="h-4 w-4 text-blue-600" />
-                             <span className="text-sm">{agendamento.clinics.phone}</span>
-                           </div>
-                         )}
+                        {agendamento.clinicas?.phone && (
+                          <div className="flex items-center space-x-2">
+                            <Phone className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm">{agendamento.clinicas.phone}</span>
+                          </div>
+                        )}
                         <div className="flex items-center space-x-2">
                           <DollarSign className="h-4 w-4 text-blue-600" />
                           <span className="text-sm font-medium">
-                            {formatPrice(agendamento.valor)}
+                            {formatPrice(agendamento.valor || agendamento.servico?.valor || 0)}
                           </span>
                         </div>
                       </div>
 
-                      {agendamento.clinics?.address && (
-                         <div className="flex items-start space-x-2">
-                           <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
-                           <span className="text-sm text-gray-600">
-                             {agendamento.clinics.address}
-                           </span>
-                         </div>
-                       )}
+                      {/* Profissional e Serviço */}
+                      <div className="pt-2">
+                        <p className="text-sm font-semibold text-gray-700">
+                          {agendamento.servico?.nome || agendamento.tipo_consulta.replace('_', ' ').toUpperCase()}
+                        </p>
+                        {agendamento.profissional && (
+                          <p className="text-xs text-gray-500">
+                            Profissional: {(agendamento.profissional as any).profiles?.nome || 'Não informado'}
+                          </p>
+                        )}
+                      </div>
+
+                      {agendamento.clinicas?.address && (
+                        <div className="flex items-start space-x-2">
+                          <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                          <span className="text-sm text-gray-600">
+                            {agendamento.clinicas.address}
+                          </span>
+                        </div>
+                      )}
 
                       {agendamento.observacoes && (
                         <div className="bg-gray-50 p-3 rounded-lg">

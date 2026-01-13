@@ -6,7 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { Award, Star, Gift, TrendingUp, Calendar, Heart, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const LoyaltyProgram = () => {
@@ -60,8 +59,7 @@ const LoyaltyProgram = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/profile">
@@ -96,7 +94,7 @@ const LoyaltyProgram = () => {
                     Nível Bronze
                   </Badge>
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Progresso para Nível Prata</span>
@@ -121,7 +119,7 @@ const LoyaltyProgram = () => {
                   {benefits.map((benefit, index) => {
                     const IconComponent = benefit.icon;
                     const canClaim = currentPoints >= parseInt(benefit.points);
-                    
+
                     return (
                       <div key={index} className={`p-4 border rounded-lg ${canClaim ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}`}>
                         <div className="flex items-start gap-3">
@@ -133,8 +131,8 @@ const LoyaltyProgram = () => {
                               <Badge variant="outline" className="text-xs">
                                 {benefit.points}
                               </Badge>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant={canClaim ? "default" : "secondary"}
                                 disabled={!canClaim}
                                 className="h-7 text-xs"
