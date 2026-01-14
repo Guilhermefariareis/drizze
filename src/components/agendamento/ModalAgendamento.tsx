@@ -20,8 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Agendamento } from '@/types/agendamento';
-import { useAgendamentos } from '@/hooks/useAgendamentos';
+import { Agendamento, useAgendamentos } from '@/hooks/useAgendamentos';
 
 interface ModalAgendamentoProps {
   agendamento: Agendamento | null;
@@ -94,9 +93,18 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
     }
   };
 
+  const formatDateSafe = (dateString: string | undefined | null, formatStr: string) => {
+    if (!dateString) return 'Data não disponível';
+    try {
+      return format(parseISO(dateString), formatStr, { locale: ptBR });
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return 'Data inválida';
+    }
+  };
+
   const formatarDataCompleta = (dataHora: string) => {
-    const data = parseISO(dataHora);
-    return format(data, "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+    return formatDateSafe(dataHora, "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm");
   };
 
   const calcularDuracao = () => {
@@ -188,7 +196,7 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
                     <div>
                       <label className="text-sm font-medium text-white/50">Data de Nascimento</label>
                       <p className="text-white">
-                        {format(parseISO(agendamento.paciente.data_nascimento), 'dd/MM/yyyy')}
+                        {formatDateSafe(agendamento.paciente.data_nascimento, 'dd/MM/yyyy')}
                       </p>
                     </div>
                   )}
@@ -326,9 +334,9 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
           {/* Informações de Auditoria */}
           <Separator />
           <div className="text-xs text-gray-500 space-y-1">
-            <p>Criado em: {format(parseISO(agendamento.created_at), 'dd/MM/yyyy HH:mm')}</p>
+            <p>Criado em: {formatDateSafe(agendamento.created_at, 'dd/MM/yyyy HH:mm')}</p>
             {agendamento.updated_at !== agendamento.created_at && (
-              <p>Última atualização: {format(parseISO(agendamento.updated_at), 'dd/MM/yyyy HH:mm')}</p>
+              <p>Última atualização: {formatDateSafe(agendamento.updated_at, 'dd/MM/yyyy HH:mm')}</p>
             )}
           </div>
         </div>

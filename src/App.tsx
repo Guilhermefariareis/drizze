@@ -78,6 +78,7 @@ import AuthConfirm from "./pages/AuthConfirm";
 import ParaClinicasPage from "./pages/ParaClinicasPage";
 import ParaDentistasPage from "./pages/ParaDentistasPage";
 import MeusAgendamentos from "./pages/MeusAgendamentos";
+import HealthCheckPage from "./pages/admin/HealthCheckPage";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import ChatDemo from "./pages/ChatDemo";
 import StripeTestPage from "./pages/StripeTestPage";
@@ -108,6 +109,8 @@ const App = () => (
                     <Route element={<MainLayout />}>
                       <Route path="/" element={<Index />} />
                       <Route path="/search" element={<SearchClinics />} />
+                      <Route path="/clinic/dashboard" element={<ClinicDashboard />} />
+                      <Route path="/clinic/appointments" element={<ClinicAppointments />} />
                       <Route path="/clinic/:id" element={<ClinicProfile />} />
                       <Route path="/booking/:clinicId" element={<BookingPage />} />
                       <Route path="/payment" element={<PaymentPage />} />
@@ -137,8 +140,6 @@ const App = () => (
                       <Route path="/notificacoes" element={<NotificacoesPage />} />
                       <Route path="/agendamento/:clinicaId" element={<AgendamentoPage />} />
                       <Route path="/agendamento-confirmacao" element={<AgendamentoConfirmacao />} />
-                      <Route path="/agendamentos" element={<AgendamentosPage />} />
-                      <Route path="/agendamentos/:clinicaId" element={<AgendamentosPage />} />
                       <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
                       <Route path="/configuracao-horarios" element={<AdminRoute><ConfiguracaoHorariosPage /></AdminRoute>} />
                       <Route path="/relatorios-agendamentos" element={<AdminRoute><RelatoriosAgendamentosPage /></AdminRoute>} />
@@ -173,6 +174,7 @@ const App = () => (
                     <Route path="/test-credit" element={<AdminRoute><TestCreditPage /></AdminRoute>} />
                     <Route path="/proposal/:requestId" element={<ProposalDetailsPage />} />
 
+                    <Route path="/admin/health" element={<HealthCheckPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

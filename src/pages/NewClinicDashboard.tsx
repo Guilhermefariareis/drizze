@@ -512,8 +512,8 @@ const NewClinicDashboard = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#0F0F23] text-foreground selection:bg-primary/30">
-      {/* Navbar da página home - Talvez remover ou fazer dark? */}
-      {/* <Navbar /> */}
+      {/* Navbar da página home */}
+      <Navbar />
 
       {/* Background Gradients/Aurora */}
       <div className="fixed top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>

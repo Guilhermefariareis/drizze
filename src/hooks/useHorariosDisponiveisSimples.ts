@@ -93,12 +93,38 @@ export function useHorariosDisponiveis(clinicaId?: string) {
     profissionalId?: string,
     duracaoMinutos: number = 30
   ): Promise<SlotHorario[]> => {
-    if (!clinicaId || !data) return [];
+    if (!clinicaId || !data) {
+      console.warn('🔍 [DEBUG] obterHorariosDisponiveis - Faltando clinicaId ou data', { clinicaId, data });
+      return [];
+    }
 
     try {
-      // Se não temos horários de funcionamento, retornar array vazio
-      if (horariosFuncionamento.length === 0) {
-        return [];
+      console.log('🔍 [DEBUG] obterHorariosDisponiveis - Buscando para:', { data, profissionalId });
+
+      let funcionamentoAtual = horariosFuncionamento;
+
+      // Se não temos horários de funcionamento no estado, tentar buscar uma vez
+      if (funcionamentoAtual.length === 0) {
+        console.log('🔍 [DEBUG] obterHorariosDisponiveis - Estado vazio, buscando no banco...');
+        const { data: dbData } = await supabase
+          .from('horarios_funcionamento')
+          .select('*')
+          .eq('clinica_id', clinicaId)
+          .eq('ativo', true);
+
+        if (dbData && dbData.length > 0) {
+          funcionamentoAtual = dbData as HorarioFuncionamento[];
+          console.log('🔍 [DEBUG] obterHorariosDisponiveis - Encontrados no banco:', dbData.length);
+        } else {
+          console.log('🔍 [DEBUG] obterHorariosDisponiveis - Sem horários no banco, usando padrão.');
+          funcionamentoAtual = [
+            { id: 'p1', clinica_id: clinicaId, dia_semana: 1, hora_inicio: '08:00', hora_fim: '18:00', duracao_consulta: 30, ativo: true },
+            { id: 'p2', clinica_id: clinicaId, dia_semana: 2, hora_inicio: '08:00', hora_fim: '18:00', duracao_consulta: 30, ativo: true },
+            { id: 'p3', clinica_id: clinicaId, dia_semana: 3, hora_inicio: '08:00', hora_fim: '18:00', duracao_consulta: 30, ativo: true },
+            { id: 'p4', clinica_id: clinicaId, dia_semana: 4, hora_inicio: '08:00', hora_fim: '18:00', duracao_consulta: 30, ativo: true },
+            { id: 'p5', clinica_id: clinicaId, dia_semana: 5, hora_inicio: '08:00', hora_fim: '18:00', duracao_consulta: 30, ativo: true }
+          ] as HorarioFuncionamento[];
+        }
       }
 
       const dataObj = parseISO(data);
@@ -108,13 +134,15 @@ export function useHorariosDisponiveis(clinicaId?: string) {
 
       // Verificar se a data não é no passado
       if (isBefore(dataConsulta, hoje)) {
+        console.warn('🔍 [DEBUG] obterHorariosDisponiveis - Data no passado');
         return [];
       }
 
       // Buscar horário de funcionamento para o dia da semana
-      const funcionamento = horariosFuncionamento.find(h => h.dia_semana === diaSemana);
+      const funcionamento = funcionamentoAtual.find(h => h.dia_semana === diaSemana);
 
       if (!funcionamento) {
+        console.warn('🔍 [DEBUG] obterHorariosDisponiveis - Sem funcionamento para o dia:', diaSemana);
         return [];
       }
 
