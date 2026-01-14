@@ -38,7 +38,7 @@ export function useHorariosDisponiveis(clinicaId?: string) {
 
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from('horarios_funcionamento')
         .select('*')
@@ -70,7 +70,7 @@ export function useHorariosDisponiveis(clinicaId?: string) {
 
         // Usar horários padrão imediatamente
         setHorariosFuncionamento(horariosPadrao as HorarioFuncionamento[]);
-        
+
         // Criar no banco em background (sem await)
         horariosPadrao.forEach(async (horario) => {
           try {
@@ -113,19 +113,28 @@ export function useHorariosDisponiveis(clinicaId?: string) {
 
       // Buscar horário de funcionamento para o dia da semana
       const funcionamento = horariosFuncionamento.find(h => h.dia_semana === diaSemana);
-      
+
       if (!funcionamento) {
         return [];
       }
 
       // Buscar agendamentos existentes
-      const { data: agendamentos, error: agendamentoError } = await supabase
+      let query = supabase
         .from('agendamentos')
         .select('data_hora')
         .eq('clinica_id', clinicaId)
         .gte('data_hora', `${data}T00:00:00`)
         .lt('data_hora', `${data}T23:59:59`)
         .in('status', ['pendente', 'confirmado']);
+
+      // Se um profissional específico foi selecionado, filtrar por ele
+      // Se não, precisamos ver se a clínica opera com bloqueio global ou por profissional
+      // Por padrão, assumimos bloqueio por profissional se um for passado
+      if (profissionalId) {
+        query = query.eq('profissional_id', profissionalId);
+      }
+
+      const { data: agendamentos, error: agendamentoError } = await query;
 
       if (agendamentoError) {
         console.error('Erro ao buscar agendamentos:', agendamentoError);
@@ -141,10 +150,10 @@ export function useHorariosDisponiveis(clinicaId?: string) {
       const slots: SlotHorario[] = [];
       const [horaInicio, minutoInicio] = funcionamento.hora_inicio.split(':').map(Number);
       const [horaFim, minutoFim] = funcionamento.hora_fim.split(':').map(Number);
-      
+
       let horarioAtual = new Date(dataObj);
       horarioAtual.setHours(horaInicio, minutoInicio, 0, 0);
-      
+
       const horarioLimite = new Date(dataObj);
       horarioLimite.setHours(horaFim, minutoFim, 0, 0);
 
