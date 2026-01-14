@@ -31,10 +31,10 @@ import { useAdminPermissions } from '@/hooks/useAdminPermissions';
 import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
 import { AppSidebar } from '@/components/AppSidebar';
 import Footer from '@/components/Footer';
-import { 
-  Calendar, 
-  CreditCard, 
-  Users, 
+import {
+  Calendar,
+  CreditCard,
+  Users,
   TrendingUp,
   Crown,
   AlertCircle,
@@ -60,25 +60,25 @@ const NewClinicDashboard = () => {
   console.log('🔥🔥🔥 [NewClinicDashboard] USER OBTIDO:', user?.email);
   console.log('🔥🔥🔥 [NewClinicDashboard] USER COMPLETO:', user);
   const { role, loading: roleLoading } = useUserRole();
-  
+
   // Hook de permissões admin
   console.log('🔥🔥🔥 [NewClinicDashboard] ANTES DE CHAMAR useAdminPermissions');
   const { isAdmin, isLoading: adminLoading } = useAdminPermissions();
   console.log('🔥🔥🔥 [NewClinicDashboard] DEPOIS DE CHAMAR useAdminPermissions:', { isAdmin, adminLoading });
-  
+
   console.log('🚨🚨🚨 [NewClinicDashboard] isAdmin:', isAdmin);
   console.log('🚨🚨🚨 [NewClinicDashboard] adminLoading:', adminLoading);
   console.log('🚨🚨🚨 [NewClinicDashboard] role:', role);
   console.log('🚨🚨🚨 [NewClinicDashboard] roleLoading:', roleLoading);
-  
+
   // Log para verificar se o hook está sendo executado
   console.log('🏥 [NewClinicDashboard] Executando useClinicProfile, user:', user?.id, user?.email);
   const { clinic, loading: clinicLoading } = useClinicProfile();
   console.log('🏥 [NewClinicDashboard] Resultado useClinicProfile - clinic:', clinic, 'loading:', clinicLoading);
-  
+
   console.log('🚨 [NewClinicDashboard] ADMIN DEBUG:', { isAdmin, adminLoading, role, roleLoading });
   console.log('🚨 [NewClinicDashboard] TIMESTAMP:', Date.now());
-  
+
   const { canAccessAdvancedServices } = useClinicPermissions(clinic?.id);
   const { loading: subscriptionLoading, canAccessAdvancedServices: hasAdvancedSubscription } = useSubscriptionCheck();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -143,7 +143,7 @@ const NewClinicDashboard = () => {
   console.log('🔧 [NewClinicDashboard] role:', role);
   console.log('🔧 [NewClinicDashboard] clinic:', clinic);
   console.log('🔧 [NewClinicDashboard] user:', user);
-  
+
   // CORREÇÃO CRÍTICA: Removido hardcode que causava vazamento de dados
   // Agora usa apenas a clínica real do usuário logado
   const testClinic = clinic;
@@ -192,8 +192,8 @@ const NewClinicDashboard = () => {
             <p className="text-red-600">
               Você não tem uma clínica associada ou não tem permissão para acessar esta área.
             </p>
-            <Button 
-              onClick={() => navigate('/clinic-login')} 
+            <Button
+              onClick={() => navigate('/clinic-login')}
               className="mt-4 w-full"
             >
               Fazer Login Novamente
@@ -216,12 +216,12 @@ const NewClinicDashboard = () => {
       isCredit: activeTab === 'credit',
       isCredito: activeTab === 'credito'
     });
-    
+
     switch (activeTab) {
       case 'dashboard':
         return (
-          <LoadingState 
-            isLoading={false} 
+          <LoadingState
+            isLoading={false}
             error={dashboardError}
             loadingText="Carregando dashboard..."
           >
@@ -230,24 +230,24 @@ const NewClinicDashboard = () => {
             </div>
           </LoadingState>
         );
-      
+
       case 'agenda':
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Dados Clinicorp</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Dados Clinicorp</h2>
+              <p className="text-gray-400">
                 Sistema integrado de agendamento com Clinicorp
               </p>
             </div>
             {clinic?.clinicorp_enabled ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
                   <div>
-                    <p className="font-medium text-green-900">Clinicorp Conectado</p>
-                    <p className="text-sm text-green-700">Sistema de agenda integrado e funcionando</p>
+                    <p className="font-medium text-emerald-400">Clinicorp Conectado</p>
+                    <p className="text-sm text-emerald-500/80">Sistema de agenda integrado e funcionando</p>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Acessar Agenda
                   </Button>
@@ -255,34 +255,36 @@ const NewClinicDashboard = () => {
                 <ClinicorpDashboard clinicId={clinic?.id || testClinic?.id} />
               </div>
             ) : (
-              <div className="text-center py-8">
-                <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Configure a Integração Clinicorp</h3>
-                <p className="text-muted-foreground mb-4">
+              <div className="text-center py-12 glass-effect rounded-[2rem] border-dashed border-primary/20">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-white">Configure a Integração Clinicorp</h3>
+                <p className="text-gray-400 mb-6 max-w-md mx-auto">
                   Configure suas credenciais do Clinicorp para acessar o sistema de agenda
                 </p>
-                <Button onClick={() => setActiveTab('config')}>
+                <Button onClick={() => setActiveTab('config')} size="lg" className="rounded-full shadow-glow shadow-primary/20">
                   Configurar Agora
                 </Button>
               </div>
             )}
           </div>
         );
-      
+
       case 'agendamento':
         const viewMode = searchParams.get('view') || 'calendario';
         return (
           <div className="space-y-6 px-4 sm:px-6">
             <div className="mb-6 text-center sm:text-left">
-              <h2 className="text-2xl font-bold mb-2">Gerenciar Agendamento</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Gerenciar Agendamento</h2>
+              <p className="text-gray-400">
                 Sistema de agendamento do Doutorizze
               </p>
             </div>
             <AgendamentosContent initialViewMode={viewMode as any} />
           </div>
         );
-      
+
       case 'credit':
       case 'credito':
         console.log('🔥 [NewClinicDashboard] Renderizando aba de crédito!');
@@ -292,39 +294,39 @@ const NewClinicDashboard = () => {
             <ClinicDashboard />
           </div>
         );
-      
+
       case 'leads':
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Gestão de Leads</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Gestão de Leads</h2>
+              <p className="text-gray-400">
                 Acompanhe e converta potenciais pacientes em consultas
               </p>
             </div>
             <LeadsManager clinicId={clinic?.id || testClinic?.id} />
           </div>
         );
-      
+
       case 'horarios':
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Configuração de Horários</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Configuração de Horários</h2>
+              <p className="text-gray-400">
                 Configure os horários de funcionamento e bloqueios da clínica
               </p>
             </div>
             <ConfiguracaoHorariosPage />
           </div>
         );
-      
+
       case 'relatorios':
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Relatórios de Agendamentos</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Relatórios de Agendamentos</h2>
+              <p className="text-gray-400">
                 Visualize relatórios detalhados dos agendamentos
               </p>
             </div>
@@ -334,10 +336,10 @@ const NewClinicDashboard = () => {
 
       case 'config':
         return (
-          <Card className="w-full">
+          <Card className="w-full glass-effect border-none">
             <CardHeader className="w-full">
-              <CardTitle>Configurações do Clinicorp</CardTitle>
-              <p className="text-muted-foreground">
+              <CardTitle className="text-white">Configurações do Clinicorp</CardTitle>
+              <p className="text-gray-400">
                 Configure a integração com o sistema Clinicorp
               </p>
             </CardHeader>
@@ -351,8 +353,8 @@ const NewClinicDashboard = () => {
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Gerenciar Profissionais</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Gerenciar Profissionais</h2>
+              <p className="text-gray-400">
                 Gerencie a equipe de profissionais da sua clínica
               </p>
             </div>
@@ -364,8 +366,8 @@ const NewClinicDashboard = () => {
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Central de Suporte</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Central de Suporte</h2>
+              <p className="text-gray-400">
                 Gerencie tickets de suporte da sua clínica
               </p>
             </div>
@@ -377,15 +379,15 @@ const NewClinicDashboard = () => {
         return (
           <div className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Perfil da Clínica</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-2xl font-bold mb-2 text-white">Perfil da Clínica</h2>
+              <p className="text-gray-400">
                 Gerencie as informações e configurações da sua clínica
               </p>
             </div>
             <ClinicProfileManager />
           </div>
         );
-      
+
       case 'advanced-services':
         if (!isMaster) {
           return (
@@ -397,8 +399,8 @@ const NewClinicDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="w-full">
-                <p className="text-muted-foreground">
-                  Apenas o usuário Master tem acesso aos Serviços Avançados. 
+                <p className="text-gray-400">
+                  Apenas o usuário Master tem acesso aos Serviços Avançados.
                   Entre em contato com o administrador da clínica para liberar o acesso.
                 </p>
               </CardContent>
@@ -423,11 +425,11 @@ const NewClinicDashboard = () => {
                   <Crown className="h-6 w-6 text-yellow-500" />
                   Serviços Avançados
                 </h2>
-                <p className="text-muted-foreground">
+                <p className="text-gray-400">
                   Funcionalidades premium disponíveis mediante assinatura
                 </p>
               </div>
-              
+
               <Card className="w-full border-2 border-yellow-200 bg-yellow-50">
                 <CardHeader className="w-full">
                   <CardTitle className="flex items-center gap-2 text-yellow-800">
@@ -439,7 +441,7 @@ const NewClinicDashboard = () => {
                   <p className="text-yellow-700 mb-4">
                     Para acessar os serviços avançados, é necessário ter uma assinatura ativa do plano Clínica Avançada.
                   </p>
-                  <Button 
+                  <Button
                     className="w-full"
                     onClick={() => navigate('/plans?type=clinic_advanced')}
                   >
@@ -458,11 +460,11 @@ const NewClinicDashboard = () => {
                 <Crown className="h-6 w-6 text-yellow-500" />
                 Serviços Avançados
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-gray-400">
                 Funcionalidades premium ativas
               </p>
             </div>
-            
+
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="w-full border-2 border-green-200 bg-green-50">
                 <CardHeader className="w-full">
@@ -472,7 +474,7 @@ const NewClinicDashboard = () => {
                   <p className="text-green-700 mb-4">
                     Sistema de pagamentos integrado com funcionalidades avançadas
                   </p>
-                  <Button 
+                  <Button
                     className="w-full"
                     variant="outline"
                   >
@@ -480,7 +482,7 @@ const NewClinicDashboard = () => {
                   </Button>
                 </CardContent>
               </Card>
-              
+
               <Card className="w-full border-2 border-green-200 bg-green-50">
                 <CardHeader className="w-full">
                   <CardTitle className="text-green-800">Marketing Automatizado</CardTitle>
@@ -489,7 +491,7 @@ const NewClinicDashboard = () => {
                   <p className="text-green-700 mb-4">
                     Campanhas automáticas e gestão avançada de relacionamento
                   </p>
-                  <Button 
+                  <Button
                     className="w-full"
                     variant="outline"
                   >
@@ -500,34 +502,38 @@ const NewClinicDashboard = () => {
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
   };
 
   console.log('🎯 [NewClinicDashboard] Pronto para renderizar, activeTab:', activeTab);
-  
-  return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-gray-50">
-      {/* Navbar da página home */}
-      <Navbar />
-      
-      {/* Container Principal */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar fixa: oculta em mobile, visível em md+ */}
-        <div className="hidden md:block md:w-64 flex-shrink-0">
-          <AppSidebar />
-        </div>
 
-        {/* Main content alinhado sem margem extra e centralizado */}
-        <div className="flex-1 flex flex-col min-w-0">
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#0F0F23] text-foreground selection:bg-primary/30">
+      {/* Navbar da página home - Talvez remover ou fazer dark? */}
+      {/* <Navbar /> */}
+
+      {/* Background Gradients/Aurora */}
+      <div className="fixed top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+      <div className="fixed bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+
+      {/* Container Principal */}
+      <div className="flex flex-1 overflow-hidden relative z-10">
+        {/* Sidebar fixa: oculta em mobile, visível em md+ */}
+        {/* AppSidebar já é fixed, então precisamos de um spacer ou ajustar o layout */}
+        {/* AppSidebar é `fixed left-0 top-0`. Então precisamos de margin-left no contéudo */}
+        <AppSidebar />
+
+        {/* Main content alinhado */}
+        <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 md:ml-20 lg:ml-64">
           {/* Header */}
-          <div className="flex-shrink-0 bg-white border-b">
+          <div className="flex-shrink-0 border-b border-white/5 bg-[#0F0F23]/80 backdrop-blur-md sticky top-0 z-40">
             <div className="container mx-auto px-4 sm:px-6 py-4">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div className="md:hidden">
-                  <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(true)}>
+                  <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(true)} className="text-white">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </div>
@@ -540,8 +546,8 @@ const NewClinicDashboard = () => {
           </div>
 
           {/* Content area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="container mx-auto px-4 sm:px-6 py-6">
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="container mx-auto px-4 sm:px-6 py-6 text-gray-100">
               {renderContent()}
               <Footer />
             </div>
@@ -550,11 +556,11 @@ const NewClinicDashboard = () => {
       </div>
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileSidebarOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-80 max-w-[85%] bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <h2 className="text-lg font-semibold">Menu</h2>
-              <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(false)}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setMobileSidebarOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-80 max-w-[85%] bg-[#0F0F23] shadow-2xl transform transition-transform duration-300 ease-in-out border-r border-white/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h2 className="text-lg font-bold text-white">Menu</h2>
+              <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(false)} className="text-white hover:bg-white/10">
                 <X className="h-5 w-5" />
               </Button>
             </div>

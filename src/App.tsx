@@ -148,7 +148,7 @@ const App = () => (
                     {/* Dashboards - fora do layout principal ou com layout próprio */}
                     <Route path="/patient-dashboard" element={<Navigate to="/patient/dashboard" replace />} />
                     <Route path="/patient/dashboard" element={<PatientDashboard />} />
-                    <Route path="/clinic-dashboard" element={<ClinicDashboard />} />
+                    <Route path="/clinic-dashboard" element={<NewClinicDashboard />} />
                     <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
                     {/* Rotas de Paciente (Dashboard Links) */}
