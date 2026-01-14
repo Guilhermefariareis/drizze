@@ -82,6 +82,13 @@ const PatientDashboard = () => {
   });
 
   useEffect(() => {
+    // Close sidebar on mobile by default
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       navigate('/login-paciente');
       return;
@@ -247,7 +254,7 @@ const PatientDashboard = () => {
     <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">
       <PatientSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-      <main className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-6 lg:p-10 relative overflow-hidden`}>
+      <main className={`flex-1 transition-all duration-500 lg:${sidebarOpen ? 'ml-64' : 'ml-20'} ml-0 p-4 lg:p-10 relative overflow-hidden w-full`}>
         {/* Background Gradients/Aurora */}
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
         <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-accent/10 rounded-full blur-[100px] -z-10"></div>
@@ -262,13 +269,13 @@ const PatientDashboard = () => {
                 </div>
                 <span className="text-primary font-bold tracking-[0.2em] text-xs uppercase">Dashboard Executivo</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
+              <h1 className="text-3xl lg:text-5xl font-black tracking-tight leading-tight text-white">
                 Bem-vindo, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent active:scale-95 transition-transform inline-block cursor-default">
                   {userName || 'Paciente'}
                 </span>
                 <span className="inline-block animate-bounce ml-2">👋</span>
               </h1>
-              <p className="text-muted-foreground text-lg font-medium mt-2 max-w-xl">
+              <p className="text-muted-foreground text-base lg:text-lg font-medium mt-2 max-w-xl">
                 Gerencie sua saúde financeira e seus tratamentos com a inteligência da <span className="text-foreground">Doutorizze</span>.
               </p>
             </div>
@@ -279,7 +286,7 @@ const PatientDashboard = () => {
               </Button>
               <Button
                 onClick={() => navigate('/patient/credit-request')}
-                className="bg-primary hover:bg-primary-hover text-white font-bold h-14 px-8 rounded-2xl transition-all shadow-glow shadow-primary/20 flex items-center gap-3 active:scale-95"
+                className="bg-primary hover:bg-primary-hover text-white font-bold h-12 lg:h-14 px-6 lg:px-8 rounded-2xl transition-all shadow-glow shadow-primary/20 flex items-center gap-2 lg:gap-3 active:scale-95 text-sm lg:text-base w-full sm:w-auto justify-center"
               >
                 <Plus className="w-6 h-6" />
                 Nova Solicitação
@@ -288,7 +295,7 @@ const PatientDashboard = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {[
               { label: 'Total de Pedidos', value: stats.totalRequests, icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
               { label: 'Em Análise', value: stats.pendingRequests, icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
@@ -296,14 +303,14 @@ const PatientDashboard = () => {
               { label: 'Disponível', value: formatCurrency(stats.totalApprovedAmount), icon: DollarSign, color: 'text-accent', bg: 'bg-accent/10' },
             ].map((stat, i) => (
               <Card key={i} className="glass-effect rounded-[2.5rem] overflow-hidden group hover:translate-y-[-4px] transition-all border-none">
-                <CardContent className="p-8">
+                <CardContent className="p-6 lg:p-8">
                   <div className="flex flex-col gap-4">
                     <div className={`w-14 h-14 rounded-2xl ${stat.bg} flex items-center justify-center shrink-0 shadow-lg shadow-black/20 group-hover:scale-110 transition-transform`}>
                       <stat.icon className={`w-7 h-7 ${stat.color}`} />
                     </div>
                     <div>
                       <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em]">{stat.label}</p>
-                      <p className="text-3xl font-black text-white mt-1 font-outfit">{stat.value}</p>
+                      <p className="text-2xl lg:text-3xl font-black text-white mt-1 font-outfit">{stat.value}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -311,9 +318,9 @@ const PatientDashboard = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
             {/* Recent Requests */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-6 lg:space-y-8">
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-3xl font-black flex items-center gap-3 text-white">
                   <Activity className="w-8 h-8 text-primary" />
@@ -351,7 +358,7 @@ const PatientDashboard = () => {
                       const StatusIcon = config.icon;
                       return (
                         <Card key={`credit-${request.id}`} className="glass-effect rounded-[2.5rem] overflow-hidden hover:bg-primary/5 transition-all cursor-pointer group border-none shadow-lg">
-                          <CardContent className="p-8">
+                          <CardContent className="p-6 lg:p-8">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                               <div className="flex items-center gap-6">
                                 <div className={`w-16 h-16 rounded-2xl ${config.bg} flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform`}>
@@ -386,7 +393,7 @@ const PatientDashboard = () => {
                       const appointment = activity.data;
                       return (
                         <Card key={`appointment-${appointment.id}`} className="glass-effect rounded-[2.5rem] overflow-hidden hover:bg-primary/5 transition-all cursor-pointer group border-none shadow-lg" onClick={() => navigate('/patient/appointments')}>
-                          <CardContent className="p-8">
+                          <CardContent className="p-6 lg:p-8">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                               <div className="flex items-center gap-6">
                                 <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
@@ -440,33 +447,33 @@ const PatientDashboard = () => {
                     key={i}
                     variant="ghost"
                     onClick={action.action}
-                    className="h-auto p-8 rounded-[2.5rem] glass-effect flex items-center gap-5 text-left hover:bg-white/[0.08] hover:border-primary/30 transition-all group border-none"
+                    className="h-auto p-6 lg:p-8 rounded-[2rem] lg:rounded-[2.5rem] glass-effect flex items-center gap-4 lg:gap-5 text-left hover:bg-white/[0.08] hover:border-primary/30 transition-all group border-none"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <action.icon className={`w-7 h-7 ${action.color}`} />
+                    <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/5 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <action.icon className={`w-6 h-6 lg:w-7 lg:h-7 ${action.color}`} />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-white text-lg">{action.label}</p>
-                      <p className="text-muted-foreground text-xs mt-1 leading-tight">{action.desc}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white text-base lg:text-lg truncate">{action.label}</p>
+                      <p className="text-muted-foreground text-xs mt-1 leading-tight truncate">{action.desc}</p>
                     </div>
-                    <ChevronRight className="w-6 h-6 text-white/20 group-hover:text-primary transition-colors" />
+                    <ChevronRight className="w-5 h-5 lg:w-6 lg:h-6 text-white/20 group-hover:text-primary transition-colors shrink-0" />
                   </Button>
                 ))}
               </div>
 
               {/* Tips Card */}
               <div className="relative group p-1 rounded-[3rem] bg-gradient-to-br from-primary/40 to-accent/40 shadow-glow shadow-primary/10">
-                <div className="bg-[#0F0F23] rounded-[2.9rem] p-10 relative overflow-hidden h-full">
+                <div className="bg-[#0F0F23] rounded-[2.9rem] p-8 lg:p-10 relative overflow-hidden h-full">
                   <div className="absolute top-[-20%] right-[-20%] w-40 h-40 bg-primary/20 rounded-full blur-[40px] -z-10 group-hover:bg-primary/30 transition-all"></div>
-                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mb-8 shadow-inner">
-                    <TrendingUp className="w-8 h-8 text-primary" />
+                  <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-primary/20 flex items-center justify-center mb-6 lg:mb-8 shadow-inner">
+                    <TrendingUp className="w-6 h-6 lg:w-8 lg:h-8 text-primary" />
                   </div>
-                  <h4 className="text-2xl font-black mb-4 text-white">Dica do Especialista</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed mb-8">
+                  <h4 className="text-xl lg:text-2xl font-black mb-3 lg:mb-4 text-white">Dica do Especialista</h4>
+                  <p className="text-sm lg:text-base text-muted-foreground leading-relaxed mb-6 lg:mb-8">
                     Mantenha seus documentos sempre atualizados. Isso agiliza a aprovação de qualquer procedimento em até <span className="text-primary font-bold">48 horas</span>.
                   </p>
                   <Button variant="link" className="text-primary font-bold p-0 h-auto hover:text-primary-hover flex items-center group-hover:translate-x-1 transition-transform" onClick={() => navigate('/patient/documents')}>
-                    Verificar documentos <ArrowRight className="ml-2 w-5 h-5" />
+                    Verificar documentos <ArrowRight className="ml-2 w-4 h-4 lg:w-5 lg:h-5" />
                   </Button>
                 </div>
               </div>
