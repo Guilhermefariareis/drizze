@@ -418,6 +418,43 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     }
   }, []);
 
+  // Buscar agendamento por ID
+  const buscarAgendamentoPorId = useCallback(async (id: string) => {
+    try {
+      const { data, error: queryError } = await supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          paciente:paciente_dados_id(id, nome, email, telefone),
+          clinica:clinica_id(id, name, city, phone, address),
+          profissional:profissional_id(id, profiles(nome:full_name)),
+          servico:servico_id(id, nome, preco, duracao_minutos)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (queryError) {
+        throw queryError;
+      }
+
+      // Format professional data
+      const agendamentoFormatado = {
+        ...data,
+        profissional: data.profissional ? {
+          id: data.profissional.id,
+          nome: data.profissional.profiles?.nome || 'Profissional não informado',
+          especialidade: data.profissional.especialidade
+        } : undefined
+      };
+
+      return agendamentoFormatado;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar agendamento';
+      setError(errorMessage);
+      return null;
+    }
+  }, []);
+
   // Cancelar agendamento
   const cancelarAgendamento = useCallback(async (id: string, motivo?: string) => {
     const observacoes = motivo ? `Cancelado: ${motivo}` : 'Agendamento cancelado';
@@ -488,42 +525,7 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     return await atualizarAgendamento(id, { status: 'no_show' });
   }, [atualizarAgendamento]);
 
-  // Buscar agendamento por ID
-  const buscarAgendamentoPorId = useCallback(async (id: string) => {
-    try {
-      const { data, error: queryError } = await supabase
-        .from('agendamentos')
-        .select(`
-          *,
-          paciente:paciente_dados_id(id, nome, email, telefone),
-          clinica:clinica_id(id, name, city, phone, address),
-          profissional:profissional_id(id, profiles(nome:full_name)),
-          servico:servico_id(id, nome, preco, duracao_minutos)
-        `)
-        .eq('id', id)
-        .single();
 
-      if (queryError) {
-        throw queryError;
-      }
-
-      // Format professional data
-      const agendamentoFormatado = {
-        ...data,
-        profissional: data.profissional ? {
-          id: data.profissional.id,
-          nome: data.profissional.profiles?.nome || 'Profissional não informado',
-          especialidade: data.profissional.especialidade
-        } : undefined
-      };
-
-      return agendamentoFormatado;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar agendamento';
-      setError(errorMessage);
-      return null;
-    }
-  }, []);
 
   // Buscar agendamentos por data
   const buscarAgendamentosPorData = useCallback(async (data: string) => {
