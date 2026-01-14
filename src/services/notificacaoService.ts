@@ -43,6 +43,7 @@ export class NotificacaoService {
     const mensagem = `Seu agendamento com ${profissional.full_name} foi confirmado para ${dataFormatada} às ${horarioFormatado} na ${clinica.name}.`;
 
     return this.criarNotificacao(
+      agendamento.paciente_id,
       agendamento.id,
       'confirmacao',
       titulo,
@@ -69,6 +70,7 @@ export class NotificacaoService {
     const mensagem = `Não se esqueça! Você tem uma consulta agendada com ${profissional.full_name} amanhã (${dataFormatada}) às ${horarioFormatado} na ${clinica.name}.`;
 
     return this.criarNotificacao(
+      agendamento.paciente_id,
       agendamento.id,
       'lembrete',
       titulo,
@@ -93,14 +95,15 @@ export class NotificacaoService {
 
     const titulo = 'Agendamento Cancelado';
     let mensagem = `Seu agendamento com ${profissional.full_name} para ${dataFormatada} às ${horarioFormatado} foi cancelado.`;
-    
+
     if (motivo) {
       mensagem += ` Motivo: ${motivo}`;
     }
-    
+
     mensagem += ' Entre em contato conosco para reagendar.';
 
     return this.criarNotificacao(
+      agendamento.paciente_id,
       agendamento.id,
       'cancelamento',
       titulo,
@@ -132,6 +135,7 @@ export class NotificacaoService {
     const mensagem = `Seu agendamento com ${profissional.full_name} foi reagendado de ${dataAntigaFormatada} às ${horarioAntigoFormatado} para ${dataNovaFormatada} às ${horarioNovoFormatado}.`;
 
     return this.criarNotificacao(
+      agendamentoNovo.paciente_id,
       agendamentoNovo.id,
       'reagendamento',
       titulo,
@@ -143,21 +147,28 @@ export class NotificacaoService {
    * Método base para criar notificações
    */
   private static async criarNotificacao(
+    userId: string,
     agendamentoId: string,
     tipo: 'confirmacao' | 'lembrete' | 'cancelamento' | 'reagendamento',
     titulo: string,
     mensagem: string
   ) {
     try {
+      // Default type mapping
+      const notificationType = 'info';
+
       const { data, error } = await supabase
-        .from('agendamento_notificacoes')
+        .from('notifications')
         .insert({
-          agendamento_id: agendamentoId,
-          tipo,
-          titulo,
-          mensagem,
-          data_envio: new Date().toISOString(),
-          lida: false
+          user_id: userId,
+          title: titulo,
+          message: mensagem,
+          type: notificationType,
+          is_read: false,
+          metadata: {
+            agendamento_id: agendamentoId,
+            sub_type: tipo
+          }
         })
         .select()
         .single();

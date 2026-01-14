@@ -100,7 +100,7 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
   };
 
   const calcularDuracao = () => {
-    if (agendamento.servico.duracao_minutos) {
+    if (agendamento.servico?.duracao_minutos) {
       const horas = Math.floor(agendamento.servico.duracao_minutos / 60);
       const minutos = agendamento.servico.duracao_minutos % 60;
 
@@ -157,41 +157,45 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
             </h3>
 
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg p-4 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-white/50">Nome</label>
-                  <p className="text-white font-medium">{agendamento.paciente.nome}</p>
+              {agendamento.paciente ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-white/50">Nome</label>
+                    <p className="text-white font-medium">{agendamento.paciente.nome}</p>
+                  </div>
+
+                  {agendamento.paciente.email && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Email</label>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <p className="text-gray-900">{agendamento.paciente.email}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {agendamento.paciente.telefone && (
+                    <div>
+                      <label className="text-sm font-medium text-white/50">Telefone</label>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-white/40" />
+                        <p className="text-white">{agendamento.paciente.telefone}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {agendamento.paciente.data_nascimento && (
+                    <div>
+                      <label className="text-sm font-medium text-white/50">Data de Nascimento</label>
+                      <p className="text-white">
+                        {format(parseISO(agendamento.paciente.data_nascimento), 'dd/MM/yyyy')}
+                      </p>
+                    </div>
+                  )}
                 </div>
-
-                {agendamento.paciente.email && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-900">{agendamento.paciente.email}</p>
-                    </div>
-                  </div>
-                )}
-
-                {agendamento.paciente.telefone && (
-                  <div>
-                    <label className="text-sm font-medium text-white/50">Telefone</label>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-white/40" />
-                      <p className="text-white">{agendamento.paciente.telefone}</p>
-                    </div>
-                  </div>
-                )}
-
-                {agendamento.paciente.data_nascimento && (
-                  <div>
-                    <label className="text-sm font-medium text-white/50">Data de Nascimento</label>
-                    <p className="text-white">
-                      {format(parseISO(agendamento.paciente.data_nascimento), 'dd/MM/yyyy')}
-                    </p>
-                  </div>
-                )}
-              </div>
+              ) : (
+                <p className="text-white/60">Informações do paciente não disponíveis</p>
+              )}
             </div>
           </div>
 
@@ -216,33 +220,41 @@ export const ModalAgendamento: React.FC<ModalAgendamentoProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-white/50">Serviço</label>
-                  <p className="text-white">{agendamento.servico.nome}</p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-white/50">Duração</label>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-white/40" />
-                    <p className="text-white">{calcularDuracao()}</p>
-                  </div>
-                </div>
-
-                {agendamento.servico.preco && (
-                  <div>
-                    <label className="text-sm font-medium text-white/50">Valor</label>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-white/40" />
-                      <p className="text-white">
-                        R$ {agendamento.servico.preco.toFixed(2).replace('.', ',')}
-                      </p>
+                {agendamento.servico ? (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium text-white/50">Serviço</label>
+                      <p className="text-white">{agendamento.servico.nome}</p>
                     </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-white/50">Duração</label>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-white/40" />
+                        <p className="text-white">{calcularDuracao()}</p>
+                      </div>
+                    </div>
+
+                    {agendamento.servico.preco && (
+                      <div>
+                        <label className="text-sm font-medium text-white/50">Valor</label>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-white/40" />
+                          <p className="text-white">
+                            R$ {agendamento.servico.preco.toFixed(2).replace('.', ',')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="col-span-1 md:col-span-2">
+                    <p className="text-white/60">Informações do serviço não disponíveis</p>
                   </div>
                 )}
               </div>
 
-              {agendamento.servico.descricao && (
+              {agendamento.servico?.descricao && (
                 <div>
                   <label className="text-sm font-medium text-white/50">Descrição do Serviço</label>
                   <p className="text-white/70 text-sm">{agendamento.servico.descricao}</p>

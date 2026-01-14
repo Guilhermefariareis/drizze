@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useRealTimeAgendamentos } from './useRealTimeAgendamentos.tsx';
 import { useAutoRefresh } from './useAutoRefresh.tsx';
 import { useCachedData } from './useDataCache.tsx';
+import { NotificacaoService } from '@/services/notificacaoService';
 
 export interface Agendamento {
   id: string;
@@ -420,13 +421,62 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
   // Cancelar agendamento
   const cancelarAgendamento = useCallback(async (id: string, motivo?: string) => {
     const observacoes = motivo ? `Cancelado: ${motivo}` : 'Agendamento cancelado';
-    return await atualizarAgendamento(id, { status: 'cancelado', observacoes });
-  }, [atualizarAgendamento]);
+    const updated = await atualizarAgendamento(id, { status: 'cancelado', observacoes });
+
+    if (updated) {
+      try {
+        const agendamentoCompleto = await buscarAgendamentoPorId(id);
+        if (agendamentoCompleto && agendamentoCompleto.paciente && agendamentoCompleto.clinica && agendamentoCompleto.profissional) {
+          await NotificacaoService.criarNotificacaoCancelamento(
+            agendamentoCompleto as any,
+            {
+              name: agendamentoCompleto.clinica.name,
+              address: agendamentoCompleto.clinica.address,
+              phone: agendamentoCompleto.clinica.phone
+            },
+            {
+              full_name: agendamentoCompleto.profissional.nome,
+              specialty: agendamentoCompleto.profissional.especialidade
+            },
+            motivo
+          );
+          toast.success("Paciente notificado do cancelamento");
+        }
+      } catch (e) {
+        console.error("Erro ao enviar notificação", e);
+      }
+    }
+    return updated;
+  }, [atualizarAgendamento, buscarAgendamentoPorId]);
 
   // Confirmar agendamento
   const confirmarAgendamento = useCallback(async (id: string) => {
-    return await atualizarAgendamento(id, { status: 'confirmado' });
-  }, [atualizarAgendamento]);
+    const updated = await atualizarAgendamento(id, { status: 'confirmado' });
+
+    if (updated) {
+      try {
+        const agendamentoCompleto = await buscarAgendamentoPorId(id);
+        if (agendamentoCompleto && agendamentoCompleto.paciente && agendamentoCompleto.clinica && agendamentoCompleto.profissional) {
+          await NotificacaoService.criarNotificacaoConfirmacao(
+            agendamentoCompleto as any,
+            {
+              name: agendamentoCompleto.clinica.name,
+              address: agendamentoCompleto.clinica.address,
+              phone: agendamentoCompleto.clinica.phone
+            },
+            {
+              full_name: agendamentoCompleto.profissional.nome,
+              specialty: agendamentoCompleto.profissional.especialidade
+            }
+          );
+          toast.success("Paciente notificado da confirmação");
+        }
+      } catch (e) {
+        console.error("Erro ao enviar notificação", e);
+      }
+    }
+    return updated;
+  }, [atualizarAgendamento, buscarAgendamentoPorId]);
 
   // Concluir agendamento
   const concluirAgendamento = useCallback(async (id: string) => {
@@ -443,7 +493,13 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
     try {
       const { data, error: queryError } = await supabase
         .from('agendamentos')
-        .select('*')
+        .select(`
+          *,
+          paciente:paciente_dados_id(id, nome, email, telefone),
+          clinica:clinica_id(id, name, city, phone, address),
+          profissional:profissional_id(id, profiles(nome:full_name)),
+          servico:servico_id(id, nome, preco, duracao_minutos)
+        `)
         .eq('id', id)
         .single();
 
@@ -451,7 +507,17 @@ export function useAgendamentos(filtrosIniciais?: FiltrosAgendamento, options?: 
         throw queryError;
       }
 
-      return data;
+      // Format professional data
+      const agendamentoFormatado = {
+        ...data,
+        profissional: data.profissional ? {
+          id: data.profissional.id,
+          nome: data.profissional.profiles?.nome || 'Profissional não informado',
+          especialidade: data.profissional.especialidade
+        } : undefined
+      };
+
+      return agendamentoFormatado;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar agendamento';
       setError(errorMessage);
