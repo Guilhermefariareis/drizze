@@ -52,6 +52,31 @@ function PatientAppointments() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('patient-appointments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agendamentos',
+          filter: `paciente_id=eq.${user.id}`
+        },
+        () => {
+          console.log('🔄 [Realtime] Agendamento alterado. Recarregando...');
+          loadAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const loadAppointments = async () => {
     if (!user) return;
 

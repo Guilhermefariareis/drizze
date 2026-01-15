@@ -52,7 +52,7 @@ export default function ClinicAppointments() {
     try {
       console.log('🔍 Iniciando carregamento de agendamentos...');
       console.log('👤 User ID:', user?.id);
-      
+
       // Primeiro buscar a clínica do usuário
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
@@ -109,9 +109,30 @@ export default function ClinicAppointments() {
         .eq('id', appointmentId);
 
       if (error) throw error;
-      
-      setAppointments(prev => 
-        prev.map(app => 
+
+      const appointment = appointments.find(app => app.id === appointmentId);
+
+      // Enviar notificação para o paciente
+      if (appointment?.paciente_id) {
+        const statusMap: Record<string, string> = {
+          confirmado: 'confirmada',
+          cancelado: 'cancelada',
+          concluido: 'concluída'
+        };
+
+        const statusLabel = statusMap[newStatus] || newStatus;
+
+        await supabase.from('notifications').insert({
+          user_id: appointment.paciente_id,
+          type: newStatus === 'confirmado' ? 'success' : newStatus === 'cancelado' ? 'error' : 'info',
+          title: `Consulta ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}`,
+          message: `Sua consulta para o dia ${format(new Date(appointment.data_hora), "dd/MM 'às' HH:mm")} foi ${statusLabel}.`,
+          read: false
+        });
+      }
+
+      setAppointments(prev =>
+        prev.map(app =>
           app.id === appointmentId ? { ...app, status: newStatus } : app
         )
       );
@@ -357,18 +378,18 @@ export default function ClinicAppointments() {
                     <Eye className="h-4 w-4 mr-2" />
                     Detalhes
                   </Button>
-                  
+
                   {appointment.status === 'pendente' && (
                     <>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={() => updateAppointmentStatus(appointment.id, 'confirmado')}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Confirmar
                       </Button>
-                      <Button 
-                        variant="destructive" 
+                      <Button
+                        variant="destructive"
                         size="sm"
                         onClick={() => updateAppointmentStatus(appointment.id, 'cancelado')}
                       >
@@ -379,8 +400,8 @@ export default function ClinicAppointments() {
                   )}
 
                   {appointment.status === 'confirmado' && (
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       size="sm"
                       onClick={() => updateAppointmentStatus(appointment.id, 'concluido')}
                     >

@@ -47,6 +47,49 @@ const MeusAgendamentos = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscription real-time para atualizações automáticas
+    const setupSubscription = async () => {
+      // Buscar o profile primeiro
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) return;
+
+      const channel = supabase
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agendamentos',
+            filter: `paciente_id=eq.${profile.id}`
+          },
+          () => {
+            console.log('🔄 [Realtime] Mudança detectada nos agendamentos. Atualizando...');
+            fetchAgendamentos();
+          }
+        )
+        .subscribe();
+
+      return channel;
+    };
+
+    const subscriptionPromise = setupSubscription();
+
+    return () => {
+      subscriptionPromise.then(channel => {
+        if (channel) supabase.removeChannel(channel);
+      });
+    };
+  }, [user]);
+
   const fetchAgendamentos = async () => {
     try {
       setLoading(true);
@@ -71,7 +114,7 @@ const MeusAgendamentos = () => {
         .select(`
           *,
           clinicas:clinics(name, phone, address),
-          servico:servico_id(nome, preco, duracao_minutos),
+          servico:servico_id(nome, valor, duracao_minutos),
           profissional:profissional_id(id, profiles(nome:full_name))
         `)
         .eq('paciente_id', profile.id)
@@ -124,7 +167,7 @@ const MeusAgendamentos = () => {
     return {
       date: date.toLocaleDateString('pt-BR', {
         day: '2-digit',
-        month: '2-digit',
+        month: 'long',
         year: 'numeric'
       }),
       time: date.toLocaleTimeString('pt-BR', {
@@ -135,7 +178,7 @@ const MeusAgendamentos = () => {
   };
 
   const formatPrice = (price: number | null) => {
-    if (!price) return 'Não informado';
+    if (!price) return 'Sob consulta';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -144,14 +187,19 @@ const MeusAgendamentos = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pendente: { label: 'Pendente', variant: 'secondary' as const },
-      confirmado: { label: 'Confirmado', variant: 'default' as const },
-      cancelado: { label: 'Cancelado', variant: 'destructive' as const },
-      concluido: { label: 'Concluído', variant: 'outline' as const }
+      pendente: { label: 'Pendente', className: 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]' },
+      confirmado: { label: 'Confirmado', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' },
+      cancelado: { label: 'Cancelado', className: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]' },
+      concluido: { label: 'Concluído', className: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]' },
+      no_show: { label: 'Reagendado', className: 'bg-purple-500/10 text-purple-400 border-purple-500/20' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return (
+      <Badge variant="outline" className={`px-4 py-1.5 rounded-full font-bold uppercase tracking-wider text-[10px] ${config.className}`}>
+        {config.label}
+      </Badge>
+    );
   };
 
   const canCancelAgendamento = (status: string, dataHora: string) => {
@@ -162,133 +210,174 @@ const MeusAgendamentos = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Carregando seus agendamentos...</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
+        <div className="text-center group">
+          <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mx-auto mb-6 shadow-[0_0_15px_rgba(99,102,241,0.2)]"></div>
+          <p className="text-gray-400 font-medium animate-pulse">Carregando seus agendamentos...</p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#0a0a0b] relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/5 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="container mx-auto px-4 py-12 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Meus Agendamentos</h1>
-            <p className="text-gray-600">Gerencie suas consultas agendadas</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Meus Agendamentos</h1>
+              <p className="text-gray-400 text-lg">Gerencie suas consultas de forma simples e rápida.</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/search'}
+              className="bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 transition-all px-6 h-12"
+            >
+              Novo Agendamento
+            </Button>
           </div>
 
           {agendamentos.length === 0 ? (
-            <Card className="text-center py-12">
+            <Card className="bg-[#141416]/60 backdrop-blur-xl border-white/5 text-center py-20 shadow-2xl">
               <CardContent>
-                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Nenhum agendamento encontrado
+                <div className="w-20 h-20 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-indigo-500/20 shadow-inner">
+                  <Calendar className="h-10 w-10 text-indigo-500" />
+                </div>
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  Inicie sua jornada de saúde
                 </h3>
-                <p className="text-gray-600 mb-6">
-                  Você ainda não possui consultas agendadas.
+                <p className="text-gray-400 mb-8 max-w-sm mx-auto">
+                  Você ainda não possui consultas agendadas. Clique no botão acima para encontrar a clínica ideal.
                 </p>
-                <Button onClick={() => window.location.href = '/search'}>
-                  Agendar Consulta
+                <Button
+                  onClick={() => window.location.href = '/search'}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 h-12 shadow-[0_4px_20px_rgba(79,70,229,0.3)] transition-all hover:scale-[1.02]"
+                >
+                  Buscar Clínicas
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {agendamentos.map((agendamento) => {
                 const { date, time } = formatDateTime(agendamento.data_hora);
                 return (
-                  <Card key={agendamento.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-4">
+                  <Card key={agendamento.id} className="bg-[#141416]/60 backdrop-blur-xl border-white/5 hover:border-indigo-500/30 transition-all duration-300 group shadow-lg">
+                    <CardHeader className="pb-4 border-b border-white/5">
                       <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg font-semibold text-gray-900">
-                            {agendamento.clinicas?.name || 'Clínica não informada'}
-                          </CardTitle>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {agendamento.tipo_consulta.replace('_', ' ').toUpperCase()}
-                          </p>
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                            <MapPin className="h-6 w-6 text-indigo-500" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors">
+                              {agendamento.clinicas?.name || 'Clínica não informada'}
+                            </CardTitle>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="bg-indigo-500/5 text-indigo-400 border-indigo-500/20 uppercase tracking-wider text-[10px] font-bold">
+                                {agendamento.tipo_consulta.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
                         {getStatusBadge(agendamento.status)}
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium">{date}</span>
+                    <CardContent className="pt-6 space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-500 uppercase font-semibold">Data</p>
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Calendar className="h-4 w-4 text-indigo-500" />
+                            <span className="font-medium">{date}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium">{time}</span>
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-500 uppercase font-semibold">Horário</p>
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Clock className="h-4 w-4 text-indigo-500" />
+                            <span className="font-medium">{time}</span>
+                          </div>
                         </div>
-                        {agendamento.clinicas?.phone && (
-                          <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 text-blue-600" />
-                            <span className="text-sm">{agendamento.clinicas.phone}</span>
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-500 uppercase font-semibold">Investimento</p>
+                          <div className="flex items-center gap-2 text-emerald-400">
+                            <DollarSign className="h-4 w-4" />
+                            <span className="font-bold">
+                              {formatPrice(agendamento.valor || agendamento.servico?.valor || 0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-500 uppercase font-semibold">Contato</p>
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Phone className="h-4 w-4 text-indigo-500" />
+                            <span className="text-sm truncate">{agendamento.clinicas?.phone || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-black/20 rounded-2xl p-6 border border-white/5 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                          <div>
+                            <p className="text-sm text-gray-400 mb-1">Serviço & Especialista</p>
+                            <h4 className="text-lg font-bold text-white">
+                              {agendamento.servico?.nome || agendamento.tipo_consulta.replace('_', ' ').toUpperCase()}
+                            </h4>
+                            {agendamento.profissional && (
+                              <p className="text-sm text-indigo-400 font-medium mt-1">
+                                Dr(a). {(agendamento.profissional as any).profiles?.nome || 'Especialista'}
+                              </p>
+                            )}
+                          </div>
+
+                          {agendamento.codigo_confirmacao && (
+                            <div className="bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-xl text-center">
+                              <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mb-1">Check-in</p>
+                              <span className="text-xl font-mono font-bold text-white tracking-widest">{agendamento.codigo_confirmacao}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {agendamento.clinicas?.address && (
+                          <div className="flex items-start gap-3 pt-2 border-t border-white/5 mt-2">
+                            <MapPin className="h-5 w-5 text-gray-500 mt-0.5 shrink-0" />
+                            <span className="text-sm text-gray-400 leading-relaxed italic">
+                              {agendamento.clinicas.address}
+                            </span>
                           </div>
                         )}
-                        <div className="flex items-center space-x-2">
-                          <DollarSign className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium">
-                            {formatPrice(agendamento.valor || agendamento.servico?.valor || 0)}
-                          </span>
-                        </div>
-                      </div>
 
-                      {/* Profissional e Serviço */}
-                      <div className="pt-2">
-                        <p className="text-sm font-semibold text-gray-700">
-                          {agendamento.servico?.nome || agendamento.tipo_consulta.replace('_', ' ').toUpperCase()}
-                        </p>
-                        {agendamento.profissional && (
-                          <p className="text-xs text-gray-500">
-                            Profissional: {(agendamento.profissional as any).profiles?.nome || 'Não informado'}
-                          </p>
+                        {agendamento.observacoes && (
+                          <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-xl mt-4">
+                            <p className="text-sm text-amber-200/70 italic">
+                              <strong className="text-amber-400 not-italic mr-2">Nota:</strong> {agendamento.observacoes}
+                            </p>
+                          </div>
                         )}
                       </div>
 
-                      {agendamento.clinicas?.address && (
-                        <div className="flex items-start space-x-2">
-                          <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
-                          <span className="text-sm text-gray-600">
-                            {agendamento.clinicas.address}
-                          </span>
-                        </div>
-                      )}
-
-                      {agendamento.observacoes && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="text-sm text-gray-700">
-                            <strong>Observações:</strong> {agendamento.observacoes}
-                          </p>
-                        </div>
-                      )}
-
-                      {agendamento.codigo_confirmacao && (
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <p className="text-sm text-blue-700">
-                            <strong>Código de Confirmação:</strong> {agendamento.codigo_confirmacao}
-                          </p>
-                        </div>
-                      )}
-
                       {canCancelAgendamento(agendamento.status, agendamento.data_hora) && (
-                        <div className="pt-4 border-t">
+                        <div className="flex justify-end pt-2">
                           <Button
-                            variant="destructive"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleCancelAgendamento(agendamento.id)}
                             disabled={cancellingId === agendamento.id}
+                            className="text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all font-medium"
                           >
-                            {cancellingId === agendamento.id ? 'Cancelando...' : 'Cancelar Agendamento'}
+                            {cancellingId === agendamento.id ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                                Cancelando...
+                              </div>
+                            ) : 'Cancelar Agendamento'}
                           </Button>
                         </div>
                       )}
@@ -300,7 +389,9 @@ const MeusAgendamentos = () => {
           )}
         </div>
       </div>
-      <Footer />
+      <div className="border-t border-white/5 bg-[#0d0d0f]">
+        <Footer />
+      </div>
     </div>
   );
 };

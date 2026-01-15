@@ -211,7 +211,13 @@ const PatientDocuments: React.FC = () => {
 
     try {
       // Upload para Supabase Storage
-      const fileName = `${Date.now()}_${uploadingFile.file.name}`;
+      // Sanitizar nome do arquivo para evitar erro "Invalid key" (remover espaços e caracteres especiais)
+      const sanitizedName = uploadingFile.file.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-zA-Z0-9.-]/g, '_'); // Substitui tudo que não for alfanumérico por underscore
+
+      const fileName = `${Date.now()}_${sanitizedName}`;
       const filePath = `credit-documents/${selectedRequestId}/${fileName}`;
 
       // Simular progresso de upload
@@ -439,10 +445,10 @@ const PatientDocuments: React.FC = () => {
                     <Label>Status da Solicitação</Label>
                     <div className="mt-2">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${creditRequests.find(r => r.id === selectedRequestId)?.status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : creditRequests.find(r => r.id === selectedRequestId)?.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-green-100 text-green-800'
+                        : creditRequests.find(r => r.id === selectedRequestId)?.status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
                         }`}>
                         {creditRequests.find(r => r.id === selectedRequestId)?.status === 'approved' && 'Aprovado'}
                         {creditRequests.find(r => r.id === selectedRequestId)?.status === 'rejected' && 'Rejeitado'}

@@ -182,6 +182,7 @@ export interface Database {
         Row: {
           id: string;
           credit_request_id: string;
+          patient_id?: string;
           document_type: 'cpf' | 'income_proof' | 'address_proof' | 'photo' | 'other';
           file_url: string;
           file_name: string;
@@ -193,6 +194,7 @@ export interface Database {
         Insert: {
           id?: string;
           credit_request_id: string;
+          patient_id?: string;
           document_type: 'cpf' | 'income_proof' | 'address_proof' | 'photo' | 'other';
           file_url: string;
           file_name: string;
@@ -204,6 +206,7 @@ export interface Database {
         Update: {
           id?: string;
           credit_request_id?: string;
+          patient_id?: string;
           document_type?: 'cpf' | 'income_proof' | 'address_proof' | 'photo' | 'other';
           file_url?: string;
           file_name?: string;

@@ -139,6 +139,26 @@ export default function AdminAppointments() {
         .eq('id', id);
 
       if (error) throw error;
+
+      const appointment = appointments.find(app => app.id === id);
+      if (appointment?.patient_id) {
+        const statusMap: Record<string, string> = {
+          confirmada: 'confirmada',
+          cancelada: 'cancelada',
+          concluida: 'concluída'
+        };
+
+        const statusLabel = statusMap[newStatus] || newStatus;
+
+        await adminSupabase.from('notifications').insert({
+          user_id: appointment.patient_id,
+          type: newStatus === 'confirmada' ? 'success' : newStatus === 'cancelada' ? 'error' : 'info',
+          title: `Consulta ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}`,
+          message: `Sua consulta para o dia ${new Date(appointment.data_hora).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} foi ${statusLabel}.`,
+          read: false
+        });
+      }
+
       toast.success(`Consulta ${newStatus} com sucesso`);
       fetchAppointments();
       fetchStats();

@@ -173,12 +173,12 @@ export default function AdminDashboard() {
                   <CreditCard className="h-6 w-6" />
                   Análise de Crédito
                 </Button>
-                <Button variant="secondary" className="h-24 flex flex-col gap-2 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900 border-red-100 dark:border-red-900" onClick={() => navigate('/admin/users')}>
-                  <ShieldAlert className="h-6 w-6 text-red-600" />
+                <Button variant="outline" className="h-24 flex flex-col gap-2 border-red-500/20 hover:bg-red-500/10 hover:border-red-500/50 transition-all group" onClick={() => navigate('/admin/users')}>
+                  <ShieldAlert className="h-6 w-6 text-red-500 group-hover:scale-110 transition-transform" />
                   Bloquear Usuários
                 </Button>
-                <Button variant="secondary" className="h-24 flex flex-col gap-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950 dark:hover:bg-purple-900 border-purple-100 dark:border-purple-900" onClick={() => navigate('/admin/subscriptions')}>
-                  <Crown className="h-6 w-6 text-purple-600" />
+                <Button variant="outline" className="h-24 flex flex-col gap-2 border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all group" onClick={() => navigate('/admin/subscriptions')}>
+                  <Crown className="h-6 w-6 text-purple-500 group-hover:scale-110 transition-transform" />
                   Gerenciar Planos
                 </Button>
               </CardContent>

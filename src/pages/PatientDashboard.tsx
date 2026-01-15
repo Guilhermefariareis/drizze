@@ -96,6 +96,45 @@ const PatientDashboard = () => {
     fetchDashboardData();
   }, [user, navigate]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('patient-dashboard-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agendamentos',
+          filter: `paciente_id=eq.${user.id}`
+        },
+        () => {
+          console.log('🔄 [Realtime] Agendamento alterado. Recarregando dashboard...');
+          fetchDashboardData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credit_requests'
+          // No filter here as we might not know the profile ID yet or it might be complex
+          // But we can filter by patient_id if we fetch the profile first.
+          // For now, let's keep it simple for agendamentos as requested.
+        },
+        () => {
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
