@@ -4,7 +4,6 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SiteConfigManager from "@/components/admin/SiteConfigManager";
 import TestimonialsManager from "@/components/admin/TestimonialsManager";
-import SupportTicketsManager from "@/components/admin/SupportTicketsManager";
 import { Settings, MessageSquare, Users, CreditCard } from "lucide-react";
 
 const AdminSiteConfig = () => {
@@ -12,14 +11,14 @@ const AdminSiteConfig = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <AdminSidebar 
-        open={sidebarOpen} 
-        onToggle={() => setSidebarOpen(!sidebarOpen)} 
+      <AdminSidebar
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader hideSearch />
-        
+
         <main className="p-2 sm:p-4 lg:p-6">
           <div className="max-w-7xl mx-auto">
             <div className="mb-4 sm:mb-6 lg:mb-8">

@@ -61,6 +61,7 @@ import ClinicCreditAnalysis from "./pages/clinic/ClinicCreditAnalysis";
 import OffersPage from "./pages/clinic/OffersPage";
 import AdminCreditManagement from "./pages/admin/AdminCreditManagement";
 import AdminCreditDetails from "./pages/admin/AdminCreditDetails";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import { AdminRoute } from "./components/AdminRoute";
 import PlansPage from "./pages/PlansPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
@@ -150,12 +151,25 @@ const App = () => (
                     <Route path="/patient-dashboard" element={<Navigate to="/patient/dashboard" replace />} />
                     <Route path="/patient/dashboard" element={<PatientDashboard />} />
                     <Route path="/clinic-dashboard" element={<NewClinicDashboard />} />
-                    <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                    <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                    <Route path="/admin/clinics" element={<AdminRoute><AdminClinics /></AdminRoute>} />
+                    <Route path="/admin/appointments" element={<AdminRoute><AdminAppointments /></AdminRoute>} />
+                    <Route path="/admin/financial" element={<AdminRoute><AdminFinances /></AdminRoute>} />
+                    <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+                    <Route path="/admin/site-config" element={<AdminRoute><AdminSiteConfig /></AdminRoute>} />
+                    <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
+                    <Route path="/admin/security" element={<AdminRoute><AdminSecurity /></AdminRoute>} />
+                    <Route path="/admin/audit" element={<AdminRoute><AdminAudit /></AdminRoute>} />
+                    <Route path="/admin/credentialing" element={<AdminRoute><AdminCredentialing /></AdminRoute>} />
+                    <Route path="/admin/credit-management" element={<AdminRoute><AdminCreditManagement /></AdminRoute>} />
+                    <Route path="/admin/credit-details/:id" element={<AdminRoute><AdminCreditDetails /></AdminRoute>} />
+                    <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
+                    <Route path="/admin/health" element={<AdminRoute><HealthCheckPage /></AdminRoute>} />
 
                     {/* Rotas de Paciente (Dashboard Links) */}
                     <Route path="/patient/credit-request" element={<PatientCreditRequest />} />
                     <Route path="/patient/credit" element={<PatientCredit />} />
-                    <Route path="/patient/appointments" element={<PatientAppointments />} />
                     <Route path="/patient/appointments" element={<PatientAppointments />} />
                     <Route path="/patient/documents" element={<PatientDocuments />} />
                     <Route path="/patient/plan" element={<PatientPlan />} />
@@ -174,7 +188,6 @@ const App = () => (
                     <Route path="/test-credit" element={<AdminRoute><TestCreditPage /></AdminRoute>} />
                     <Route path="/proposal/:requestId" element={<ProposalDetailsPage />} />
 
-                    <Route path="/admin/health" element={<HealthCheckPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

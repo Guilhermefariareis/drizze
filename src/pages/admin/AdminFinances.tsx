@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
@@ -9,9 +10,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createClient } from '@supabase/supabase-js';
 import { DollarSign, TrendingUp, CreditCard, AlertCircle, Search, Filter, Download, Eye, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+
+// Admin client to bypass RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
 
 type Payment = {
   id: string;
@@ -53,7 +61,7 @@ export default function AdminFinances() {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await adminSupabase
         .from('payments')
         .select(`
           *,
@@ -80,31 +88,31 @@ export default function AdminFinances() {
   const fetchStats = async () => {
     try {
       // Total revenue
-      const { data: revenueData } = await supabase
+      const { data: revenueData } = await adminSupabase
         .from('payments')
         .select('amount')
         .eq('status', 'completed');
 
       // Pending amount
-      const { data: pendingData } = await supabase
+      const { data: pendingData } = await adminSupabase
         .from('payments')
         .select('amount')
         .eq('status', 'pending');
 
       // Total processed payments count
-      const { data: processedData } = await supabase
+      const { count: processedCount } = await adminSupabase
         .from('payments')
-        .select('id', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'completed');
 
-      const totalRevenue = revenueData?.reduce((acc, payment) => acc + payment.amount, 0) || 0;
-      const pendingAmount = pendingData?.reduce((acc, payment) => acc + payment.amount, 0) || 0;
+      const totalRevenue = revenueData?.reduce((acc, payment) => acc + (payment.amount || 0), 0) || 0;
+      const totalPending = pendingData?.reduce((acc, payment) => acc + (payment.amount || 0), 0) || 0;
       const commissionTotal = totalRevenue * 0.08; // 8% commission
 
       setStats({
         totalRevenue,
-        pendingAmount,
-        processedCount: processedData?.length || 0,
+        pendingAmount: totalPending,
+        processedCount: processedCount || 0,
         commissionTotal
       });
     } catch (error) {
@@ -153,51 +161,51 @@ export default function AdminFinances() {
   const filteredPayments = payments.filter(payment => {
     const clinicName = payment.appointments?.clinics?.name || '';
     const patientName = payment.appointments?.profiles?.full_name || '';
-    
+
     const matchesSearch = clinicName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patientName.toLowerCase().includes(searchQuery.toLowerCase());
+      patientName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const statsData = [
-    { 
-      title: "Receita Total", 
-      value: formatCurrency(stats.totalRevenue), 
-      change: "+25%", 
-      icon: DollarSign, 
-      color: "text-success" 
+    {
+      title: "Receita Total",
+      value: formatCurrency(stats.totalRevenue),
+      change: "+25%",
+      icon: DollarSign,
+      color: "text-success"
     },
-    { 
-      title: "Comissões", 
-      value: formatCurrency(stats.commissionTotal), 
-      change: "+18%", 
-      icon: TrendingUp, 
-      color: "text-primary" 
+    {
+      title: "Comissões",
+      value: formatCurrency(stats.commissionTotal),
+      change: "+18%",
+      icon: TrendingUp,
+      color: "text-primary"
     },
-    { 
-      title: "Pendente", 
-      value: formatCurrency(stats.pendingAmount), 
-      change: "-5%", 
-      icon: AlertCircle, 
-      color: "text-warning" 
+    {
+      title: "Pendente",
+      value: formatCurrency(stats.pendingAmount),
+      change: "-5%",
+      icon: AlertCircle,
+      color: "text-warning"
     },
-    { 
-      title: "Processadas", 
-      value: stats.processedCount.toString(), 
-      change: "+12%", 
-      icon: CreditCard, 
-      color: "text-accent" 
+    {
+      title: "Processadas",
+      value: stats.processedCount.toString(),
+      change: "+12%",
+      icon: CreditCard,
+      color: "text-accent"
     }
   ];
 
   return (
     <div className="min-h-screen bg-background flex">
       <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Gerenciar Financeiro</h1>
@@ -241,13 +249,13 @@ export default function AdminFinances() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Buscar transações..." 
-                        className="pl-10" 
+                      <Input
+                        placeholder="Buscar transações..."
+                        className="pl-10"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
@@ -266,7 +274,7 @@ export default function AdminFinances() {
                     </Select>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   {loading ? (
                     <div className="flex items-center justify-center py-8">

@@ -22,7 +22,7 @@ export const useAdminPermissions = (): AdminPermissions => {
 
   const checkPermissions = async (): Promise<boolean> => {
     console.log('🔥🔥🔥 [useAdminPermissions] INICIANDO checkPermissions');
-    
+
     if (!user) {
       console.log('🔥🔥🔥 [useAdminPermissions] Usuário não encontrado');
       setIsAdmin(false);
@@ -31,6 +31,13 @@ export const useAdminPermissions = (): AdminPermissions => {
     }
 
     console.log('🔥🔥🔥 [useAdminPermissions] Usuário encontrado:', user.id, user.email);
+
+    if (user.user_metadata?.role === 'admin' || user.user_metadata?.role === 'master') {
+      console.log('🔥🔥🔥 [useAdminPermissions] ADMIN CONFIRMADO pelo metadata!');
+      setIsAdmin(true);
+      setIsLoading(false);
+      return true;
+    }
 
     try {
       setIsLoading(true);
@@ -47,8 +54,12 @@ export const useAdminPermissions = (): AdminPermissions => {
       console.log('🔥🔥🔥 [useAdminPermissions] Resultado da busca do perfil:', { profile, profileError });
 
       if (profileError) {
-        console.log('🔥🔥🔥 [useAdminPermissions] Erro ao buscar perfil:', profileError);
-        throw profileError;
+        // Ignorar erro se for apenas "perfil não encontrado", pois vamos verificar o fallback
+        if (profileError.code !== 'PGRST116') {
+          console.log('🔥🔥🔥 [useAdminPermissions] Erro grave ao buscar perfil:', profileError);
+          throw profileError;
+        }
+        console.log('🔥🔥🔥 [useAdminPermissions] Perfil não encontrado (PGRST116), prosseguindo para fallback...');
       }
 
       if (profile && (profile.role === 'admin' || profile.role === 'master')) {

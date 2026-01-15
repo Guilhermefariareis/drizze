@@ -33,7 +33,7 @@ type ClinicLead = {
   status: string;
   created_at: string;
   updated_at?: string;
-  
+
   // Novos campos individuais
   razao_social?: string;
   cnpj?: string;
@@ -72,6 +72,7 @@ export default function AdminCredentialing() {
   const [selectedLead, setSelectedLead] = useState<ClinicLead | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     thisMonth: 0,
@@ -92,8 +93,8 @@ export default function AdminCredentialing() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      
-      const { data, error } = await supabase
+
+      const { data, error } = await adminSupabase
         .from('clinic_leads')
         .select('*')
         .order('created_at', { ascending: false });
@@ -121,7 +122,7 @@ export default function AdminCredentialing() {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
-      
+
       const { data: monthData } = await adminSupabase
         .from('clinic_leads')
         .select('id', { count: 'exact' })
@@ -191,17 +192,17 @@ export default function AdminCredentialing() {
   const updateLeadStatus = async (leadId: string, newStatus: string) => {
     try {
       await updateLeadInDatabase(leadId, { status: newStatus });
-      
+
       // Atualizar estado local
-      setLeads(prevLeads => 
-        prevLeads.map(lead => 
+      setLeads(prevLeads =>
+        prevLeads.map(lead =>
           lead.id === leadId ? { ...lead, status: newStatus } : lead
         )
       );
-      
+
       // Atualizar estatísticas
       await fetchStats();
-      
+
       toast.success('Status atualizado com sucesso!');
     } catch (error) {
       toast.error('Erro ao atualizar status');
@@ -221,19 +222,19 @@ export default function AdminCredentialing() {
       }
 
       // Atualizar estado local
-      setLeads(prevLeads => 
-        prevLeads.map(lead => 
+      setLeads(prevLeads =>
+        prevLeads.map(lead =>
           leadIds.includes(lead.id) ? { ...lead, status: newStatus } : lead
         )
       );
-      
+
       // Limpar seleção
       setSelectedLeads(new Set());
       setSelectAll(false);
-      
+
       // Atualizar estatísticas
       await fetchStats();
-      
+
       toast.success(`${leadIds.length} lead(s) atualizado(s) com sucesso!`);
     } catch (error) {
       console.error('Erro ao atualizar leads em lote:', error);
@@ -314,7 +315,7 @@ export default function AdminCredentialing() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success(`${selectedData.length} registros exportados para CSV`);
   };
 
@@ -364,7 +365,7 @@ export default function AdminCredentialing() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success(`${selectedData.length} registros exportados para Excel`);
   };
 
@@ -438,12 +439,12 @@ export default function AdminCredentialing() {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.focus();
-    
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
     }, 250);
-    
+
     toast.success(`Relatório PDF gerado com ${selectedData.length} registros`);
   };
 
@@ -474,18 +475,18 @@ export default function AdminCredentialing() {
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lead.nome_clinica.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lead.telefone.includes(searchQuery);
+      lead.nome_clinica.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.telefone.includes(searchQuery);
     const matchesUf = ufFilter === 'all' || lead.cidade === ufFilter;
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    
+
     // Filtro por período
     let matchesDate = true;
     if (dateFilter !== 'all') {
       const leadDate = new Date(lead.created_at);
       const now = new Date();
-      
+
       switch (dateFilter) {
         case 'week':
           const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -508,240 +509,41 @@ export default function AdminCredentialing() {
           break;
       }
     }
-    
+
     return matchesSearch && matchesUf && matchesStatus && matchesDate;
   });
 
   const uniqueCities = Array.from(new Set(leads.map(lead => lead.cidade))).sort();
 
-  const LeadDetailsModal = ({ lead }: { lead: ClinicLead }) => (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold">
-          Detalhes da Solicitação - {lead.nome}
-        </DialogTitle>
-      </DialogHeader>
-      
-      <Tabs defaultValue="personal" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
-          <TabsTrigger value="clinic">Dados da Clínica</TabsTrigger>
-          <TabsTrigger value="business">Dados Comerciais</TabsTrigger>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="personal" className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Dados Pessoais do Responsável</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Nome Completo</label>
-                <p className="text-gray-900 font-medium mt-1">{lead.nome || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Cargo</label>
-                <p className="text-gray-900 mt-1">{lead.cargo || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Email</label>
-                <p className="text-gray-900 mt-1">{lead.email || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Telefone/WhatsApp</label>
-                <p className="text-gray-900 mt-1">{formatPhone(lead.telefone) || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">CRO Responsável</label>
-                <p className="text-gray-900 mt-1">{lead.cro_responsavel || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Como Conheceu</label>
-                <p className="text-gray-900 mt-1">{lead.como_conheceu || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="clinic" className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Dados da Clínica</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Razão Social</label>
-                <p className="text-gray-900 font-medium mt-1">{lead.razao_social || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Nome Fantasia</label>
-                <p className="text-gray-900 mt-1">{lead.nome_fantasia || lead.nome_clinica}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">CNPJ</label>
-                <p className="text-gray-900 mt-1">{formatCNPJ(lead.cnpj)}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Instagram</label>
-                <p className="text-gray-900 mt-1">{lead.instagram || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Site</label>
-                <p className="text-gray-900 mt-1">{lead.site || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Local da Clínica</label>
-                <p className="text-gray-900 mt-1">{lead.local_clinica || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Localização</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">UF</label>
-                <p className="text-gray-900 mt-1">{lead.uf || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Cidade</label>
-                <p className="text-gray-900 mt-1">{lead.cidade || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Bairro</label>
-                <p className="text-gray-900 mt-1">{lead.bairro || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Especialidades</h3>
-            <div className="bg-white p-3 rounded border">
-              <p className="text-gray-900">{lead.especialidades?.join(', ') || lead.especialidade || 'N/A'}</p>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="business" className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Perfil da Clínica</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Número de Cadeiras</label>
-                <p className="text-gray-900 mt-1">{lead.numero_cadeiras || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Orçamentos por Mês</label>
-                <p className="text-gray-900 mt-1">{lead.orcamentos_mes || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Ticket Médio</label>
-                <p className="text-gray-900 mt-1">{formatCurrency(lead.ticket_medio)}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Faturamento Mensal</label>
-                <p className="text-gray-900 mt-1">{formatCurrency(lead.faturamento_mensal)}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Sobre Crédito</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Possui Crédito</label>
-                <p className="text-gray-900 mt-1">{lead.tem_credito ? 'Sim' : 'Não'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Valor do Crédito</label>
-                <p className="text-gray-900 mt-1">{formatCurrency(lead.valor_credito)}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                <label className="text-sm font-medium text-gray-600">Banco do Crédito</label>
-                <p className="text-gray-900 mt-1">{lead.banco_credito || 'N/A'}</p>
-              </div>
-              <div className="bg-white p-3 rounded border">
-                 <label className="text-sm font-medium text-gray-600">Outros Serviços</label>
-                 <p className="text-gray-900 mt-1">{lead.tem_outros_servicos ? 'Sim' : 'Não'}</p>
-               </div>
-             </div>
-           </div>
-           
-           <div className="bg-gray-50 p-4 rounded-lg">
-             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Informações Adicionais</h3>
-             <div className="grid grid-cols-1 gap-4">
-               <div className="bg-white p-3 rounded border">
-                 <label className="text-sm font-medium text-gray-600">Mensagem</label>
-                 <p className="text-gray-900 mt-1">{lead.mensagem || 'Nenhuma mensagem adicional'}</p>
-               </div>
-               <div className="bg-white p-3 rounded border">
-                 <label className="text-sm font-medium text-gray-600">Data de Criação</label>
-                 <p className="text-gray-900 mt-1">{new Date(lead.created_at).toLocaleDateString('pt-BR')}</p>
-               </div>
-             </div>
-           </div>
-         </TabsContent>
-        
-        <TabsContent value="documents" className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Documentos da Clínica</h3>
-            <div className="bg-white p-4 rounded border">
-              <label className="text-sm font-medium text-gray-600 block mb-3">Carteirinha CRO</label>
-              {lead.carteirinha_cro_url ? (
-                <div className="space-y-3">
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <img 
-                       src={lead.carteirinha_cro_url} 
-                       alt="Carteirinha CRO" 
-                       className="max-w-full h-auto max-h-64 rounded border shadow-sm cursor-pointer hover:shadow-md transition-shadow mx-auto block"
-                       onClick={() => setImageModalOpen(true)}
-                       onError={(e) => {
-                         const target = e.target as HTMLImageElement;
-                         target.style.display = 'none';
-                         const parent = target.parentElement;
-                         if (parent) {
-                           parent.innerHTML = '<div class="text-center py-8"><p class="text-sm text-red-500">Erro ao carregar imagem</p><p class="text-xs text-gray-400 mt-1">Verifique se o arquivo ainda existe</p></div>';
-                         }
-                       }}
-                     />
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                    <FileText className="h-4 w-4" />
-                    <span>Clique na imagem para visualizar em tamanho completo</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center bg-gray-50">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">Nenhuma carteirinha CRO foi enviada</p>
-                  <p className="text-xs text-gray-400 mt-1">O cliente não fez upload do documento</p>
-                </div>
-              )}
-            </div>
-            
-            {lead.mensagem && (
-              <div className="bg-white p-4 rounded border mt-4">
-                <label className="text-sm font-medium text-gray-600 block mb-3">Mensagem/Observações</label>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-sm">{lead.mensagem}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </DialogContent>
-  );
-
   return (
     <div className="min-h-screen bg-background flex">
       <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Novo Credenciamento</h1>
             <p className="text-muted-foreground">Visualize e gerencie todas as solicitações de credenciamento de clínicas</p>
           </div>
+
+          <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
+            <DialogContent className="max-w-5xl">
+              <DialogHeader>
+                <DialogTitle>Visualização do Documento</DialogTitle>
+              </DialogHeader>
+              <div className="flex justify-center p-4">
+                {selectedLead?.carteirinha_cro_url && (
+                  <img
+                    src={selectedLead.carteirinha_cro_url}
+                    alt="Documento em tamanho real"
+                    className="max-w-full h-auto max-h-[80vh] rounded shadow-lg"
+                  />
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -870,7 +672,7 @@ export default function AdminCredentialing() {
                         ))}
                       </SelectContent>
                     </Select>
-                    
+
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Filtrar por Status" />
@@ -882,7 +684,7 @@ export default function AdminCredentialing() {
                         <SelectItem value="aprovado">Aprovado</SelectItem>
                       </SelectContent>
                     </Select>
-                    
+
                     <Select value={dateFilter} onValueChange={setDateFilter}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Filtrar por Período" />
@@ -897,7 +699,7 @@ export default function AdminCredentialing() {
                     </Select>
                   </div>
                 </div>
-                
+
                 {dateFilter === 'custom' && (
                   <div className="flex gap-2">
                     <Input
@@ -916,15 +718,15 @@ export default function AdminCredentialing() {
                     />
                   </div>
                 )}
-                
+
                 <div className="flex gap-2">
-                  
+
                   {selectedLeads.size > 0 && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">
                         {selectedLeads.size} selecionado{selectedLeads.size > 1 ? 's' : ''}
                       </span>
-                      
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -945,7 +747,7 @@ export default function AdminCredentialing() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm">
@@ -1044,9 +846,14 @@ export default function AdminCredentialing() {
                                   Ver Detalhes
                                 </Button>
                               </DialogTrigger>
-                              {selectedLead && <LeadDetailsModal lead={selectedLead} />}
+                              {selectedLead && (
+                                <LeadDetailsModal
+                                  lead={selectedLead}
+                                  onOpenImage={() => setImageModalOpen(true)}
+                                />
+                              )}
                             </Dialog>
-                            
+
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm">
@@ -1072,7 +879,7 @@ export default function AdminCredentialing() {
                   </TableBody>
                 </Table>
               )}
-              
+
               {!loading && filteredLeads.length === 0 && (
                 <div className="text-center py-8">
                   <FileCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />

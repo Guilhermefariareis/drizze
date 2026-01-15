@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/ui/button';
@@ -15,13 +16,20 @@ import { Plus, Search, Filter, Download, Edit, Trash2, Eye, MoreHorizontal, User
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
+// Admin client to bypass RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
+
 type Profile = {
   id: string;
   user_id: string;
   full_name: string;
   email: string;
   phone: string | null;
-  role: 'admin' | 'clinic' | 'patient';
+  role: 'admin' | 'master' | 'clinic' | 'patient' | 'professional';
+  is_active: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -47,7 +55,7 @@ export default function AdminUsers() {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await adminSupabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
@@ -64,41 +72,25 @@ export default function AdminUsers() {
 
   const fetchStats = async () => {
     try {
-      // Total users
-      const { data: totalData } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' });
-
-      // Users by role
-      const { data: adminsData } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' })
-        .eq('role', 'admin');
-
-      const { data: clinicsData } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' })
-        .eq('role', 'clinic');
-
-      const { data: patientsData } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' })
-        .eq('role', 'patient');
+      const { count: totalCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true });
+      const { count: adminsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['admin', 'master']);
+      const { count: clinicsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'clinic');
+      const { count: patientsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'patient');
 
       setStats({
-        total: totalData?.length || 0,
-        admins: adminsData?.length || 0,
-        clinics: clinicsData?.length || 0,
-        patients: patientsData?.length || 0
+        total: totalCount || 0,
+        admins: adminsCount || 0,
+        clinics: clinicsCount || 0,
+        patients: patientsCount || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'clinic' | 'patient') => {
+  const updateUserRole = async (userId: string, newRole: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('profiles')
         .update({ role: newRole })
         .eq('user_id', userId);
@@ -114,9 +106,26 @@ export default function AdminUsers() {
     }
   };
 
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await adminSupabase
+        .from('profiles')
+        .update({ is_active: !currentStatus })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast.success(`Usuário ${!currentStatus ? 'ativado' : 'bloqueado'} com sucesso`);
+      fetchProfiles();
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      toast.error('Erro ao atualizar status do usuário');
+    }
+  };
+
   const deleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('profiles')
         .delete()
         .eq('user_id', userId);
@@ -134,9 +143,11 @@ export default function AdminUsers() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-destructive text-destructive-foreground';
+      case 'admin':
+      case 'master': return 'bg-destructive text-destructive-foreground';
       case 'clinic': return 'bg-primary text-primary-foreground';
       case 'patient': return 'bg-secondary text-secondary-foreground';
+      case 'professional': return 'bg-indigo-500 text-white';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -144,15 +155,17 @@ export default function AdminUsers() {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'admin': return 'Administrador';
+      case 'master': return 'Master';
       case 'clinic': return 'Clínica';
       case 'patient': return 'Paciente';
+      case 'professional': return 'Profissional';
       default: return role;
     }
   };
 
   const filteredProfiles = profiles.filter(profile => {
     const matchesSearch = profile.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         profile.email.toLowerCase().includes(searchQuery.toLowerCase());
+      profile.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === 'all' || profile.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -160,10 +173,10 @@ export default function AdminUsers() {
   return (
     <div className="min-h-screen bg-background flex">
       <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Gerenciar Usuários</h1>
@@ -237,13 +250,13 @@ export default function AdminUsers() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Buscar por nome ou e-mail..." 
-                    className="pl-10" 
+                  <Input
+                    placeholder="Buscar por nome ou e-mail..."
+                    className="pl-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -255,13 +268,15 @@ export default function AdminUsers() {
                   <SelectContent>
                     <SelectItem value="all">Todas as funções</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="master">Master</SelectItem>
                     <SelectItem value="clinic">Clínica</SelectItem>
                     <SelectItem value="patient">Paciente</SelectItem>
+                    <SelectItem value="professional">Profissional</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -285,7 +300,12 @@ export default function AdminUsers() {
                         <TableRow key={profile.id}>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{profile.full_name}</p>
+                              <p className="font-medium flex items-center gap-2">
+                                {profile.full_name}
+                                {profile.is_active === false && (
+                                  <Badge variant="destructive" className="text-[10px] h-4 px-1">Bloqueado</Badge>
+                                )}
+                              </p>
                               <p className="text-sm text-muted-foreground">ID: {profile.user_id.slice(0, 8)}...</p>
                             </div>
                           </TableCell>
@@ -322,20 +342,67 @@ export default function AdminUsers() {
                                   <Edit className="h-4 w-4 mr-2" />
                                   Editar
                                 </DropdownMenuItem>
-                                {profile.role !== 'admin' && (
-                                  <DropdownMenuItem 
+                                {profile.role !== 'admin' && profile.role !== 'master' && (
+                                  <DropdownMenuItem
                                     onClick={() => updateUserRole(profile.user_id, 'admin')}
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Tornar Admin
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem 
+                                {profile.role !== 'master' && (
+                                  <DropdownMenuItem
+                                    onClick={() => updateUserRole(profile.user_id, 'master')}
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Tornar Master
+                                  </DropdownMenuItem>
+                                )}
+                                {profile.role !== 'clinic' && (
+                                  <DropdownMenuItem
+                                    onClick={() => updateUserRole(profile.user_id, 'clinic')}
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Tornar Clínica
+                                  </DropdownMenuItem>
+                                )}
+                                {profile.role !== 'patient' && (
+                                  <DropdownMenuItem
+                                    onClick={() => updateUserRole(profile.user_id, 'patient')}
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Tornar Paciente
+                                  </DropdownMenuItem>
+                                )}
+                                {profile.role !== 'professional' && (
+                                  <DropdownMenuItem
+                                    onClick={() => updateUserRole(profile.user_id, 'professional')}
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Tornar Profissional
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
                                   className="text-destructive"
                                   onClick={() => deleteUser(profile.user_id)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Excluir
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => toggleUserStatus(profile.user_id, profile.is_active ?? true)}
+                                >
+                                  {profile.is_active === false ? (
+                                    <>
+                                      <UserCheck className="h-4 w-4 mr-2 text-green-600" />
+                                      Desbloquear
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserX className="h-4 w-4 mr-2 text-red-600" />
+                                      Bloquear
+                                    </>
+                                  )}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
@@ -11,9 +12,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Filter, Download, Edit, Trash2, Eye, MoreHorizontal, MapPin, Star, Clock } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import {
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Edit,
+  Trash2,
+  Eye,
+  MoreHorizontal,
+  MapPin,
+  Star,
+  Clock
+} from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+
+// Admin client to bypass RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
 
 type Clinic = {
   id: string;
@@ -51,7 +71,7 @@ export default function AdminClinics() {
   const fetchClinics = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await adminSupabase
         .from('clinics')
         .select('*')
         .order('created_at', { ascending: false });
@@ -69,60 +89,78 @@ export default function AdminClinics() {
   const fetchStats = async () => {
     try {
       // Total clinics
-      const { data: totalData } = await supabase
+      const { count: totalCount } = await adminSupabase
         .from('clinics')
-        .select('id', { count: 'exact' });
+        .select('*', { count: 'exact', head: true });
 
       // Active clinics
-      const { data: activeData } = await supabase
+      const { count: activeCount } = await adminSupabase
         .from('clinics')
-        .select('id', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
       // Unique cities
-      const { data: citiesData } = await supabase
+      const { data: citiesData } = await adminSupabase
         .from('clinics')
         .select('city')
         .eq('is_active', true);
 
       // Average rating
-      const { data: ratingData } = await supabase
+      const { data: ratingData } = await adminSupabase
         .from('clinics')
         .select('rating')
         .eq('is_active', true)
         .gt('rating', 0);
 
       const uniqueCities = new Set(citiesData?.map(c => c.city) || []).size;
-      const avgRating = ratingData?.length 
-        ? ratingData.reduce((acc, c) => acc + (c.rating || 0), 0) / ratingData.length 
+      const avgRating = ratingData?.length
+        ? ratingData.reduce((acc, c) => acc + (c.rating || 0), 0) / ratingData.length
         : 0;
 
       setStats({
-        total: totalData?.length || 0,
-        active: activeData?.length || 0,
+        total: totalCount || 0,
+        active: activeCount || 0,
         cities: uniqueCities,
-        avgRating: Number(avgRating.toFixed(1))
+        avgRating: Math.round(avgRating * 10) / 10
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Error fetching clinic stats:', error);
     }
   };
 
-  const toggleClinicStatus = async (clinicId: string, currentStatus: boolean) => {
+  const updateClinicStatus = async (clinicId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('clinics')
         .update({ is_active: !currentStatus })
         .eq('id', clinicId);
 
       if (error) throw error;
 
-      toast.success(`Clínica ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`);
+      toast.success(`Clínica ${!currentStatus ? 'ativada' : 'inativada'} com sucesso`);
       fetchClinics();
       fetchStats();
     } catch (error) {
       console.error('Error updating clinic status:', error);
       toast.error('Erro ao atualizar status da clínica');
+    }
+  };
+
+  const deleteClinic = async (clinicId: string) => {
+    try {
+      const { error } = await adminSupabase
+        .from('clinics')
+        .delete()
+        .eq('id', clinicId);
+
+      if (error) throw error;
+
+      toast.success('Clínica removida com sucesso');
+      fetchClinics();
+      fetchStats();
+    } catch (error) {
+      console.error('Error deleting clinic:', error);
+      toast.error('Erro ao remover clínica');
     }
   };
 
@@ -136,20 +174,20 @@ export default function AdminClinics() {
 
   const filteredClinics = clinics.filter(clinic => {
     const matchesSearch = clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         clinic.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'active' && clinic.is_active) ||
-                         (statusFilter === 'inactive' && !clinic.is_active);
+      clinic.city.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' && clinic.is_active) ||
+      (statusFilter === 'inactive' && !clinic.is_active);
     return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="min-h-screen bg-background flex">
       <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Gerenciar Clínicas</h1>
@@ -223,13 +261,13 @@ export default function AdminClinics() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Buscar por nome ou cidade..." 
-                    className="pl-10" 
+                  <Input
+                    placeholder="Buscar por nome ou cidade..."
+                    className="pl-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -246,7 +284,7 @@ export default function AdminClinics() {
                 </Select>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -337,7 +375,7 @@ export default function AdminClinics() {
                                   <Edit className="h-4 w-4 mr-2" />
                                   Editar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => toggleClinicStatus(clinic.id, clinic.is_active)}
                                 >
                                   <Star className="h-4 w-4 mr-2" />

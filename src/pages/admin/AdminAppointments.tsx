@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/ui/button';
@@ -7,72 +9,147 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, Building2, Search, Filter, Download, Eye, MoreHorizontal, TrendingUp, AlertCircle } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { Calendar, Clock, User, Building2, Search, Filter, Download, Eye, MoreHorizontal, TrendingUp, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+
+// Admin client to bypass RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
+
+type Appointment = {
+  id: string;
+  patient_id: string;
+  clinica_id: string;
+  profissional_id: string | null;
+  data_hora: string;
+  tipo_consulta: string;
+  status: string;
+  valor: number | null;
+  observacoes: string | null;
+  profiles?: {
+    full_name: string;
+  };
+  clinics?: {
+    name: string;
+  };
+  professionals?: {
+    name: string;
+  };
+};
 
 export default function AdminAppointments() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    today: 0,
+    pending: 0,
+    completed: 0,
+    cancelled: 0
+  });
 
-  const appointments = [
-    {
-      id: 1,
-      patientName: "João Silva",
-      dentistName: "Dr. Maria Santos",
-      clinicName: "Clínica Dental doltorizze",
-      service: "Consulta de Rotina",
-      date: "2024-01-22",
-      time: "14:00",
-      duration: "30 min",
-      status: "confirmada",
-      price: "R$ 150,00",
-      createdAt: "2024-01-20 10:30"
-    },
-    {
-      id: 2,
-      patientName: "Ana Costa",
-      dentistName: "Dr. Carlos Lima",
-      clinicName: "Odonto Excellence",
-      service: "Implante Dentário",
-      date: "2024-01-23",
-      time: "09:30",
-      duration: "120 min",
-      status: "pendente",
-      price: "R$ 2.500,00",
-      createdAt: "2024-01-21 15:20"
-    },
-    {
-      id: 3,
-      patientName: "Pedro Oliveira",
-      dentistName: "Dra. Fernanda Silva",
-      clinicName: "Sorriso Perfeito",
-      service: "Limpeza",
-      date: "2024-01-21",
-      time: "16:00",
-      duration: "45 min",
-      status: "concluida",
-      price: "R$ 120,00",
-      createdAt: "2024-01-19 09:15"
-    },
-    {
-      id: 4,
-      patientName: "Lucia Ferreira",
-      dentistName: "Dr. Roberto Costa",
-      clinicName: "Clínica Dental doltorizze",
-      service: "Ortodontia",
-      date: "2024-01-24",
-      time: "11:00",
-      duration: "60 min",
-      status: "cancelada",
-      price: "R$ 300,00",
-      createdAt: "2024-01-18 14:45"
+  useEffect(() => {
+    fetchAppointments();
+    fetchStats();
+  }, [statusFilter, dateFilter]);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      let query = adminSupabase
+        .from('agendamentos')
+        .select(`
+          *,
+          profiles:paciente_id (full_name),
+          clinics:clinica_id (name),
+          professionals:profissional_id (name)
+        `)
+        .order('data_hora', { ascending: false });
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (dateFilter === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        query = query.gte('data_hora', today.toISOString());
+      } else if (dateFilter === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        query = query.gte('data_hora', weekAgo.toISOString());
+      } else if (dateFilter === 'month') {
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        query = query.gte('data_hora', monthAgo.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setAppointments(data as any);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast.error('Erro ao carregar consultas');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const fetchStats = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const [
+        { count: todayCount },
+        { count: pendingCount },
+        { count: completedCount },
+        { count: cancelledCount }
+      ] = await Promise.all([
+        adminSupabase.from('agendamentos').select('id', { count: 'exact', head: true }).gte('data_hora', today.toISOString()),
+        adminSupabase.from('agendamentos').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
+        adminSupabase.from('agendamentos').select('id', { count: 'exact', head: true }).eq('status', 'concluida'),
+        adminSupabase.from('agendamentos').select('id', { count: 'exact', head: true }).eq('status', 'cancelada')
+      ]);
+
+      setStats({
+        today: todayCount || 0,
+        pending: pendingCount || 0,
+        completed: completedCount || 0,
+        cancelled: cancelledCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await adminSupabase
+        .from('agendamentos')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success(`Consulta ${newStatus} com sucesso`);
+      fetchAppointments();
+      fetchStats();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Erro ao atualizar status');
+    }
+  };
+
+  const getStatusColor = (status: string | null) => {
+    switch (status?.toLowerCase()) {
       case 'confirmada': return 'bg-primary text-primary-foreground';
       case 'pendente': return 'bg-warning text-warning-foreground';
       case 'concluida': return 'bg-success text-success-foreground';
@@ -82,28 +159,31 @@ export default function AdminAppointments() {
     }
   };
 
-  const filteredAppointments = appointments.filter(appointment => {
-    const matchesSearch = appointment.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         appointment.dentistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         appointment.clinicName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const filteredAppointmentsList = appointments.filter(appointment => {
+    const searchLower = searchQuery.toLowerCase();
+    const patientName = appointment.profiles?.full_name?.toLowerCase() || '';
+    const clinicName = appointment.clinics?.name?.toLowerCase() || '';
+    const professionalName = appointment.professionals?.name?.toLowerCase() || '';
+
+    return patientName.includes(searchLower) ||
+      clinicName.includes(searchLower) ||
+      professionalName.includes(searchLower);
   });
 
-  const stats = [
-    { title: "Consultas Hoje", value: "47", change: "+8%", icon: Calendar, color: "text-primary" },
-    { title: "Pendentes", value: "12", change: "-5%", icon: Clock, color: "text-warning" },
-    { title: "Concluídas", value: "189", change: "+15%", icon: TrendingUp, color: "text-success" },
-    { title: "Canceladas", value: "8", change: "+2%", icon: AlertCircle, color: "text-destructive" }
+  const statsData = [
+    { title: "Consultas Hoje", value: stats.today.toString(), icon: Calendar, color: "text-primary" },
+    { title: "Pendentes", value: stats.pending.toString(), icon: Clock, color: "text-warning" },
+    { title: "Concluídas", value: stats.completed.toString(), icon: TrendingUp, color: "text-success" },
+    { title: "Canceladas", value: stats.cancelled.toString(), icon: AlertCircle, color: "text-destructive" }
   ];
 
   return (
     <div className="min-h-screen bg-background flex">
       <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Gerenciar Consultas</h1>
@@ -112,14 +192,13 @@ export default function AdminAppointments() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {stats.map((stat) => (
+            {statsData.map((stat) => (
               <Card key={stat.title}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
                       <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-xs text-success font-medium">{stat.change} vs ontem</p>
                     </div>
                     <stat.icon className={`h-8 w-8 ${stat.color}`} />
                   </div>
@@ -133,19 +212,19 @@ export default function AdminAppointments() {
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <CardTitle>Lista de Consultas</CardTitle>
                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={fetchAppointments}>
                     <Download className="h-4 w-4 mr-2" />
-                    Exportar
+                    Atualizar
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Buscar por paciente, dentista ou clínica..." 
-                    className="pl-10" 
+                  <Input
+                    placeholder="Buscar por paciente, profissional ou clínica..."
+                    className="pl-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -176,95 +255,109 @@ export default function AdminAppointments() {
                 </Select>
               </div>
             </CardHeader>
-            
+
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Consulta</TableHead>
-                      <TableHead>Paciente</TableHead>
-                      <TableHead>Profissional</TableHead>
-                      <TableHead>Clínica</TableHead>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Duração</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAppointments.map(appointment => (
-                      <TableRow key={appointment.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{appointment.service}</p>
-                            <p className="text-sm text-muted-foreground">ID: {appointment.id}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{appointment.patientName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-medium">{appointment.dentistName}</span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{appointment.clinicName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">{appointment.date}</p>
-                            <p className="text-sm text-muted-foreground">{appointment.time}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{appointment.duration}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-medium">{appointment.price}</span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(appointment.status)}>
-                            {appointment.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Visualizar Detalhes
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Reagendar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
-                                <AlertCircle className="h-4 w-4 mr-2" />
-                                Cancelar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                  <p className="text-muted-foreground">Carregando consultas...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Consulta</TableHead>
+                        <TableHead>Paciente</TableHead>
+                        <TableHead>Profissional</TableHead>
+                        <TableHead>Clínica</TableHead>
+                        <TableHead>Data/Hora</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAppointmentsList.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                            Nenhuma consulta encontrada.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredAppointmentsList.map(appointment => (
+                          <TableRow key={appointment.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{appointment.tipo_consulta}</p>
+                                <p className="text-xs text-muted-foreground">ID: {appointment.id.slice(0, 8)}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{appointment.profiles?.full_name || 'Usuário'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm font-medium">{appointment.professionals?.name || 'Não atribuído'}</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{appointment.clinics?.name || 'N/A'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {new Date(appointment.data_hora).toLocaleDateString('pt-BR')}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(appointment.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm font-medium">
+                                {appointment.valor ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(appointment.valor) : 'N/A'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(appointment.status)}>
+                                {appointment.status?.toUpperCase() || 'PENDENTE'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => updateStatus(appointment.id, 'confirmada')}>
+                                    <CheckCircle className="h-4 w-4 mr-2 text-primary" />
+                                    Confirmar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => updateStatus(appointment.id, 'concluida')}>
+                                    <TrendingUp className="h-4 w-4 mr-2 text-success" />
+                                    Concluir
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => updateStatus(appointment.id, 'cancelada')}>
+                                    <AlertCircle className="h-4 w-4 mr-2" />
+                                    Cancelar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

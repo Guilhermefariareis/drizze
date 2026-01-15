@@ -12,7 +12,8 @@ import {
   FileCheck,
   ChevronLeft,
   ChevronRight,
-  CreditCard
+  CreditCard,
+  Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,7 @@ const menuItems = [
   { icon: MessageSquare, label: 'Tickets Suporte', path: '/admin/support' },
   { icon: Shield, label: 'Segurança', path: '/admin/security' },
   { icon: FileText, label: 'Auditoria', path: '/admin/audit' },
+  { icon: Crown, label: 'Assinaturas', path: '/admin/subscriptions' },
 ];
 
 export function AdminSidebar({ open, onToggle }: AdminSidebarProps) {

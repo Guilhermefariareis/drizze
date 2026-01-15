@@ -96,15 +96,15 @@ const AdminCreditManagement: React.FC = () => {
     interest_rate: 2.5,
     approval_limit: 10000
   });
-  
+
   // Estados para gerenciar ofertas bancárias
   const [showOffersForm, setShowOffersForm] = useState<string | null>(null);
   const [offers, setOffers] = useState<CreditOffer[]>([]);
   const [submittingOffers, setSubmittingOffers] = useState(false);
-  
+
   // Estado para modal de detalhes
   const [showDetailsModal, setShowDetailsModal] = useState<string | null>(null);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -115,7 +115,7 @@ const AdminCreditManagement: React.FC = () => {
   const fetchCreditRequests = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await adminSupabase
         .from('credit_requests')
         .select(`
@@ -160,15 +160,15 @@ const AdminCreditManagement: React.FC = () => {
       }
 
       const today = new Date().toDateString();
-      const approvedToday = allRequests?.filter(req => 
-        req.status === 'admin_approved' && 
+      const approvedToday = allRequests?.filter(req =>
+        req.status === 'admin_approved' &&
         new Date(req.created_at).toDateString() === today
       ).length || 0;
 
       const totalApprovedAmount = allRequests?.filter(req => req.status === 'admin_approved')
         .reduce((sum, req) => sum + req.requested_amount, 0) || 0;
 
-      const approvalRate = allRequests?.length > 0 
+      const approvalRate = allRequests?.length > 0
         ? (allRequests.filter(req => req.status === 'admin_approved').length / allRequests.length) * 100
         : 0;
 
@@ -189,7 +189,7 @@ const AdminCreditManagement: React.FC = () => {
     try {
       // Aqui seria a chamada para salvar no banco de dados
       // await updateGlobalCreditSettings(globalSettings);
-      
+
       toast.success('Configurações globais salvas com sucesso!');
       setShowSettings(false);
     } catch (error) {
@@ -226,7 +226,7 @@ const AdminCreditManagement: React.FC = () => {
       toast.error('Máximo de 4 ofertas por solicitação');
       return;
     }
-    
+
     setOffers(prev => [...prev, {
       credit_request_id: showOffersForm!,
       bank_name: '',
@@ -245,23 +245,23 @@ const AdminCreditManagement: React.FC = () => {
     setOffers(prev => prev.map((offer, i) => {
       if (i === index) {
         const updatedOffer = { ...offer, [field]: value };
-        
+
         // Calcular valores automaticamente
         if (field === 'approved_amount' || field === 'interest_rate' || field === 'installments') {
           const amount = field === 'approved_amount' ? value : updatedOffer.approved_amount;
           const rate = field === 'interest_rate' ? value : updatedOffer.interest_rate;
           const installments = field === 'installments' ? value : updatedOffer.installments;
-          
+
           if (amount > 0 && rate > 0 && installments > 0) {
             const monthlyRate = rate / 100 / 12;
             const monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, installments)) / (Math.pow(1 + monthlyRate, installments) - 1);
             const totalAmount = monthlyPayment * installments;
-            
+
             updatedOffer.monthly_payment = monthlyPayment;
             updatedOffer.total_amount = totalAmount;
           }
         }
-        
+
         return updatedOffer;
       }
       return offer;
@@ -273,10 +273,10 @@ const AdminCreditManagement: React.FC = () => {
       console.error('❌ [AdminCreditManagement] showOffersForm é null');
       return;
     }
-    
+
     console.log('🔄 [AdminCreditManagement] Iniciando envio de ofertas para:', showOffersForm);
     console.log('🔄 [AdminCreditManagement] Ofertas atuais:', offers);
-    
+
     // Validar se o credit_request_id existe
     console.log('🔍 [AdminCreditManagement] Verificando se a solicitação existe...');
     const { data: requestExists, error: requestError } = await adminSupabase
@@ -284,20 +284,20 @@ const AdminCreditManagement: React.FC = () => {
       .select('id, status')
       .eq('id', showOffersForm)
       .single();
-    
+
     if (requestError || !requestExists) {
       console.error('❌ [AdminCreditManagement] Solicitação não encontrada:', requestError);
       toast.error('Solicitação de crédito não encontrada');
       return;
     }
-    
+
     console.log('✅ [AdminCreditManagement] Solicitação encontrada:', requestExists);
-    
+
     // Validar ofertas
-    const validOffers = offers.filter(offer => 
-      offer.bank_name.trim() && 
-      offer.approved_amount > 0 && 
-      offer.interest_rate > 0 && 
+    const validOffers = offers.filter(offer =>
+      offer.bank_name.trim() &&
+      offer.approved_amount > 0 &&
+      offer.interest_rate > 0 &&
       offer.installments > 0
     ).map(offer => ({
       credit_request_id: showOffersForm,
@@ -309,45 +309,45 @@ const AdminCreditManagement: React.FC = () => {
       monthly_payment: offer.monthly_payment || null,
       total_amount: offer.total_amount || null
     }));
-    
+
     console.log('✅ [AdminCreditManagement] Ofertas válidas:', validOffers.length);
     console.log('🔍 [AdminCreditManagement] Estrutura das ofertas válidas:', JSON.stringify(validOffers, null, 2));
-    
+
     if (validOffers.length === 0) {
       toast.error('Adicione pelo menos uma oferta válida');
       return;
     }
-    
+
     try {
       setSubmittingOffers(true);
-      
+
       // LOGS DETALHADOS PARA DEBUG
       console.log('🔍 [DEBUG] Configuração do adminSupabase:');
       console.log('🔍 [DEBUG] URL:', import.meta.env.VITE_SUPABASE_URL);
       console.log('🔍 [DEBUG] Service Role Key presente:', !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY);
       console.log('🔍 [DEBUG] Service Role Key (primeiros 20 chars):', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20));
-      
+
       console.log('🗑️ [AdminCreditManagement] Removendo ofertas existentes...');
       // Remover ofertas existentes para esta solicitação
       const { error: deleteError } = await adminSupabase
         .from('credit_offers')
         .delete()
         .eq('credit_request_id', showOffersForm);
-      
+
       if (deleteError) {
         console.error('❌ [AdminCreditManagement] Erro ao deletar ofertas existentes:', deleteError);
         throw deleteError;
       }
-      
+
       console.log('💾 [AdminCreditManagement] Inserindo novas ofertas...');
       console.log('🔍 [DEBUG] Ofertas a serem inseridas:', JSON.stringify(validOffers, null, 2));
-      
+
       // Inserir novas ofertas
       const { data: insertData, error: insertError } = await adminSupabase
         .from('credit_offers')
         .insert(validOffers)
         .select();
-      
+
       if (insertError) {
         console.error('❌ [AdminCreditManagement] Erro ao inserir ofertas:', insertError);
         console.error('❌ [AdminCreditManagement] Detalhes do erro:', insertError.details);
@@ -356,24 +356,24 @@ const AdminCreditManagement: React.FC = () => {
         console.error('❌ [AdminCreditManagement] Mensagem do erro:', insertError.message);
         throw insertError;
       }
-      
+
       console.log('✅ [AdminCreditManagement] Ofertas inseridas com sucesso:', insertData);
-      
+
       console.log('📝 [AdminCreditManagement] Atualizando status da solicitação...');
       // Atualizar status da solicitação para aprovada
       const { error: updateError } = await adminSupabase
         .from('credit_requests')
-        .update({ 
+        .update({
           status: 'admin_approved',
           updated_at: new Date().toISOString()
         })
         .eq('id', showOffersForm);
-      
+
       if (updateError) {
         console.error('❌ [AdminCreditManagement] Erro ao atualizar status:', updateError);
         throw updateError;
       }
-      
+
       console.log('✅ [AdminCreditManagement] Ofertas enviadas com sucesso!');
       toast.success(`${validOffers.length} oferta(s) enviada(s) com sucesso!`);
       setShowOffersForm(null);
@@ -400,7 +400,7 @@ const AdminCreditManagement: React.FC = () => {
       // Atualizar status da solicitação
       const { error: updateError } = await adminSupabase
         .from('credit_requests')
-        .update({ 
+        .update({
           status: newStatus,
           updated_at: new Date().toISOString()
         })
@@ -412,11 +412,13 @@ const AdminCreditManagement: React.FC = () => {
 
       // Criar registro de análise se for aprovação ou rejeição
       if (newStatus === 'admin_approved' || newStatus === 'admin_rejected') {
+        const { data: { user } } = await supabase.auth.getUser();
+
         const { error: analysisError } = await adminSupabase
           .from('credit_analysis')
           .insert({
             credit_request_id: requestId,
-            analyst_id: 'current-admin-user-id', // TODO: Substituir pelo ID do usuário logado
+            analyst_id: user?.id || 'admin-system',
             analysis_type: 'admin',
             decision: newStatus === 'admin_approved' ? 'approved' : 'rejected',
             comments: analysisComments
@@ -512,7 +514,7 @@ const AdminCreditManagement: React.FC = () => {
 
     const config = statusConfig[status as keyof typeof statusConfig];
     if (!config) return null;
-    
+
     const Icon = config.icon;
 
     return (
@@ -580,7 +582,7 @@ const AdminCreditManagement: React.FC = () => {
               </div>
               <Switch
                 checked={globalSettings.system_active}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setGlobalSettings(prev => ({ ...prev, system_active: checked }))
                 }
               />
@@ -599,7 +601,7 @@ const AdminCreditManagement: React.FC = () => {
                   id="min_amount"
                   type="number"
                   value={globalSettings.min_amount}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     setGlobalSettings(prev => ({ ...prev, min_amount: Number(e.target.value) }))
                   }
                   min="1"
@@ -619,7 +621,7 @@ const AdminCreditManagement: React.FC = () => {
                   id="max_amount"
                   type="number"
                   value={globalSettings.max_amount}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     setGlobalSettings(prev => ({ ...prev, max_amount: Number(e.target.value) }))
                   }
                   min="1"
@@ -642,7 +644,7 @@ const AdminCreditManagement: React.FC = () => {
                   id="max_installments"
                   type="number"
                   value={globalSettings.max_installments}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     setGlobalSettings(prev => ({ ...prev, max_installments: Number(e.target.value) }))
                   }
                   min="1"
@@ -663,7 +665,7 @@ const AdminCreditManagement: React.FC = () => {
                   type="number"
                   step="0.1"
                   value={globalSettings.interest_rate}
-                  onChange={(e) => 
+                  onChange={(e) =>
                     setGlobalSettings(prev => ({ ...prev, interest_rate: Number(e.target.value) }))
                   }
                   min="0"
@@ -685,7 +687,7 @@ const AdminCreditManagement: React.FC = () => {
                 id="approval_limit"
                 type="number"
                 value={globalSettings.approval_limit}
-                onChange={(e) => 
+                onChange={(e) =>
                   setGlobalSettings(prev => ({ ...prev, approval_limit: Number(e.target.value) }))
                 }
                 min="0"
@@ -728,13 +730,13 @@ const AdminCreditManagement: React.FC = () => {
 
             {/* Botões de Ação */}
             <div className="flex justify-end gap-2">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowSettings(false)}
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={handleSaveGlobalSettings}
                 disabled={settingsLoading}
                 className="min-w-[120px]"
@@ -908,7 +910,7 @@ const AdminCreditManagement: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Descrição do Tratamento</p>
                   <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
@@ -931,7 +933,7 @@ const AdminCreditManagement: React.FC = () => {
                         className="w-full"
                       />
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleStatusUpdate(request.id, 'admin_approved')}
@@ -1069,8 +1071,8 @@ const AdminCreditManagement: React.FC = () => {
                                 Valor da Parcela
                               </Label>
                               <div className="mt-1 p-2 bg-gray-50 rounded border text-sm font-medium text-green-600">
-                                {offer.monthly_payment ? 
-                                  `R$ ${offer.monthly_payment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 
+                                {offer.monthly_payment ?
+                                  `R$ ${offer.monthly_payment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
                                   'R$ 0,00'
                                 }
                               </div>
@@ -1081,8 +1083,8 @@ const AdminCreditManagement: React.FC = () => {
                                 Valor Total
                               </Label>
                               <div className="mt-1 p-2 bg-gray-50 rounded border text-sm font-medium text-blue-600">
-                                {offer.total_amount ? 
-                                  `R$ ${offer.total_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 
+                                {offer.total_amount ?
+                                  `R$ ${offer.total_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
                                   'R$ 0,00'
                                 }
                               </div>
@@ -1144,7 +1146,7 @@ const AdminCreditManagement: React.FC = () => {
                         <DialogHeader>
                           <DialogTitle>Detalhes da Solicitação de Crédito</DialogTitle>
                         </DialogHeader>
-                        
+
                         <div className="space-y-6">
                           {/* Informações do Paciente */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1156,7 +1158,7 @@ const AdminCreditManagement: React.FC = () => {
                                 <p><span className="font-medium">Telefone:</span> {request.profiles?.phone}</p>
                               </div>
                             </div>
-                            
+
                             <div>
                               <h3 className="font-semibold text-lg mb-2">Informações da Clínica</h3>
                               <div className="space-y-2">
@@ -1165,7 +1167,7 @@ const AdminCreditManagement: React.FC = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Detalhes da Solicitação */}
                           <div>
                             <h3 className="font-semibold text-lg mb-2">Detalhes da Solicitação</h3>
@@ -1194,11 +1196,11 @@ const AdminCreditManagement: React.FC = () => {
                               </p>
                             </div>
                           </div>
-                          
+
                           {/* Botões de Ação */}
                           <div className="border-t pt-4">
                             <h3 className="font-semibold text-lg mb-4">Ações Administrativas</h3>
-                            
+
                             {/* Formulário de Análise */}
                             {selectedRequest === request.id && (request.status === 'clinic_approved' || request.status === 'admin_analyzing') && (
                               <div className="mb-4 p-4 bg-gray-50 rounded-lg">
@@ -1245,7 +1247,7 @@ const AdminCreditManagement: React.FC = () => {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Formulário de Ofertas */}
                             {showOffersForm === request.id && (
                               <div className="mb-4 p-4 bg-blue-50 rounded-lg">
@@ -1318,7 +1320,7 @@ const AdminCreditManagement: React.FC = () => {
                                     </div>
                                   </div>
                                 ))}
-                                
+
                                 <div className="flex gap-2 mb-4">
                                   <Button
                                     onClick={addOffer}
@@ -1330,7 +1332,7 @@ const AdminCreditManagement: React.FC = () => {
                                     Adicionar Oferta
                                   </Button>
                                 </div>
-                                
+
                                 <div className="flex gap-2">
                                   <Button
                                     onClick={submitOffers}
@@ -1354,7 +1356,7 @@ const AdminCreditManagement: React.FC = () => {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Botões de Ação Principal */}
                             {selectedRequest !== request.id && showOffersForm !== request.id && (
                               <div className="flex gap-2 flex-wrap">
@@ -1389,7 +1391,7 @@ const AdminCreditManagement: React.FC = () => {
                                     </Button>
                                   </>
                                 )}
-                                
+
                                 {request.status === 'admin_analyzing' && (
                                   <>
                                     <Button
