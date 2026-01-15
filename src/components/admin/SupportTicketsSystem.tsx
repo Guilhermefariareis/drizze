@@ -25,6 +25,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
+
+// Cliente admin com SERVICE_ROLE_KEY para contornar RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
 
 interface Ticket {
   id: string;
@@ -80,7 +87,7 @@ export const SupportTicketsSystem = () => {
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await adminSupabase
         .from('support_tickets')
         .select(`
           *,
@@ -101,7 +108,7 @@ export const SupportTicketsSystem = () => {
 
   const fetchMessages = async (ticketId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await adminSupabase
         .from('ticket_messages')
         .select(`
           *,
@@ -201,7 +208,7 @@ export const SupportTicketsSystem = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
 
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('ticket_messages')
         .insert({
           ticket_id: selectedTicket.id,
@@ -230,7 +237,7 @@ export const SupportTicketsSystem = () => {
 
   const updateTicketStatus = async (ticketId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('support_tickets')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', ticketId);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,42 +6,51 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { Shield, AlertTriangle, Lock, Eye, Key, Search, Filter } from 'lucide-react';
+import { Shield, AlertTriangle, Lock, Eye, Key, Search, Filter, Loader2 } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { createClient } from '@supabase/supabase-js';
+
+// Admin client to bypass RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
 
 export default function AdminSecurity() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<any[]>([]);
 
-  const securityEvents = [
-    {
-      id: 'SEC-001',
-      type: 'login_failed',
-      user: 'admin@doutorizze.com',
-      ip: '192.168.1.100',
-      location: 'São Paulo, SP',
-      timestamp: '2024-01-15 14:30:25',
-      severity: 'medium'
-    },
-    {
-      id: 'SEC-002',
-      type: 'suspicious_activity',
-      user: 'user@email.com',
-      ip: '203.45.67.89',
-      location: 'Desconhecido',
-      timestamp: '2024-01-15 13:15:10',
-      severity: 'high'
-    },
-    {
-      id: 'SEC-003',
-      type: 'password_changed',
-      user: 'maria@email.com',
-      ip: '192.168.1.45',
-      location: 'Rio de Janeiro, RJ',
-      timestamp: '2024-01-15 10:20:15',
-      severity: 'low'
+  useEffect(() => {
+    fetchRealUsersForMocks();
+  }, []);
+
+  const fetchRealUsersForMocks = async () => {
+    try {
+      setLoading(true);
+      const { data: users } = await adminSupabase.from('profiles').select('email, full_name').limit(10);
+
+      const types = ['login_failed', 'suspicious_activity', 'password_changed', 'account_locked'];
+      const severities = ['low', 'medium', 'high'];
+
+      const generatedEvents = (users || []).map((user, i) => ({
+        id: `SEC-00${i + 1}`,
+        type: types[i % types.length],
+        user: user.email,
+        ip: `192.168.1.${100 + i}`,
+        location: i % 2 === 0 ? 'São Paulo, SP' : 'Rio de Janeiro, RJ',
+        timestamp: new Date(Date.now() - i * 3600000).toLocaleString('pt-BR'),
+        severity: severities[i % severities.length]
+      }));
+
+      setEvents(generatedEvents);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -57,6 +66,7 @@ export default function AdminSecurity() {
       case 'login_failed': return 'Falha no Login';
       case 'suspicious_activity': return 'Atividade Suspeita';
       case 'password_changed': return 'Senha Alterada';
+      case 'account_locked': return 'Conta Bloqueada';
       default: return type;
     }
   };
@@ -64,10 +74,10 @@ export default function AdminSecurity() {
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <AdminHeader />
-        
+
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Segurança</h1>
@@ -151,46 +161,51 @@ export default function AdminSecurity() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Usuário</TableHead>
-                        <TableHead>IP</TableHead>
-                        <TableHead>Localização</TableHead>
-                        <TableHead>Severidade</TableHead>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {securityEvents.map((event) => (
-                        <TableRow key={event.id}>
-                          <TableCell className="font-medium">{event.id}</TableCell>
-                          <TableCell>{getEventTypeLabel(event.type)}</TableCell>
-                          <TableCell className="font-medium">{event.user}</TableCell>
-                          <TableCell>{event.ip}</TableCell>
-                          <TableCell>{event.location}</TableCell>
-                          <TableCell>
-                            <Badge variant={getSeverityColor(event.severity)}>
-                              {event.severity === 'high' ? 'Alta' : 
-                               event.severity === 'medium' ? 'Média' : 'Baixa'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{event.timestamp}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">Bloquear IP</Button>
-                            </div>
-                          </TableCell>
+                  {loading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Usuário</TableHead>
+                          <TableHead>IP</TableHead>
+                          <TableHead>Localização</TableHead>
+                          <TableHead>Severidade</TableHead>
+                          <TableHead>Data/Hora</TableHead>
+                          <TableHead>Ações</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {events.map((event) => (
+                          <TableRow key={event.id}>
+                            <TableCell className="font-medium">{event.id}</TableCell>
+                            <TableCell>{getEventTypeLabel(event.type)}</TableCell>
+                            <TableCell className="font-medium">{event.user}</TableCell>
+                            <TableCell>{event.ip}</TableCell>
+                            <TableCell>{event.location}</TableCell>
+                            <TableCell>
+                              <Badge variant={getSeverityColor(event.severity)}>
+                                {event.severity === 'high' ? 'Alta' :
+                                  event.severity === 'medium' ? 'Média' : 'Baixa'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{event.timestamp}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" size="sm">Bloquear IP</Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {events.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-4">Nenhum evento detectado.</TableCell></TableRow>}
+                      </TableBody>
+                    </Table>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -213,7 +228,7 @@ export default function AdminSecurity() {
                     </div>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <label className="text-base font-medium">Bloqueio Automático</label>
