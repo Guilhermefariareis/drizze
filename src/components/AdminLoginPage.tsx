@@ -164,6 +164,12 @@ export default function AdminLoginPage() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
                   <Label htmlFor="password" title="password" className="text-gray-300">Senha Segura</Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-red-500 hover:text-red-400 hover:underline transition-colors"
+                  >
+                    Esqueceu sua senha?
+                  </Link>
                 </div>
                 <div className="relative group">
                   <Input

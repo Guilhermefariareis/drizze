@@ -82,6 +82,8 @@ import MeusAgendamentos from "./pages/MeusAgendamentos";
 import HealthCheckPage from "./pages/admin/HealthCheckPage";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import ChatDemo from "./pages/ChatDemo";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StripeTestPage from "./pages/StripeTestPage";
 import CustomerPortalTestPage from "./pages/CustomerPortalTestPage";
 import TestCreditPage from "./pages/TestCreditPage";
@@ -182,6 +184,8 @@ const App = () => (
                     <Route path="/patient-login" element={<PatientLoginPage />} />
                     <Route path="/clinic-login" element={<ClinicLoginPage />} />
                     <Route path="/admin-login" element={<AdminLoginPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/chat-demo" element={<ChatDemo />} />
                     <Route path="/stripe-test" element={<AdminRoute><StripeTestPage /></AdminRoute>} />
                     <Route path="/customer-portal-test" element={<AdminRoute><CustomerPortalTestPage /></AdminRoute>} />

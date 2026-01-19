@@ -239,7 +239,15 @@ export default function AuthPageSimple() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Senha</Label>
+                      <div className="flex justify-between items-center">
+                        <Label htmlFor="login-password">Senha</Label>
+                        <Link
+                          to="/forgot-password"
+                          className="text-xs text-primary hover:underline transition-colors"
+                        >
+                          Esqueceu sua senha?
+                        </Link>
+                      </div>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input

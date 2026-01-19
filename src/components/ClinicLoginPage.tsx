@@ -95,7 +95,7 @@ const ClinicLoginPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -144,7 +144,7 @@ const ClinicLoginPage = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       if (password !== signupData.confirmPassword) {
         toast.error('As senhas não coincidem');
@@ -199,14 +199,14 @@ const ClinicLoginPage = () => {
         <div className="p-8 md:p-12 flex flex-col justify-center bg-white">
           <div className="w-full max-w-md space-y-8 mx-auto">
             <div className="space-y-4">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar ao início
               </Link>
-              
+
               <div className="mb-8">
                 <div className="flex items-center mb-4">
                   <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center mr-3">
@@ -218,8 +218,8 @@ const ClinicLoginPage = () => {
                   {isSignup ? 'Cadastrar Clínica' : 'Entrar como Clínica'}
                 </h1>
                 <p className="text-gray-600">
-                  {isSignup 
-                    ? 'Cadastre sua clínica na nossa plataforma' 
+                  {isSignup
+                    ? 'Cadastre sua clínica na nossa plataforma'
                     : 'Acesse sua conta para gerenciar consultas'
                   }
                 </p>
@@ -238,7 +238,7 @@ const ClinicLoginPage = () => {
                         type="text"
                         placeholder="Nome da sua clínica"
                         value={signupData.clinicName}
-                        onChange={(e) => setSignupData({...signupData, clinicName: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, clinicName: e.target.value })}
                         className="pl-10 h-12 border-gray-300 focus:border-primary"
                         required
                       />
@@ -254,7 +254,7 @@ const ClinicLoginPage = () => {
                         type="text"
                         placeholder="Seu nome completo"
                         value={signupData.responsibleName}
-                        onChange={(e) => setSignupData({...signupData, responsibleName: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, responsibleName: e.target.value })}
                         className="pl-10 h-12 border-gray-300 focus:border-primary"
                         required
                       />
@@ -270,7 +270,7 @@ const ClinicLoginPage = () => {
                         type="tel"
                         placeholder="(11) 99999-9999"
                         value={signupData.phone}
-                        onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                         className="pl-10 h-12 border-gray-300 focus:border-primary"
                         required
                       />
@@ -284,14 +284,14 @@ const ClinicLoginPage = () => {
                       type="text"
                       placeholder="00.000.000/0000-00"
                       value={signupData.cnpj}
-                      onChange={(e) => setSignupData({...signupData, cnpj: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, cnpj: e.target.value })}
                       className="h-12 border-gray-300 focus:border-primary"
                       required
                     />
                   </div>
                 </>
               )}
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email da clínica</Label>
                 <div className="relative">
@@ -307,9 +307,19 @@ const ClinicLoginPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password">Senha</Label>
+                  {!isSignup && (
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs text-primary hover:underline transition-colors"
+                    >
+                      Esqueceu sua senha?
+                    </Link>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <Input
@@ -334,14 +344,14 @@ const ClinicLoginPage = () => {
                       type="password"
                       placeholder="••••••••"
                       value={signupData.confirmPassword}
-                      onChange={(e) => setSignupData({...signupData, confirmPassword: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                       className="pl-10 h-12 border-gray-300 focus:border-primary"
                       required
                     />
                   </div>
                 </div>
               )}
-              
+
               <Button
                 type="submit"
                 disabled={loading}
@@ -357,8 +367,8 @@ const ClinicLoginPage = () => {
                 onClick={() => setIsSignup(!isSignup)}
                 className="text-primary hover:text-primary/80 hover:bg-primary/5 rounded-xl"
               >
-                {isSignup 
-                  ? 'Já tem conta? Faça login' 
+                {isSignup
+                  ? 'Já tem conta? Faça login'
                   : 'Não tem conta? Cadastre sua clínica'
                 }
               </Button>
@@ -370,16 +380,16 @@ const ClinicLoginPage = () => {
           <div className="relative w-full max-w-lg">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full transform -rotate-6"></div>
-              
+
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
                 <div className="space-y-6">
                   <div className="text-center space-y-4">
-                    <img 
+                    <img
                       src="https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20healthcare%20dentist%20woman%20with%20laptop%20computer%2C%20modern%20purple%20gradient%20background%2C%20clean%20minimalist%20style%2C%20colorful%20geometric%20elements%2C%20professional%20attire%2C%20confident%20pose%2C%20digital%20technology%2C%20healthcare%20innovation%2C%20high%20quality%20illustration&image_size=square_hd"
                       alt="Profissional de Saúde com Tecnologia"
                       className="w-64 h-64 rounded-2xl mx-auto object-cover shadow-lg"
                     />
-                    
+
                     <div className="space-y-2">
                       <h3 className="text-xl font-semibold text سفید">
                         Gestão Inteligente
@@ -389,7 +399,7 @@ const ClinicLoginPage = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-center space-x-4">
                     <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
                       <Building2 className="w-6 h-6 text-primary" />

@@ -22,7 +22,7 @@ const PatientLoginPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -40,14 +40,14 @@ const PatientLoginPage = () => {
 
         console.log('Profile data:', profile);
         console.log('Profile error:', profileError);
-        
+
         // Permitir acesso se:
         // 1. O role é 'patient'
         // 2. Não há profile (usuário novo) - assumir como paciente
         // 3. Role é null/undefined - assumir como paciente
         const userRole = profile?.role;
         const isPatientAccess = userRole === 'patient' || !userRole || profileError;
-        
+
         if (isPatientAccess) {
           console.log('Acesso permitido para paciente. Role:', userRole);
           navigate('/patient-dashboard');
@@ -71,7 +71,7 @@ const PatientLoginPage = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       if (password !== signupData.confirmPassword) {
         toast.error('As senhas não coincidem');
@@ -113,14 +113,14 @@ const PatientLoginPage = () => {
         <div className="p-8 md:p-12 flex flex-col justify-center bg-white">
           <div className="w-full max-w-md space-y-8 mx-auto">
             <div className="space-y-4">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar ao início
               </Link>
-              
+
               <div className="mb-8">
                 <div className="flex items-center mb-4">
                   <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center mr-3">
@@ -132,8 +132,8 @@ const PatientLoginPage = () => {
                   {isSignup ? 'Criar conta' : 'Entrar como Paciente'}
                 </h1>
                 <p className="text-gray-600">
-                  {isSignup 
-                    ? 'Crie sua conta para agendar consultas' 
+                  {isSignup
+                    ? 'Crie sua conta para agendar consultas'
                     : 'Acesse sua conta para gerenciar consultas'
                   }
                 </p>
@@ -152,7 +152,7 @@ const PatientLoginPage = () => {
                         type="text"
                         placeholder="Seu nome completo"
                         value={signupData.fullName}
-                        onChange={(e) => setSignupData({...signupData, fullName: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
                         className="pl-10 h-12 border-gray-300 focus:border-primary"
                         required
                       />
@@ -168,7 +168,7 @@ const PatientLoginPage = () => {
                         type="tel"
                         placeholder="(11) 99999-9999"
                         value={signupData.phone}
-                        onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                         className="pl-10 h-12 border-gray-300 focus:border-primary"
                         required
                       />
@@ -176,7 +176,7 @@ const PatientLoginPage = () => {
                   </div>
                 </>
               )}
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -192,9 +192,19 @@ const PatientLoginPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password">Senha</Label>
+                  {!isSignup && (
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs text-primary hover:underline transition-colors"
+                    >
+                      Esqueceu sua senha?
+                    </Link>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <Input
@@ -219,14 +229,14 @@ const PatientLoginPage = () => {
                       type="password"
                       placeholder="••••••••"
                       value={signupData.confirmPassword}
-                      onChange={(e) => setSignupData({...signupData, confirmPassword: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                       className="pl-10 h-12 border-gray-300 focus:border-primary"
                       required
                     />
                   </div>
                 </div>
               )}
-              
+
               <Button
                 type="submit"
                 disabled={loading}
@@ -242,8 +252,8 @@ const PatientLoginPage = () => {
                 onClick={() => setIsSignup(!isSignup)}
                 className="text-primary hover:text-primary/80 hover:bg-primary/5 rounded-xl"
               >
-                {isSignup 
-                  ? 'Já tem conta? Faça login' 
+                {isSignup
+                  ? 'Já tem conta? Faça login'
                   : 'Não tem conta? Cadastre-se'
                 }
               </Button>
@@ -255,16 +265,16 @@ const PatientLoginPage = () => {
           <div className="relative w-full max-w-lg">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full transform -rotate-6"></div>
-              
+
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
                 <div className="space-y-6">
                   <div className="text-center space-y-4">
-                    <img 
+                    <img
                       src="https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=happy%20smiling%20young%20person%20with%20smartphone%20or%20tablet%2C%20modern%20purple%20gradient%20background%2C%20clean%20minimalist%20style%2C%20colorful%20geometric%20elements%2C%20casual%20modern%20clothing%2C%20friendly%20approachable%20pose%2C%20digital%20technology%2C%20healthcare%20app%20user%2C%20high%20quality%20illustration&image_size=square_hd"
                       alt="Pessoa com Tecnologia"
                       className="w-64 h-64 rounded-2xl mx-auto object-cover shadow-lg"
                     />
-                    
+
                     <div className="space-y-2">
                       <h3 className="text-xl font-semibold text-white">
                         Saúde na Palma da Mão
@@ -274,7 +284,7 @@ const PatientLoginPage = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-center space-x-4">
                     <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
                       <User className="w-6 h-6 text-primary" />
