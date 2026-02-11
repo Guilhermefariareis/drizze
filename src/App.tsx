@@ -72,6 +72,7 @@ import AgendamentoConfirmacao from "./pages/AgendamentoConfirmacao";
 import AgendamentosPage from "./pages/AgendamentosPage";
 import PatientLoginPage from "./components/PatientLoginPage";
 import ClinicLoginPage from "./components/ClinicLoginPage";
+import DentistLoginPage from "./components/DentistLoginPage";
 import AdminLoginPage from "./components/AdminLoginPage";
 import ConfiguracaoHorariosPage from "./pages/ConfiguracaoHorariosPage";
 import RelatoriosAgendamentosPage from "./pages/RelatoriosAgendamentosPage";
@@ -181,8 +182,10 @@ const App = () => (
 
                     <Route path="/login-paciente" element={<PatientLoginPage />} />
                     <Route path="/login-clinica" element={<ClinicLoginPage />} />
+                    <Route path="/login-dentista" element={<DentistLoginPage />} />
                     <Route path="/patient-login" element={<PatientLoginPage />} />
                     <Route path="/clinic-login" element={<ClinicLoginPage />} />
+                    <Route path="/dentist-login" element={<DentistLoginPage />} />
                     <Route path="/admin-login" element={<AdminLoginPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />

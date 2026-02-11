@@ -56,6 +56,17 @@ export default function AdminClinics() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: ''
+  });
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -146,7 +157,52 @@ export default function AdminClinics() {
     }
   };
 
+  const handleEditOpen = (clinic: Clinic) => {
+    setSelectedClinic(clinic);
+    setEditFormData({
+      name: clinic.name,
+      email: clinic.email || '',
+      phone: clinic.phone,
+      address: typeof clinic.address === 'string' ? clinic.address : '',
+      city: clinic.city,
+      state: clinic.state
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedClinic) return;
+
+    try {
+      const { error } = await adminSupabase
+        .from('clinics')
+        .update({
+          name: editFormData.name,
+          email: editFormData.email,
+          phone: editFormData.phone,
+          address: editFormData.address,
+          city: editFormData.city,
+          state: editFormData.state,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedClinic.id);
+
+      if (error) throw error;
+
+      toast.success('Clínica atualizada com sucesso');
+      setIsEditOpen(false);
+      fetchClinics();
+    } catch (error) {
+      console.error('Error updating clinic:', error);
+      toast.error('Erro ao salvar alterações');
+    }
+  };
+
   const deleteClinic = async (clinicId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta clínica? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
     try {
       const { error } = await adminSupabase
         .from('clinics')
@@ -367,11 +423,14 @@ export default function AdminClinics() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedClinic(clinic);
+                                  setIsViewOpen(true);
+                                }}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   Visualizar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditOpen(clinic)}>
                                   <Edit className="h-4 w-4 mr-2" />
                                   Editar
                                 </DropdownMenuItem>
@@ -380,6 +439,13 @@ export default function AdminClinics() {
                                 >
                                   <Star className="h-4 w-4 mr-2" />
                                   {clinic.is_active ? 'Desativar' : 'Ativar'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => deleteClinic(clinic.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -394,6 +460,127 @@ export default function AdminClinics() {
           </Card>
         </div>
       </div>
+      {/* View Modal */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Clínica</DialogTitle>
+          </DialogHeader>
+          {selectedClinic && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">Nome</Label>
+                <div className="col-span-3 text-sm">{selectedClinic.name}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">Cidade</Label>
+                <div className="col-span-3 text-sm">{selectedClinic.city} - {selectedClinic.state}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">Endereço</Label>
+                <div className="col-span-3 text-sm">
+                  {typeof selectedClinic.address === 'string'
+                    ? selectedClinic.address
+                    : 'Endereço complexo (ver banco de dados)'}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">E-mail</Label>
+                <div className="col-span-3 text-sm">{selectedClinic.email || 'N/A'}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">Telefone</Label>
+                <div className="col-span-3 text-sm">{selectedClinic.phone}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">Status</Label>
+                <div className="col-span-3">
+                  <Badge className={getStatusColor(selectedClinic.is_active)}>
+                    {getStatusDisplay(selectedClinic.is_active)}
+                  </Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">Avaliação</Label>
+                <div className="col-span-3 text-sm flex items-center">
+                  <Star className="h-4 w-4 fill-warning text-warning mr-1" />
+                  {selectedClinic.rating} ({selectedClinic.total_reviews} avaliações)
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-bold text-sm">ID</Label>
+                <div className="col-span-3 text-xs text-muted-foreground font-mono">{selectedClinic.id}</div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Clínica</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome da Clínica</Label>
+              <Input
+                id="edit-name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input
+                id="edit-email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">Telefone</Label>
+              <Input
+                id="edit-phone"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-address">Endereço</Label>
+              <Input
+                id="edit-address"
+                value={editFormData.address}
+                onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-city">Cidade</Label>
+                <Input
+                  id="edit-city"
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-state">Estado (UF)</Label>
+                <Input
+                  id="edit-state"
+                  value={editFormData.state}
+                  maxLength={2}
+                  onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value.toUpperCase() })}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit}>Salvar Alterações</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

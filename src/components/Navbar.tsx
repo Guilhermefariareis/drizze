@@ -12,6 +12,7 @@ import NotificacoesDropdown from "@/components/NotificacoesDropdown";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeMobileSection, setActiveMobileSection] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { city, state } = useGeolocation();
   const { config } = useSiteConfig();
@@ -107,14 +108,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center space-x-2 lg:space-x-3 xl:space-x-4 whitespace-nowrap shrink-0">
-            <div className="hidden xl:flex items-center space-x-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 shrink-0">
-              <MapPin className="h-4 w-4 text-[#E94560]" />
-              <span className="text-sm text-white/70 font-medium">
-                {city && state ? `${city}, ${state}` : (city || state || 'Localização')}
-              </span>
-            </div>
-
+          <div className="hidden lg:flex items-center space-x-4 lg:space-x-4 xl:space-x-6 whitespace-nowrap shrink-0 h-full">
             {user && <NotificacoesDropdown />}
 
             {user ? (
@@ -148,15 +142,81 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Button asChild variant="v2-outline" size="sm" className="hidden xl:flex">
-                  <Link to="/patient-login">Login Paciente</Link>
-                </Button>
-                <Button asChild variant="v2-gradient" size="sm">
-                  <Link to="/clinic-login">Acesso Clínica</Link>
-                </Button>
+              <div className="flex items-center gap-3">
+                {/* Botão Entrar com Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative group overflow-hidden px-8 h-11 transition-all duration-300 hover:scale-105 mr-3 rounded-full shadow-lg shadow-[#E94560]/20 hover:shadow-[#E94560]/40">
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#E94560] to-[#FB923C] group-hover:opacity-90 transition-opacity duration-300" />
+                      <span className="relative z-10 font-bold text-white flex items-center text-base">
+                        Entrar <ChevronDown className="ml-2 h-4 w-4 opacity-90 group-hover:opacity-100 transition-opacity" />
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-2 duration-200 bg-[#1A1A2E]/95 backdrop-blur-xl border-white/10 text-white rounded-xl">
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4 text-base rounded-lg m-1">
+                      <Link to="/patient-login">
+                        <User className="h-5 w-5 mr-3 text-[#4ADE80]" />
+                        <span>Paciente</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4 text-base rounded-lg m-1">
+                      <Link to="/login-dentista">
+                        <User className="h-5 w-5 mr-3 text-[#60A5FA]" />
+                        <span>Dentista</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4 text-base rounded-lg m-1">
+                      <Link to="/clinic-login">
+                        <Building2 className="h-5 w-5 mr-3 text-[#F472B6]" />
+                        <span>Clínica</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Botão Cadastre-se com Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative group overflow-hidden px-8 h-11 transition-all duration-300 hover:scale-105 rounded-full">
+                      <div className="absolute inset-0 bg-white/10 backdrop-blur-md border border-white/20 group-hover:bg-white/20 transition-all duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-all duration-700" />
+                      <span className="relative z-10 font-bold text-white flex items-center text-base">
+                        Cadastre-se <ChevronDown className="ml-2 h-4 w-4 opacity-70 group-hover:opacity-100" />
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-2 duration-200 bg-[#1A1A2E]/95 backdrop-blur-xl border-white/10 text-white rounded-xl">
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4 text-base rounded-lg m-1">
+                      <Link to="/patient-login?signup=true">
+                        <User className="h-5 w-5 mr-3 text-[#4ADE80]" />
+                        <span>Paciente</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4 text-base rounded-lg m-1">
+                      <Link to="/login-dentista?signup=true">
+                        <User className="h-5 w-5 mr-3 text-[#60A5FA]" />
+                        <span>Dentista</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4 text-base rounded-lg m-1">
+                      <Link to="/clinic-login?signup=true">
+                        <Building2 className="h-5 w-5 mr-3 text-[#F472B6]" />
+                        <span>Clínica</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
+
+            {/* Location info for tablet/desktop */}
+            <div className="hidden xl:flex items-center space-x-1.5 ml-4 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 transition-all duration-300 ease-out hover:bg-white/10 group">
+              <MapPin className="h-3.5 w-3.5 text-[#E94560] group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-xs text-white/70 group-hover:text-white font-medium transition-colors duration-300">
+                {city && state ? `${city}, ${state}` : (city || state || 'Brasil')}
+              </span>
+            </div>
           </div>
 
           {/* Tablet Actions */}
@@ -215,6 +275,9 @@ const Navbar = () => {
               <div className="flex items-center space-x-1.5 md:space-x-2">
                 <Button asChild variant="outline" size="sm" className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-md hover:border-primary/30 text-xs md:text-sm px-2 md:px-3 group">
                   <Link to="/patient-login" className="group-hover:text-primary transition-colors duration-300">Paciente</Link>
+                </Button>
+                <Button asChild variant="secondary" size="sm" className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-md text-xs md:text-sm px-2 md:px-3">
+                  <Link to="/login-dentista">Dentista</Link>
                 </Button>
                 <Button asChild size="sm" className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-md hover:brightness-110 text-xs md:text-sm px-2 md:px-3">
                   <Link to="/clinic-login">Clínica</Link>
@@ -332,25 +395,75 @@ const Navbar = () => {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3 animate-in slide-in-from-bottom-4 fill-mode-both" style={{ animationDelay: '250ms' }}>
-                <Button asChild className="w-full rounded-xl py-3 transition-all duration-200 hover:scale-[1.02]">
-                  <Link to="/patient-login" onClick={() => setIsMenuOpen(false)}>
-                    <User className="h-4 w-4 mr-3" />
-                    Login Paciente
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full rounded-xl py-3 transition-all duration-200 hover:scale-[1.02]">
-                  <Link to="/clinic-login" onClick={() => setIsMenuOpen(false)}>
-                    <Building2 className="h-4 w-4 mr-3" />
-                    Login Clínica
-                  </Link>
-                </Button>
+
+              <div className="space-y-4 animate-in slide-in-from-bottom-4 fill-mode-both" style={{ animationDelay: '250ms' }}>
+                {/* Entrar Section */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setActiveMobileSection(activeMobileSection === 'entrar' ? null : 'entrar')}
+                    className="flex items-center justify-between w-full px-4 py-3 bg-gradient-to-r from-[#E94560]/10 to-[#FB923C]/10 border border-[#E94560]/20 rounded-xl text-left font-medium transition-all hover:bg-[#E94560]/20"
+                  >
+                    <span className="flex items-center text-white">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#E94560] to-[#FB923C] flex items-center justify-center mr-3 shadow-lg shadow-[#E94560]/20">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      Entrar
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-white/70 transition-transform duration-300 ${activeMobileSection === 'entrar' ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <div className={`space-y-2 pl-2 overflow-hidden transition-all duration-300 ${activeMobileSection === 'entrar' ? 'max-h-60 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                    <Link to="/patient-login" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 text-sm text-white/80 hover:text-white transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80] mr-3" />
+                      Paciente
+                    </Link>
+                    <Link to="/login-dentista" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 text-sm text-white/80 hover:text-white transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#60A5FA] mr-3" />
+                      Dentista
+                    </Link>
+                    <Link to="/clinic-login" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 text-sm text-white/80 hover:text-white transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#F472B6] mr-3" />
+                      Clínica
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Cadastre-se Section */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setActiveMobileSection(activeMobileSection === 'cadastrar' ? null : 'cadastrar')}
+                    className="flex items-center justify-between w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-left font-medium transition-all hover:bg-white/10"
+                  >
+                    <span className="flex items-center text-white">
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center mr-3 border border-white/10">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      Cadastre-se
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-white/70 transition-transform duration-300 ${activeMobileSection === 'cadastrar' ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <div className={`space-y-2 pl-2 overflow-hidden transition-all duration-300 ${activeMobileSection === 'cadastrar' ? 'max-h-60 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                    <Link to="/patient-login?signup=true" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 text-sm text-white/80 hover:text-white transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80] mr-3" />
+                      Paciente
+                    </Link>
+                    <Link to="/login-dentista?signup=true" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 text-sm text-white/80 hover:text-white transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#60A5FA] mr-3" />
+                      Dentista
+                    </Link>
+                    <Link to="/clinic-login?signup=true" onClick={() => setIsMenuOpen(false)} className="flex items-center px-4 py-3 rounded-lg hover:bg-white/5 text-sm text-white/80 hover:text-white transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#F472B6] mr-3" />
+                      Clínica
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
-    </nav>
+    </nav >
   );
 };
 
