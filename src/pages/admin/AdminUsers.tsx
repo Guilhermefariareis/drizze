@@ -39,6 +39,15 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    role: ''
+  });
   const [stats, setStats] = useState({
     total: 0,
     admins: 0,
@@ -60,7 +69,14 @@ export default function AdminUsers() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProfiles((data || []) as any);
+
+      const formattedProfiles = (data || []).map((profile: any) => ({
+        ...profile,
+        role: profile.role || profile.user_type || 'patient',
+        full_name: profile.full_name || profile.name || 'Usuário'
+      }));
+
+      setProfiles(formattedProfiles as any);
     } catch (error) {
       console.error('Error fetching profiles:', error);
       toast.error('Erro ao carregar usuários');
@@ -72,9 +88,9 @@ export default function AdminUsers() {
   const fetchStats = async () => {
     try {
       const { count: totalCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true });
-      const { count: adminsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['admin', 'master']);
-      const { count: clinicsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'clinic');
-      const { count: patientsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'patient');
+      const { count: adminsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).in('user_type', ['admin', 'master']);
+      const { count: clinicsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).eq('user_type', 'clinic');
+      const { count: patientsCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true }).eq('user_type', 'patient');
 
       setStats({
         total: totalCount || 0,
@@ -91,7 +107,7 @@ export default function AdminUsers() {
     try {
       const { error } = await adminSupabase
         .from('profiles')
-        .update({ role: newRole })
+        .update({ user_type: newRole })
         .eq('id', userId);
 
       if (error) throw error;
@@ -123,6 +139,10 @@ export default function AdminUsers() {
   };
 
   const deleteUser = async (userId: string) => {
+    if (!confirm('Você tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
     try {
       const { error } = await adminSupabase
         .from('profiles')
@@ -137,6 +157,43 @@ export default function AdminUsers() {
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Erro ao remover usuário');
+    }
+  };
+
+  const handleEditOpen = (profile: Profile) => {
+    setSelectedProfile(profile);
+    setEditFormData({
+      full_name: profile.full_name,
+      email: profile.email,
+      phone: profile.phone || '',
+      role: profile.role
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedProfile) return;
+
+    try {
+      const { error } = await adminSupabase
+        .from('profiles')
+        .update({
+          full_name: editFormData.full_name,
+          email: editFormData.email,
+          phone: editFormData.phone,
+          user_type: editFormData.role,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedProfile.id);
+
+      if (error) throw error;
+
+      toast.success('Usuário atualizado com sucesso');
+      setIsEditOpen(false);
+      fetchProfiles();
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Erro ao salvar alterações');
     }
   };
 
@@ -333,11 +390,14 @@ export default function AdminUsers() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedProfile(profile);
+                                  setIsViewOpen(true);
+                                }}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   Visualizar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditOpen(profile)}>
                                   <Edit className="h-4 w-4 mr-2" />
                                   Editar
                                 </DropdownMenuItem>
@@ -415,6 +475,112 @@ export default function AdminUsers() {
             </CardContent>
           </Card>
         </div>
+
+        {/* View Modal */}
+        <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Usuário</DialogTitle>
+            </DialogHeader>
+            {selectedProfile && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">Nome</Label>
+                  <div className="col-span-3 text-sm">{selectedProfile.full_name}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">E-mail</Label>
+                  <div className="col-span-3 text-sm">{selectedProfile.email}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">Telefone</Label>
+                  <div className="col-span-3 text-sm">{selectedProfile.phone || 'N/A'}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">Função</Label>
+                  <div className="col-span-3">
+                    <Badge className={getRoleColor(selectedProfile.role)}>
+                      {getRoleLabel(selectedProfile.role)}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">Status</Label>
+                  <div className="col-span-3">
+                    {selectedProfile.is_active === false ? (
+                      <Badge variant="destructive">Bloqueado</Badge>
+                    ) : (
+                      <Badge className="bg-green-500 text-white hover:bg-green-600">Ativo</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">Criado em</Label>
+                  <div className="col-span-3 text-sm">{new Date(selectedProfile.created_at).toLocaleString('pt-BR')}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right font-bold text-sm">ID</Label>
+                  <div className="col-span-3 text-xs text-muted-foreground font-mono">{selectedProfile.id}</div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Modal */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome Completo</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.full_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">E-mail</Label>
+                <Input
+                  id="edit-email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Telefone</Label>
+                <Input
+                  id="edit-phone"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Função</Label>
+                <Select value={editFormData.role} onValueChange={(val: any) => setEditFormData({ ...editFormData, role: val })}>
+                  <SelectTrigger id="edit-role">
+                    <SelectValue placeholder="Selecione a função" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="master">Master</SelectItem>
+                    <SelectItem value="clinic">Clínica</SelectItem>
+                    <SelectItem value="patient">Paciente</SelectItem>
+                    <SelectItem value="professional">Profissional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveEdit}>Salvar Alterações</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
