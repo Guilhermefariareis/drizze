@@ -15,7 +15,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const { city, state } = useGeolocation();
   const { config } = useSiteConfig();
-  const { role } = useUserRole();
+  const { role, fullName } = useUserRole();
 
 
   // Close mobile menu when clicking outside or on link
@@ -30,6 +30,9 @@ const Navbar = () => {
   }, []);
 
   const getDisplayName = () => {
+    if (fullName) {
+      return fullName;
+    }
     if (user?.user_metadata?.full_name) {
       return user.user_metadata.full_name;
     }

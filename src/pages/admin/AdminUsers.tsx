@@ -24,7 +24,6 @@ const adminSupabase = createClient(
 
 type Profile = {
   id: string;
-  user_id: string;
   full_name: string;
   email: string;
   phone: string | null;
@@ -93,7 +92,7 @@ export default function AdminUsers() {
       const { error } = await adminSupabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) throw error;
 
@@ -111,7 +110,7 @@ export default function AdminUsers() {
       const { error } = await adminSupabase
         .from('profiles')
         .update({ is_active: !currentStatus })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) throw error;
 
@@ -128,7 +127,7 @@ export default function AdminUsers() {
       const { error } = await adminSupabase
         .from('profiles')
         .delete()
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) throw error;
 
@@ -306,7 +305,7 @@ export default function AdminUsers() {
                                   <Badge variant="destructive" className="text-[10px] h-4 px-1">Bloqueado</Badge>
                                 )}
                               </p>
-                              <p className="text-sm text-muted-foreground">ID: {profile.user_id.slice(0, 8)}...</p>
+                              <p className="text-sm text-muted-foreground">ID: {profile.id.slice(0, 8)}...</p>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -344,7 +343,7 @@ export default function AdminUsers() {
                                 </DropdownMenuItem>
                                 {profile.role !== 'admin' && profile.role !== 'master' && (
                                   <DropdownMenuItem
-                                    onClick={() => updateUserRole(profile.user_id, 'admin')}
+                                    onClick={() => updateUserRole(profile.id, 'admin')}
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Tornar Admin
@@ -352,7 +351,7 @@ export default function AdminUsers() {
                                 )}
                                 {profile.role !== 'master' && (
                                   <DropdownMenuItem
-                                    onClick={() => updateUserRole(profile.user_id, 'master')}
+                                    onClick={() => updateUserRole(profile.id, 'master')}
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Tornar Master
@@ -360,7 +359,7 @@ export default function AdminUsers() {
                                 )}
                                 {profile.role !== 'clinic' && (
                                   <DropdownMenuItem
-                                    onClick={() => updateUserRole(profile.user_id, 'clinic')}
+                                    onClick={() => updateUserRole(profile.id, 'clinic')}
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Tornar Clínica
@@ -368,7 +367,7 @@ export default function AdminUsers() {
                                 )}
                                 {profile.role !== 'patient' && (
                                   <DropdownMenuItem
-                                    onClick={() => updateUserRole(profile.user_id, 'patient')}
+                                    onClick={() => updateUserRole(profile.id, 'patient')}
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Tornar Paciente
@@ -376,7 +375,7 @@ export default function AdminUsers() {
                                 )}
                                 {profile.role !== 'professional' && (
                                   <DropdownMenuItem
-                                    onClick={() => updateUserRole(profile.user_id, 'professional')}
+                                    onClick={() => updateUserRole(profile.id, 'professional')}
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Tornar Profissional
@@ -384,13 +383,13 @@ export default function AdminUsers() {
                                 )}
                                 <DropdownMenuItem
                                   className="text-destructive"
-                                  onClick={() => deleteUser(profile.user_id)}
+                                  onClick={() => deleteUser(profile.id)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Excluir
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => toggleUserStatus(profile.user_id, profile.is_active ?? true)}
+                                  onClick={() => toggleUserStatus(profile.id, profile.is_active ?? true)}
                                 >
                                   {profile.is_active === false ? (
                                     <>

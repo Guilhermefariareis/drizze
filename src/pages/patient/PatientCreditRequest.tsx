@@ -88,6 +88,44 @@ const PatientCreditRequest = () => {
     return true;
   };
 
+  useEffect(() => {
+    const checkProfileCompleteness = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile) {
+          const address = (profile.address as any) || {};
+          const isComplete =
+            profile.full_name &&
+            profile.cpf &&
+            address.city &&
+            address.state;
+
+          if (!isComplete) {
+            toast.error('Complete seu cadastro para solicitar crédito', {
+              description: 'Você será redirecionado para a página de perfil.',
+              duration: 5000,
+            });
+            setTimeout(() => navigate('/patient/profile'), 2000);
+          }
+        } else {
+          toast.warning('Perfil não encontrado. Por favor, preencha seus dados.');
+          setTimeout(() => navigate('/patient/profile'), 2000);
+        }
+      } catch (err) {
+        console.error('Erro ao verificar perfil:', err);
+      }
+    };
+
+    checkProfileCompleteness();
+  }, [user, navigate]);
+
   const validateForm = () => {
     if (!formData.clinic_id) {
       toast.error('Selecione uma clínica');
@@ -112,34 +150,43 @@ const PatientCreditRequest = () => {
     setLoading(true);
 
     try {
+      console.log('🔍 [DEBUG] Iniciando PatientCreditRequest para usuário:', user?.id);
+
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, phone, cpf, address')
-        .eq('user_id', user!.id)
-        .single();
+        .select('*')
+        .eq('id', user!.id)
+        .maybeSingle();
 
       if (profileError) {
-        throw new Error('Erro ao buscar dados do perfil. Tente novamente.');
+        console.error('🚨 [ERROR] Erro ao buscar perfil no Supabase:', profileError);
+        throw new Error(`Erro técnico ao buscar dados do perfil: ${profileError.message}`);
       }
 
-      const address = (profile.address as any) || {};
+      if (!profile) {
+        console.warn('⚠️ [WARN] Perfil não encontrado na tabela profiles. Usando dados do Auth como fallback.');
+      }
+
+      const address = (profile?.address as any) || {};
 
       const creditRequestData = {
-        patient_id: profile.id,
+        patient_id: user!.id, // Usar user.id diretamente para garantir o vínculo correto no Auth
         clinic_id: formData.clinic_id,
         requested_amount: parseFloat(formData.requested_amount),
         installments: parseInt(formData.installments),
         treatment_description: formData.treatment_description,
         status: 'pending',
-        patient_name: profile.full_name || user!.email || 'Nome não informado',
-        patient_email: profile.email || user!.email || '',
-        patient_phone: profile.phone || '',
-        patient_cpf: profile.cpf || '',
+        patient_name: profile?.full_name || user!.user_metadata?.full_name || user!.email || 'Nome não informado',
+        patient_email: profile?.email || user!.email || '',
+        patient_phone: (profile as any)?.phone || '',
+        patient_cpf: profile?.cpf || '',
         patient_address_city: address.city || undefined,
         patient_address_state: address.state || undefined,
         patient_address_cep: (address.zip_code as string | undefined)?.replace(/\D/g, '') || undefined,
         created_at: new Date().toISOString()
       };
+
+      console.log('📝 [DEBUG] Dados da solicitação de crédito preparados:', creditRequestData);
 
       const { error: requestError } = await (supabase
         .from('credit_requests' as any) as any)

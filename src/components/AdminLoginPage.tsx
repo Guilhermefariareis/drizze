@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,14 +74,15 @@ export default function AdminLoginPage() {
         // Aguardar mais um pouco para o role ser carregado
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Buscar role diretamente do banco
+        // Buscar role diretamente do banco (com resiliência)
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', authData.user.id)
-          .single();
+          .maybeSingle();
 
-        const userRole = profile?.role || 'clinic'; // Default para clinic
+        const p = profile as any;
+        const userRole = p?.role || p?.account_type || 'clinic';
         console.log('[AdminLoginPage] Role encontrado:', userRole);
 
         if (userRole === 'clinic') {

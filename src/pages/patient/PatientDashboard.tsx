@@ -93,6 +93,10 @@ const PatientDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [PatientDashboard] Buscando dados para:', user?.id);
+
+      // Usar o ID do usuário diretamente como fallback seguro
+      const patientId = user?.id || '';
 
       // Buscar solicitações de crédito
       const { data: requests, error: requestsError } = await (supabase
@@ -111,7 +115,7 @@ const PatientDashboard: React.FC = () => {
             address
           )
         `)
-        .eq('patient_id', currentPatientId)
+        .eq('patient_id', patientId)
         .order('created_at', { ascending: false });
 
       if (requestsError) {
@@ -158,7 +162,7 @@ const PatientDashboard: React.FC = () => {
       const pendingRequests = requests?.filter(r => r.status === 'pending' || r.status === 'clinic_approved' || r.status === 'admin_analyzing').length || 0;
       const approvedRequests = requests?.filter(r => r.status === 'admin_approved').length || 0;
       const rejectedRequests = requests?.filter(r => r.status === 'clinic_rejected' || r.status === 'admin_rejected').length || 0;
-      const totalApprovedAmount = requests?.filter(r => r.status === 'admin_approved').reduce((sum, r) => sum + r.requested_amount, 0) || 0;
+      const totalApprovedAmount = requests?.filter(r => r.status === 'admin_approved').reduce((sum, r) => sum + (r.requested_amount || 0), 0) || 0;
       const documentsUploaded = documents?.length || 0;
 
       setStats({

@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  MessageCircle, 
-  Plus, 
-  Search, 
+import {
+  MessageCircle,
+  Plus,
+  Search,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -48,22 +48,38 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTickets();
+    if (clinicId) {
+      console.log('🎫 [ClinicSupportCenter] Carregando tickets para clínica:', clinicId);
+      fetchTickets();
+    } else {
+      console.warn('⚠️ [ClinicSupportCenter] clinicId não fornecido');
+      setLoading(false);
+    }
   }, [clinicId]);
 
   const fetchTickets = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*')
         .eq('clinic_id', clinicId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [ClinicSupportCenter] Erro detalhado Supabase:', error);
+        throw error;
+      }
+
+      console.log('✅ [ClinicSupportCenter] Tickets carregados:', data?.length || 0);
       setTickets(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar tickets:', error);
+    } catch (error: any) {
+      console.error('❌ [ClinicSupportCenter] Erro ao buscar tickets:', error);
+      toast({
+        title: "Erro de Conexão",
+        description: error.message || "Não foi possível carregar os tickets de suporte.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -146,7 +162,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
             <MessageCircle className="h-5 w-5" />
             Central de Suporte
           </CardTitle>
-          
+
           <Dialog open={isTicketModalOpen} onOpenChange={setIsTicketModalOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -168,7 +184,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
                     placeholder="Descreva brevemente o problema"
                   />
                 </div>
-                
+
                 <div className="w-full grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="category">Categoria</Label>
@@ -185,7 +201,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="priority">Prioridade</Label>
                     <Select value={ticketForm.priority} onValueChange={(value) => setTicketForm({ ...ticketForm, priority: value })}>
@@ -201,7 +217,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
                     </Select>
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="description">Descrição</Label>
                   <Textarea
@@ -212,7 +228,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
                     rows={4}
                   />
                 </div>
-                
+
                 <Button onClick={createTicket} className="w-full">
                   <Send className="h-4 w-4 mr-2" />
                   Criar Ticket
@@ -221,7 +237,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
             </DialogContent>
           </Dialog>
         </div>
-        
+
         <div className="w-full flex items-center space-x-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -234,7 +250,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <div className="w-full space-y-4">
           {tickets.map((ticket) => (
@@ -251,11 +267,11 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
                   </Badge>
                 </div>
               </div>
-              
+
               <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                 {ticket.description}
               </p>
-              
+
               <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>Categoria: {ticket.category}</span>
                 <span>{new Date(ticket.created_at).toLocaleDateString('pt-BR')}</span>
@@ -263,7 +279,7 @@ export default function ClinicSupportCenter({ clinicId }: ClinicSupportCenterPro
             </div>
           ))}
         </div>
-        
+
         {tickets.length === 0 && (
           <div className="text-center py-8">
             <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

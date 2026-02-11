@@ -73,7 +73,7 @@ export default function SettingsPage() {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('id', user?.id)
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') throw profileError;
@@ -150,7 +150,7 @@ export default function SettingsPage() {
           },
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user?.id);
+        .eq('id', user?.id);
 
       if (error) throw error;
       toast.success('Perfil atualizado com sucesso!');

@@ -39,6 +39,21 @@ export const useAdminPermissions = (): AdminPermissions => {
       return true;
     }
 
+    // Checking email whitelist immediately to bypass DB delays
+    const masterEmails = [
+      'master@doutorizze.com.br',
+      'admin@doutorizze.com.br',
+      'suporte@doutorizze.com.br',
+      'admin@admin.com'
+    ];
+
+    if (user.email && masterEmails.includes(user.email)) {
+      console.log('🔥🔥🔥 [useAdminPermissions] ADMIN CONFIRMADO pelo fallback de email (Sync)!');
+      setIsAdmin(true);
+      setIsLoading(false);
+      return true;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -48,7 +63,7 @@ export const useAdminPermissions = (): AdminPermissions => {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       console.log('🔥🔥🔥 [useAdminPermissions] Resultado da busca do perfil:', { profile, profileError });
@@ -74,7 +89,8 @@ export const useAdminPermissions = (): AdminPermissions => {
       const masterEmails = [
         'master@doutorizze.com.br',
         'admin@doutorizze.com.br',
-        'suporte@doutorizze.com.br'
+        'suporte@doutorizze.com.br',
+        'admin@admin.com'
       ];
 
       console.log('🔥🔥🔥 [useAdminPermissions] Verificando fallback por email...');

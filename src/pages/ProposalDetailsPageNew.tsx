@@ -112,8 +112,8 @@ export const ProposalDetailsPageNew: React.FC = () => {
       if ((needsCep || needsCity || needsState || needsBirth) && requestData.patient_id) {
         try {
           const [{ data: profileData }, { data: patientData }] = await Promise.all([
-            supabase.from('profiles').select('city, state, zip_code, birth_date').eq('id', requestData.patient_id).maybeSingle(),
-            supabase.from('patients').select('city, state, zip_code, birth_date').eq('id', requestData.patient_id).maybeSingle()
+            supabase.from('profiles').select('*').eq('id', requestData.patient_id).maybeSingle(),
+            supabase.from('patients').select('*').eq('id', requestData.patient_id).maybeSingle()
           ]);
 
           const fallbackCity = (profileData as any)?.city ?? (patientData as any)?.city ?? null;

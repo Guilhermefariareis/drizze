@@ -142,7 +142,7 @@ const PatientDashboard = () => {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name')
-        .eq('user_id', user!.id)
+        .eq('id', user!.id)
         .maybeSingle();
 
       if (profileError) throw profileError;

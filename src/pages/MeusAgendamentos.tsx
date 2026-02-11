@@ -56,10 +56,10 @@ const MeusAgendamentos = () => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (!profile) return;
+      const patientId = profile?.id || user.id;
 
       const channel = supabase
         .channel('schema-db-changes')
@@ -69,7 +69,7 @@ const MeusAgendamentos = () => {
             event: '*',
             schema: 'public',
             table: 'agendamentos',
-            filter: `paciente_id=eq.${profile.id}`
+            filter: `paciente_id=eq.${patientId}`
           },
           () => {
             console.log('🔄 [Realtime] Mudança detectada nos agendamentos. Atualizando...');
@@ -100,14 +100,16 @@ const MeusAgendamentos = () => {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user!.id)
-        .single();
+        .eq('id', user!.id)
+        .maybeSingle();
 
       if (profileError) {
-        console.error('Erro ao buscar perfil do usuário:', profileError);
+        console.error('🚨 [ERROR] MeusAgendamentos: Erro ao buscar perfil:', profileError);
         toast.error('Erro ao carregar dados do perfil');
         return;
       }
+
+      const patientId = profile?.id || user!.id;
 
       const { data, error } = await supabase
         .from('agendamentos')
@@ -117,7 +119,7 @@ const MeusAgendamentos = () => {
           servico:servico_id(nome, valor, duracao_minutos),
           profissional:profissional_id(id, profiles(nome:full_name))
         `)
-        .eq('paciente_id', profile.id)
+        .eq('paciente_id', patientId)
         .order('data_hora', { ascending: false });
 
       console.log('🔍 [MeusAgendamentos] Resultado da query:', { data, error, userID: user?.id });

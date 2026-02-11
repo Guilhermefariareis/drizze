@@ -30,15 +30,29 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
   });
 
   useEffect(() => {
-    fetchProfessionals();
+    if (clinicId) {
+      console.log('👨‍⚕️ [ProfessionalsManager] Carregando profissionais para clínica:', clinicId);
+      fetchProfessionals();
+    } else {
+      console.warn('⚠️ [ProfessionalsManager] clinicId não fornecido');
+      setLoading(false);
+    }
   }, [clinicId]);
 
   const fetchProfessionals = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('clinic_professionals')
         .select(`
-          *,
+          id,
+          user_id,
+          clinic_id,
+          role,
+          permissions,
+          is_active,
+          accepted_at,
+          invited_at,
           profiles:user_id (
             full_name,
             email,
@@ -47,13 +61,18 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
         `)
         .eq('clinic_id', clinicId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [ProfessionalsManager] Erro detalhado Supabase:', error);
+        throw error;
+      }
+
+      console.log('✅ [ProfessionalsManager] Profissionais carregados:', data?.length || 0);
       setProfessionals(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar profissionais:', error);
+    } catch (error: any) {
+      console.error('❌ [ProfessionalsManager] Erro ao carregar profissionais:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os profissionais",
+        title: "Erro de Conexão",
+        description: error.message || "Não foi possível carregar a lista de profissionais.",
         variant: "destructive"
       });
     } finally {
@@ -235,17 +254,17 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="email">Email do Profissional</Label>
-            <Input
-              id="email"
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="profissional@email.com"
-            />
+            <div>
+              <Label htmlFor="email">Email do Profissional</Label>
+              <Input
+                id="email"
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="profissional@email.com"
+              />
 
-          </div>
+            </div>
             <div>
               <Label htmlFor="role">Cargo</Label>
               <Select value={inviteRole} onValueChange={setInviteRole}>
@@ -270,7 +289,7 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
                 <Switch
                   id="access_agenda"
                   checked={permissions.access_agenda}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setPermissions(prev => ({ ...prev, access_agenda: checked }))
                   }
                 />
@@ -280,7 +299,7 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
                 <Switch
                   id="access_patients"
                   checked={permissions.access_patients}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setPermissions(prev => ({ ...prev, access_patients: checked }))
                   }
                 />
@@ -290,7 +309,7 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
                 <Switch
                   id="access_reports"
                   checked={permissions.access_reports}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setPermissions(prev => ({ ...prev, access_reports: checked }))
                   }
                 />
@@ -300,7 +319,7 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
                 <Switch
                   id="access_financial"
                   checked={permissions.access_financial}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setPermissions(prev => ({ ...prev, access_financial: checked }))
                   }
                 />
@@ -310,7 +329,7 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
                 <Switch
                   id="access_advanced_services"
                   checked={permissions.access_advanced_services}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setPermissions(prev => ({ ...prev, access_advanced_services: checked }))
                   }
                 />
@@ -380,7 +399,7 @@ const ProfessionalsManager = ({ clinicId }: ProfessionalsManagerProps) => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   {/* Mostrar permissões */}
                   <Separator className="my-3" />
                   <div>

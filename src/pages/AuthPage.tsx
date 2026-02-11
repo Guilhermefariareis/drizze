@@ -132,7 +132,7 @@ export default function AuthPage() {
 
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
+
       // Prepare clinic data for the trigger
       const clinicMetaData = signupData.role === 'clinic' ? {
         clinic_name: (additionalData as any).clinicName,
@@ -233,7 +233,7 @@ export default function AuthPage() {
 
       // Store additional data in profiles table instead
       const updateData: any = {};
-      
+
       if ((additionalData as any).phone) {
         updateData.phone = (additionalData as any).phone;
       }
@@ -241,10 +241,31 @@ export default function AuthPage() {
         updateData.address = (additionalData as any).address;
       }
 
-      await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('user_id', userId);
+      if (Object.keys(updateData).length > 0) {
+        const attemptUpdate: any = async (payload: any) => {
+          const { error } = await supabase
+            .from('profiles')
+            .update(payload)
+            .eq('id', userId);
+
+          if (error) {
+            const missingColumnMatch = error.message?.match(/column "(.+)" does not exist/);
+            if (missingColumnMatch && missingColumnMatch[1]) {
+              const missingCol = missingColumnMatch[1];
+              console.warn(`⚠️ [AuthPage] Retentativa: Removendo "${missingCol}" que gerou erro.`);
+              const nextPayload = { ...payload };
+              delete nextPayload[missingCol];
+              if (Object.keys(nextPayload).length > 0) {
+                return attemptUpdate(nextPayload);
+              }
+              return;
+            }
+            console.error('Erro ao atualizar perfil em AuthPage:', error);
+          }
+        };
+
+        await attemptUpdate(updateData);
+      }
     }
   };
 
@@ -342,113 +363,113 @@ export default function AuthPage() {
                 {signupStep === 1 && (
                   <form onSubmit={handleBasicSignup} className="space-y-4">
                     <div className="space-y-3">
-                    <Label>Tipo de Conta</Label>
-                    <RadioGroup
-                      value={signupData.role}
-                      onValueChange={(value) => setSignupData({ ...signupData, role: value as 'patient' | 'clinic' })}
-                      className="flex space-x-6"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="patient" id="patient" />
-                        <Label htmlFor="patient" className="flex items-center cursor-pointer">
-                          <UserCircle className="w-4 h-4 mr-2" />
-                          Paciente
-                        </Label>
+                      <Label>Tipo de Conta</Label>
+                      <RadioGroup
+                        value={signupData.role}
+                        onValueChange={(value) => setSignupData({ ...signupData, role: value as 'patient' | 'clinic' })}
+                        className="flex space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="patient" id="patient" />
+                          <Label htmlFor="patient" className="flex items-center cursor-pointer">
+                            <UserCircle className="w-4 h-4 mr-2" />
+                            Paciente
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="clinic" id="clinic" />
+                          <Label htmlFor="clinic" className="flex items-center cursor-pointer">
+                            <Building2 className="w-4 h-4 mr-2" />
+                            Clínica
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name">Nome Completo</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-name"
+                          type="text"
+                          placeholder="Seu nome completo"
+                          value={signupData.fullName}
+                          onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                          className="pl-10"
+                          required
+                        />
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="clinic" id="clinic" />
-                        <Label htmlFor="clinic" className="flex items-center cursor-pointer">
-                          <Building2 className="w-4 h-4 mr-2" />
-                          Clínica
-                        </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={signupData.email}
+                          onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                          className="pl-10"
+                          required
+                        />
                       </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Nome Completo</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Seu nome completo"
-                        value={signupData.fullName}
-                        onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={signupData.email}
-                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-phone">Telefone</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-phone"
+                          type="tel"
+                          placeholder="(11) 99999-9999"
+                          value={signupData.phone}
+                          onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                          className="pl-10"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Telefone</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        placeholder="(11) 99999-9999"
-                        value={signupData.phone}
-                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
-                        className="pl-10"
-                      />
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={signupData.password}
+                          onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupData.password}
-                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-confirm-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={signupData.confirmPassword}
+                          onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupData.confirmPassword}
-                        onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
 
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       <span>Continuar</span>
@@ -459,22 +480,22 @@ export default function AuthPage() {
 
                 {signupStep === 2 && (
                   <div className="space-y-4">
-                    <LGPDConsentForm 
+                    <LGPDConsentForm
                       onConsentsChange={setLgpdConsents}
                       userType={signupData.role}
                     />
-                    
+
                     <div className="flex space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => setSignupStep(1)}
                         className="flex-1"
                       >
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Voltar
                       </Button>
-                      <Button 
+                      <Button
                         type="button"
                         onClick={() => setSignupStep(3)}
                         className="flex-1"
@@ -489,22 +510,22 @@ export default function AuthPage() {
 
                 {signupStep === 3 && (
                   <div className="space-y-4">
-                    <AdditionalDataForm 
+                    <AdditionalDataForm
                       userType={signupData.role}
                       onDataChange={setAdditionalData}
                     />
-                    
+
                     <div className="flex space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => setSignupStep(2)}
                         className="flex-1"
                       >
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Voltar
                       </Button>
-                      <Button 
+                      <Button
                         type="button"
                         onClick={handleCompleteSignup}
                         className="flex-1"

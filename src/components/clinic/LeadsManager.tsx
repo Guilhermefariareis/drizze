@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Users, 
-  Phone, 
-  Mail, 
-  Calendar, 
+import {
+  Users,
+  Phone,
+  Mail,
+  Calendar,
   TrendingUp,
   UserPlus,
   MessageSquare,
@@ -69,37 +69,33 @@ export const LeadsManager: React.FC<LeadsManagerProps> = ({ clinicId }) => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      
-      // Não buscar leads globais se clinicId estiver ausente
+
       if (!clinicId) {
+        console.warn('⚠️ [LeadsManager] clinicId não fornecido');
         setLeads([]);
         setLoading(false);
         return;
       }
-      
-      // Se clinicId estiver disponível, filtrar por clinic_id
-      const query = supabase
+
+      console.log('📈 [LeadsManager] Buscando leads para clínica:', clinicId);
+      const { data, error } = await supabase
         .from('clinic_leads')
         .select('*')
+        .eq('clinic_id', clinicId)
         .order('created_at', { ascending: false });
 
-      const { data, error } = await query.eq('clinic_id', clinicId);
-
       if (error) {
-        console.error('Erro ao buscar leads:', error);
-        toast({
-          title: 'Erro',
-          description: 'Erro ao carregar leads',
-          variant: 'destructive'
-        });
-      } else {
-        setLeads(data || []);
+        console.error('❌ [LeadsManager] Erro detalhado Supabase:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Erro na requisição:', error);
+
+      console.log('✅ [LeadsManager] Leads carregados:', data?.length || 0);
+      setLeads(data || []);
+    } catch (error: any) {
+      console.error('❌ [LeadsManager] Erro ao carregar leads:', error);
       toast({
-        title: 'Erro',
-        description: 'Erro ao carregar leads',
+        title: 'Erro de Conexão',
+        description: error.message || 'Não foi possível carregar os leads.',
         variant: 'destructive'
       });
     } finally {
@@ -138,7 +134,7 @@ export const LeadsManager: React.FC<LeadsManagerProps> = ({ clinicId }) => {
       });
       return;
     }
-    
+
     if (!clinicId) {
       toast({
         title: 'Erro',
@@ -200,7 +196,7 @@ export const LeadsManager: React.FC<LeadsManagerProps> = ({ clinicId }) => {
     try {
       const { error } = await supabase
         .from('clinic_leads')
-        .update({ 
+        .update({
           status: newStatus,
           updated_at: new Date().toISOString()
         })
@@ -217,8 +213,8 @@ export const LeadsManager: React.FC<LeadsManagerProps> = ({ clinicId }) => {
       }
 
       // Atualizar a lista local
-      setLeads(prev => prev.map(lead => 
-        lead.id === leadId 
+      setLeads(prev => prev.map(lead =>
+        lead.id === leadId
           ? { ...lead, status: newStatus, updated_at: new Date().toISOString() }
           : lead
       ));
@@ -239,10 +235,10 @@ export const LeadsManager: React.FC<LeadsManagerProps> = ({ clinicId }) => {
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.telefone?.includes(searchTerm) ||
-                         lead.nome_clinica?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.especialidade?.toLowerCase().includes(searchTerm.toLowerCase());
+      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.telefone?.includes(searchTerm) ||
+      lead.nome_clinica?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.especialidade?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

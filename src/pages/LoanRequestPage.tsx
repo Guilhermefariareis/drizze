@@ -137,7 +137,7 @@ export default function LoanRequestPage() {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, city, state, zip_code, birth_date')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError) {

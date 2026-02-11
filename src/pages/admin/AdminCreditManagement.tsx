@@ -19,6 +19,8 @@ import { Separator } from '../../components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { Eye, FileText, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Users, DollarSign, Settings, Save, Percent, Calendar, Plus, Trash2, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AdminSidebar } from '../../components/admin/AdminSidebar';
+import { AdminHeader } from '../../components/admin/AdminHeader';
 
 interface CreditRequest {
   id: string;
@@ -30,15 +32,17 @@ interface CreditRequest {
   status: 'pending' | 'clinic_approved' | 'clinic_rejected' | 'admin_approved' | 'admin_rejected' | 'admin_analyzing';
   created_at: string;
   updated_at: string;
-  patients: {
-    name: string;
+  profiles: {
+    full_name: string;
     email: string;
     phone: string;
-  };
+  } | null;
   clinics: {
+    id: string;
     name: string;
     email: string;
   };
+  patient_name?: string; // fallback if profile not found
 }
 
 interface CreditOffer {
@@ -105,6 +109,8 @@ const AdminCreditManagement: React.FC = () => {
   // Estado para modal de detalhes
   const [showDetailsModal, setShowDetailsModal] = useState<string | null>(null);
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -120,13 +126,7 @@ const AdminCreditManagement: React.FC = () => {
         .from('credit_requests')
         .select(`
           *,
-          profiles!credit_requests_patient_id_fkey (
-            id,
-            full_name,
-            email,
-            phone
-          ),
-          clinics!credit_requests_clinic_id_fkey (
+          clinics (
             id,
             name,
             email
@@ -139,7 +139,28 @@ const AdminCreditManagement: React.FC = () => {
         throw error;
       }
 
-      setCreditRequests(data || []);
+      let enrichedRequests = data as any[];
+
+      if (enrichedRequests && enrichedRequests.length > 0) {
+        const patientIds = [...new Set(enrichedRequests.map(r => r.patient_id).filter(Boolean))];
+
+        if (patientIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await adminSupabase
+            .from('profiles')
+            .select('id, full_name, email, phone')
+            .in('id', patientIds);
+
+          if (!profilesError && profilesData) {
+            const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+            enrichedRequests = enrichedRequests.map(req => ({
+              ...req,
+              profiles: profilesMap.get(req.patient_id) || null
+            }));
+          }
+        }
+      }
+
+      setCreditRequests(enrichedRequests || []);
     } catch (error) {
       console.error('Erro ao buscar solicitações:', error);
       toast.error('Erro ao carregar solicitações de crédito');
@@ -275,10 +296,8 @@ const AdminCreditManagement: React.FC = () => {
     }
 
     console.log('🔄 [AdminCreditManagement] Iniciando envio de ofertas para:', showOffersForm);
-    console.log('🔄 [AdminCreditManagement] Ofertas atuais:', offers);
 
     // Validar se o credit_request_id existe
-    console.log('🔍 [AdminCreditManagement] Verificando se a solicitação existe...');
     const { data: requestExists, error: requestError } = await adminSupabase
       .from('credit_requests')
       .select('id, status')
@@ -286,12 +305,9 @@ const AdminCreditManagement: React.FC = () => {
       .single();
 
     if (requestError || !requestExists) {
-      console.error('❌ [AdminCreditManagement] Solicitação não encontrada:', requestError);
       toast.error('Solicitação de crédito não encontrada');
       return;
     }
-
-    console.log('✅ [AdminCreditManagement] Solicitação encontrada:', requestExists);
 
     // Validar ofertas
     const validOffers = offers.filter(offer =>
@@ -310,9 +326,6 @@ const AdminCreditManagement: React.FC = () => {
       total_amount: offer.total_amount || null
     }));
 
-    console.log('✅ [AdminCreditManagement] Ofertas válidas:', validOffers.length);
-    console.log('🔍 [AdminCreditManagement] Estrutura das ofertas válidas:', JSON.stringify(validOffers, null, 2));
-
     if (validOffers.length === 0) {
       toast.error('Adicione pelo menos uma oferta válida');
       return;
@@ -321,13 +334,6 @@ const AdminCreditManagement: React.FC = () => {
     try {
       setSubmittingOffers(true);
 
-      // LOGS DETALHADOS PARA DEBUG
-      console.log('🔍 [DEBUG] Configuração do adminSupabase:');
-      console.log('🔍 [DEBUG] URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('🔍 [DEBUG] Service Role Key presente:', !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY);
-      console.log('🔍 [DEBUG] Service Role Key (primeiros 20 chars):', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20));
-
-      console.log('🗑️ [AdminCreditManagement] Removendo ofertas existentes...');
       // Remover ofertas existentes para esta solicitação
       const { error: deleteError } = await adminSupabase
         .from('credit_offers')
@@ -335,12 +341,8 @@ const AdminCreditManagement: React.FC = () => {
         .eq('credit_request_id', showOffersForm);
 
       if (deleteError) {
-        console.error('❌ [AdminCreditManagement] Erro ao deletar ofertas existentes:', deleteError);
         throw deleteError;
       }
-
-      console.log('💾 [AdminCreditManagement] Inserindo novas ofertas...');
-      console.log('🔍 [DEBUG] Ofertas a serem inseridas:', JSON.stringify(validOffers, null, 2));
 
       // Inserir novas ofertas
       const { data: insertData, error: insertError } = await adminSupabase
@@ -349,17 +351,9 @@ const AdminCreditManagement: React.FC = () => {
         .select();
 
       if (insertError) {
-        console.error('❌ [AdminCreditManagement] Erro ao inserir ofertas:', insertError);
-        console.error('❌ [AdminCreditManagement] Detalhes do erro:', insertError.details);
-        console.error('❌ [AdminCreditManagement] Hint do erro:', insertError.hint);
-        console.error('❌ [AdminCreditManagement] Código do erro:', insertError.code);
-        console.error('❌ [AdminCreditManagement] Mensagem do erro:', insertError.message);
         throw insertError;
       }
 
-      console.log('✅ [AdminCreditManagement] Ofertas inseridas com sucesso:', insertData);
-
-      console.log('📝 [AdminCreditManagement] Atualizando status da solicitação...');
       // Atualizar status da solicitação para aprovada
       const { error: updateError } = await adminSupabase
         .from('credit_requests')
@@ -370,17 +364,15 @@ const AdminCreditManagement: React.FC = () => {
         .eq('id', showOffersForm);
 
       if (updateError) {
-        console.error('❌ [AdminCreditManagement] Erro ao atualizar status:', updateError);
         throw updateError;
       }
 
-      console.log('✅ [AdminCreditManagement] Ofertas enviadas com sucesso!');
       toast.success(`${validOffers.length} oferta(s) enviada(s) com sucesso!`);
       setShowOffersForm(null);
       setOffers([]);
       fetchCreditRequests();
       fetchStats();
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [AdminCreditManagement] Erro ao enviar ofertas:', error);
       toast.error(`Erro ao enviar ofertas: ${error.message || 'Erro desconhecido'}`);
     } finally {
@@ -476,7 +468,6 @@ const AdminCreditManagement: React.FC = () => {
           .eq('clinic_id', request.clinic_id);
 
         if (!clinicUsersError && clinicUsers && clinicUsers.length > 0) {
-          // Notificar todos os usuários da clínica
           const clinicNotifications = clinicUsers.map(user => ({
             user_id: user.user_id,
             title: clinicTitle,
@@ -530,903 +521,659 @@ const AdminCreditManagement: React.FC = () => {
     return request.status === filter;
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gerenciamento de Crédito</h1>
-            <p className="text-gray-600">Análise e aprovação de solicitações de crédito</p>
+    <div className="min-h-screen bg-background flex">
+      <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
+        <AdminHeader />
+
+        <div className="p-6">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Crédito</h1>
+                <p className="text-muted-foreground">Análise e aprovação de solicitações de crédito</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge variant={globalSettings.system_active ? "default" : "secondary"}>
+                  {globalSettings.system_active ? "Sistema Ativo" : "Sistema Inativo"}
+                </Badge>
+                <Button
+                  onClick={() => setShowSettings(!showSettings)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Configurações Globais
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant={globalSettings.system_active ? "default" : "secondary"}>
-              {globalSettings.system_active ? "Sistema Ativo" : "Sistema Inativo"}
-            </Badge>
-            <Button
-              onClick={() => setShowSettings(!showSettings)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Configurações Globais
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Configurações Globais */}
-      {showSettings && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="h-5 w-5 mr-2" />
-              Configurações Globais do Sistema de Crédito
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Status do Sistema */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-1">
-                <Label className="text-base font-medium">Sistema de Crédito</Label>
-                <p className="text-sm text-gray-600">
-                  Ativar ou desativar o sistema de crédito para todas as clínicas
-                </p>
-              </div>
-              <Switch
-                checked={globalSettings.system_active}
-                onCheckedChange={(checked) =>
-                  setGlobalSettings(prev => ({ ...prev, system_active: checked }))
-                }
-              />
-            </div>
-
-            <Separator />
-
-            {/* Limites de Valor */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="min_amount" className="flex items-center">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  Valor Mínimo
-                </Label>
-                <Input
-                  id="min_amount"
-                  type="number"
-                  value={globalSettings.min_amount}
-                  onChange={(e) =>
-                    setGlobalSettings(prev => ({ ...prev, min_amount: Number(e.target.value) }))
-                  }
-                  min="1"
-                  max="999999"
-                />
-                <p className="text-xs text-gray-500">
-                  Valor mínimo para solicitação de crédito
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max_amount" className="flex items-center">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  Valor Máximo
-                </Label>
-                <Input
-                  id="max_amount"
-                  type="number"
-                  value={globalSettings.max_amount}
-                  onChange={(e) =>
-                    setGlobalSettings(prev => ({ ...prev, max_amount: Number(e.target.value) }))
-                  }
-                  min="1"
-                  max="999999"
-                />
-                <p className="text-xs text-gray-500">
-                  Valor máximo para solicitação de crédito
-                </p>
-              </div>
-            </div>
-
-            {/* Configurações de Parcelamento */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="max_installments" className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Parcelas Máximas
-                </Label>
-                <Input
-                  id="max_installments"
-                  type="number"
-                  value={globalSettings.max_installments}
-                  onChange={(e) =>
-                    setGlobalSettings(prev => ({ ...prev, max_installments: Number(e.target.value) }))
-                  }
-                  min="1"
-                  max="60"
-                />
-                <p className="text-xs text-gray-500">
-                  Número máximo de parcelas permitidas
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="interest_rate" className="flex items-center">
-                  <Percent className="h-4 w-4 mr-1" />
-                  Taxa de Juros (% a.m.)
-                </Label>
-                <Input
-                  id="interest_rate"
-                  type="number"
-                  step="0.1"
-                  value={globalSettings.interest_rate}
-                  onChange={(e) =>
-                    setGlobalSettings(prev => ({ ...prev, interest_rate: Number(e.target.value) }))
-                  }
-                  min="0"
-                  max="10"
-                />
-                <p className="text-xs text-gray-500">
-                  Taxa de juros mensal aplicada ao crédito
-                </p>
-              </div>
-            </div>
-
-            {/* Limite de Aprovação Automática */}
-            <div className="space-y-2">
-              <Label htmlFor="approval_limit" className="flex items-center">
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Limite de Aprovação Automática
-              </Label>
-              <Input
-                id="approval_limit"
-                type="number"
-                value={globalSettings.approval_limit}
-                onChange={(e) =>
-                  setGlobalSettings(prev => ({ ...prev, approval_limit: Number(e.target.value) }))
-                }
-                min="0"
-                max={globalSettings.max_amount}
-              />
-              <p className="text-xs text-gray-500">
-                Valores até este limite são aprovados automaticamente
-              </p>
-            </div>
-
-            <Separator />
-
-            {/* Resumo das Configurações */}
-            <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-              <h4 className="font-medium flex items-center">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Resumo das Configurações
-              </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Faixa de valores:</span>
-                  <p className="font-medium">
-                    {formatCurrency(globalSettings.min_amount)} - {formatCurrency(globalSettings.max_amount)}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Parcelamento:</span>
-                  <p className="font-medium">Até {globalSettings.max_installments}x</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Taxa de juros:</span>
-                  <p className="font-medium">{globalSettings.interest_rate}% a.m.</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Aprovação automática:</span>
-                  <p className="font-medium">Até {formatCurrency(globalSettings.approval_limit)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowSettings(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSaveGlobalSettings}
-                disabled={settingsLoading}
-                className="min-w-[120px]"
-              >
-                {settingsLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Salvando...
-                  </div>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar Configurações
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total de Solicitações</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total_requests}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Aguardando Análise</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending_approval}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Aprovadas Hoje</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.approved_today}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Valor Total Aprovado</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  R$ {stats.total_approved_amount.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Taxa de Aprovação</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.approval_rate}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filtros */}
-      <div className="mb-6 flex gap-2 flex-wrap">
-        <Button
-          variant={filter === 'all' ? 'default' : 'outline'}
-          onClick={() => setFilter('all')}
-        >
-          Todas ({creditRequests.length})
-        </Button>
-        <Button
-          variant={filter === 'clinic_approved' ? 'default' : 'outline'}
-          onClick={() => setFilter('clinic_approved')}
-        >
-          Aguardando Análise ({creditRequests.filter(r => r.status === 'clinic_approved').length})
-        </Button>
-        <Button
-          variant={filter === 'admin_analyzing' ? 'default' : 'outline'}
-          onClick={() => setFilter('admin_analyzing')}
-        >
-          Em Análise ({creditRequests.filter(r => r.status === 'admin_analyzing').length})
-        </Button>
-        <Button
-          variant={filter === 'admin_approved' ? 'default' : 'outline'}
-          onClick={() => setFilter('admin_approved')}
-        >
-          Aprovadas ({creditRequests.filter(r => r.status === 'admin_approved').length})
-        </Button>
-        <Button
-          variant={filter === 'admin_rejected' ? 'default' : 'outline'}
-          onClick={() => setFilter('admin_rejected')}
-        >
-          Rejeitadas ({creditRequests.filter(r => r.status === 'admin_rejected').length})
-        </Button>
-      </div>
-
-      {/* Lista de Solicitações */}
-      <div className="grid gap-4">
-        {filteredRequests.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma solicitação encontrada</h3>
-                <p className="text-gray-500">Não há solicitações de crédito para exibir.</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredRequests.map((request) => (
-            <Card key={request.id} className="hover:shadow-md transition-shadow">
+          {/* Configurações Globais */}
+          {showSettings && (
+            <Card className="mb-8 border-primary/20 bg-primary/5 backdrop-blur-sm">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {request.profiles?.full_name || request.patient_name}
-                    </CardTitle>
-                    <p className="text-sm text-gray-500">
-                      Clínica: {request.clinics.name}
-                    </p>
-                  </div>
-                  {getStatusBadge(request.status)}
-                </div>
+                <CardTitle className="flex items-center text-primary">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Configurações Globais do Sistema de Crédito
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Valor Solicitado</p>
-                    <p className="text-lg font-semibold text-green-600">
-                      R$ {request.requested_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <CardContent className="space-y-6">
+                {/* Status do Sistema */}
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-background/50">
+                  <div className="space-y-1">
+                    <Label className="text-base font-medium">Sistema de Crédito</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Ativar ou desativar o sistema de crédito para todas as clínicas
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Parcelas</p>
-                    <p className="text-lg font-semibold">{request.installments}x</p>
+                  <Switch
+                    checked={globalSettings.system_active}
+                    onCheckedChange={(checked) =>
+                      setGlobalSettings(prev => ({ ...prev, system_active: checked }))
+                    }
+                  />
+                </div>
+
+                <Separator className="opacity-50" />
+
+                {/* Limites de Valor */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="min_amount" className="flex items-center text-muted-foreground">
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      Valor Mínimo
+                    </Label>
+                    <Input
+                      id="min_amount"
+                      type="number"
+                      value={globalSettings.min_amount}
+                      onChange={(e) =>
+                        setGlobalSettings(prev => ({ ...prev, min_amount: Number(e.target.value) }))
+                      }
+                      className="bg-background"
+                    />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Valor da Parcela</p>
-                    <p className="text-lg font-semibold">
-                      R$ {(request.requested_amount / request.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Data da Solicitação</p>
-                    <p className="text-sm">
-                      {new Date(request.created_at).toLocaleDateString('pt-BR')}
-                    </p>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="max_amount" className="flex items-center text-muted-foreground">
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      Valor Máximo
+                    </Label>
+                    <Input
+                      id="max_amount"
+                      type="number"
+                      value={globalSettings.max_amount}
+                      onChange={(e) =>
+                        setGlobalSettings(prev => ({ ...prev, max_amount: Number(e.target.value) }))
+                      }
+                      className="bg-background"
+                    />
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Descrição do Tratamento</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                    {request.treatment_description}
-                  </p>
+                {/* Configurações de Parcelamento */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="max_installments" className="flex items-center text-muted-foreground">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Parcelas Máximas
+                    </Label>
+                    <Input
+                      id="max_installments"
+                      type="number"
+                      value={globalSettings.max_installments}
+                      onChange={(e) =>
+                        setGlobalSettings(prev => ({ ...prev, max_installments: Number(e.target.value) }))
+                      }
+                      className="bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="interest_rate" className="flex items-center text-muted-foreground">
+                      <Percent className="h-4 w-4 mr-1" />
+                      Taxa de Juros (% a.m.)
+                    </Label>
+                    <Input
+                      id="interest_rate"
+                      type="number"
+                      step="0.1"
+                      value={globalSettings.interest_rate}
+                      onChange={(e) =>
+                        setGlobalSettings(prev => ({ ...prev, interest_rate: Number(e.target.value) }))
+                      }
+                      className="bg-background"
+                    />
+                  </div>
                 </div>
 
-                {/* Formulário de Análise */}
-                {selectedRequest === request.id && (request.status === 'clinic_approved' || request.status === 'admin_analyzing') && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Comentários da Análise *
-                      </label>
-                      <Textarea
-                        value={analysisComments}
-                        onChange={(e) => setAnalysisComments(e.target.value)}
-                        placeholder="Descreva os motivos da sua decisão..."
-                        rows={3}
-                        className="w-full"
-                      />
-                    </div>
+                <Separator className="opacity-50" />
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleStatusUpdate(request.id, 'admin_approved')}
-                        disabled={submitting || !analysisComments.trim()}
-                        className="bg-green-600 hover:bg-green-700"
-                        size="sm"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        {submitting ? 'Processando...' : 'Aprovar'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleStatusUpdate(request.id, 'admin_rejected')}
-                        disabled={submitting || !analysisComments.trim()}
-                        size="sm"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        {submitting ? 'Processando...' : 'Rejeitar'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedRequest(null);
-                          setAnalysisComments('');
-                        }}
-                        size="sm"
-                      >
-                        Cancelar
-                      </Button>
+                {/* Resumo das Configurações */}
+                <div className="p-4 bg-background/50 rounded-lg space-y-2 border border-border/50">
+                  <h4 className="font-medium flex items-center text-primary">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Resumo das Configurações
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Faixa de valores:</span>
+                      <p className="font-medium">
+                        {formatCurrency(globalSettings.min_amount)} - {formatCurrency(globalSettings.max_amount)}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Parcelamento:</span>
+                      <p className="font-medium">Até {globalSettings.max_installments}x</p>
                     </div>
                   </div>
-                )}
+                </div>
 
-                {/* Formulário de Ofertas Bancárias */}
-                {showOffersForm === request.id && (
-                  <div className="mt-4 p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-green-800 flex items-center">
-                        <Building2 className="w-5 h-5 mr-2" />
-                        Ofertas Bancárias ({offers.length}/4)
-                      </h3>
-                      <Button
-                        onClick={addOffer}
-                        disabled={offers.length >= 4}
-                        variant="outline"
-                        size="sm"
-                        className="border-green-300 text-green-700 hover:bg-green-100"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Adicionar Oferta
-                      </Button>
-                    </div>
-
-                    <div className="space-y-4">
-                      {offers.map((offer, index) => (
-                        <div key={index} className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-800">Oferta {index + 1}</h4>
-                            {offers.length > 1 && (
-                              <Button
-                                onClick={() => removeOffer(index)}
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div>
-                              <Label htmlFor={`bank-${index}`} className="text-sm font-medium">
-                                Nome do Banco *
-                              </Label>
-                              <Input
-                                id={`bank-${index}`}
-                                value={offer.bank_name}
-                                onChange={(e) => updateOffer(index, 'bank_name', e.target.value)}
-                                placeholder="Ex: Banco do Brasil"
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor={`amount-${index}`} className="text-sm font-medium">
-                                Valor Aprovado (R$) *
-                              </Label>
-                              <Input
-                                id={`amount-${index}`}
-                                type="number"
-                                value={offer.approved_amount || ''}
-                                onChange={(e) => updateOffer(index, 'approved_amount', Number(e.target.value))}
-                                placeholder="0,00"
-                                min="0"
-                                step="0.01"
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor={`rate-${index}`} className="text-sm font-medium">
-                                Taxa de Juros (% a.m.) *
-                              </Label>
-                              <Input
-                                id={`rate-${index}`}
-                                type="number"
-                                value={offer.interest_rate || ''}
-                                onChange={(e) => updateOffer(index, 'interest_rate', Number(e.target.value))}
-                                placeholder="2,5"
-                                min="0"
-                                step="0.01"
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor={`installments-${index}`} className="text-sm font-medium">
-                                Parcelas *
-                              </Label>
-                              <Input
-                                id={`installments-${index}`}
-                                type="number"
-                                value={offer.installments || ''}
-                                onChange={(e) => updateOffer(index, 'installments', Number(e.target.value))}
-                                placeholder="12"
-                                min="1"
-                                max="60"
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">
-                                Valor da Parcela
-                              </Label>
-                              <div className="mt-1 p-2 bg-gray-50 rounded border text-sm font-medium text-green-600">
-                                {offer.monthly_payment ?
-                                  `R$ ${offer.monthly_payment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
-                                  'R$ 0,00'
-                                }
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">
-                                Valor Total
-                              </Label>
-                              <div className="mt-1 p-2 bg-gray-50 rounded border text-sm font-medium text-blue-600">
-                                {offer.total_amount ?
-                                  `R$ ${offer.total_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
-                                  'R$ 0,00'
-                                }
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-4">
-                            <Label htmlFor={`conditions-${index}`} className="text-sm font-medium">
-                              Condições e Observações
-                            </Label>
-                            <Textarea
-                              id={`conditions-${index}`}
-                              value={offer.conditions}
-                              onChange={(e) => updateOffer(index, 'conditions', e.target.value)}
-                              placeholder="Descreva as condições específicas desta oferta..."
-                              rows={2}
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-                      <Button
-                        onClick={submitOffers}
-                        disabled={submittingOffers}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {submittingOffers ? 'Enviando...' : 'Enviar Ofertas'}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setShowOffersForm(null);
-                          setOffers([]);
-                        }}
-                        variant="outline"
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Botão Ver Detalhes */}
-                {selectedRequest !== request.id && showOffersForm !== request.id && (
-                  <div className="flex gap-2">
-                    <Dialog open={showDetailsModal === request.id} onOpenChange={(open) => setShowDetailsModal(open ? request.id : null)}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver Detalhes
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Detalhes da Solicitação de Crédito</DialogTitle>
-                        </DialogHeader>
-
-                        <div className="space-y-6">
-                          {/* Informações do Paciente */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h3 className="font-semibold text-lg mb-2">Informações do Paciente</h3>
-                              <div className="space-y-2">
-                                <p><span className="font-medium">Nome:</span> {request.profiles?.full_name}</p>
-                                <p><span className="font-medium">Email:</span> {request.profiles?.email}</p>
-                                <p><span className="font-medium">Telefone:</span> {request.profiles?.phone}</p>
-                              </div>
-                            </div>
-
-                            <div>
-                              <h3 className="font-semibold text-lg mb-2">Informações da Clínica</h3>
-                              <div className="space-y-2">
-                                <p><span className="font-medium">Nome:</span> {request.clinics?.name}</p>
-                                <p><span className="font-medium">Email:</span> {request.clinics?.email}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Detalhes da Solicitação */}
-                          <div>
-                            <h3 className="font-semibold text-lg mb-2">Detalhes da Solicitação</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Valor Solicitado</p>
-                                <p className="text-lg font-semibold text-green-600">
-                                  R$ {request.requested_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Parcelas</p>
-                                <p className="text-lg font-semibold">{request.installments}x</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Valor da Parcela</p>
-                                <p className="text-lg font-semibold">
-                                  R$ {(request.requested_amount / request.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-4">
-                              <p className="text-sm font-medium text-gray-700 mb-2">Descrição do Tratamento</p>
-                              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                                {request.treatment_description}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Botões de Ação */}
-                          <div className="border-t pt-4">
-                            <h3 className="font-semibold text-lg mb-4">Ações Administrativas</h3>
-
-                            {/* Formulário de Análise */}
-                            {selectedRequest === request.id && (request.status === 'clinic_approved' || request.status === 'admin_analyzing') && (
-                              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                                <div className="mb-4">
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Comentários da Análise *
-                                  </label>
-                                  <Textarea
-                                    value={analysisComments}
-                                    onChange={(e) => setAnalysisComments(e.target.value)}
-                                    placeholder="Digite os comentários sobre a análise da solicitação..."
-                                    className="min-h-[100px]"
-                                  />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => handleStatusUpdate(request.id, 'admin_approved')}
-                                    disabled={submitting || !analysisComments.trim()}
-                                    className="bg-green-600 hover:bg-green-700"
-                                    size="sm"
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    {submitting ? 'Processando...' : 'Aprovar'}
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleStatusUpdate(request.id, 'admin_rejected')}
-                                    disabled={submitting || !analysisComments.trim()}
-                                    variant="destructive"
-                                    size="sm"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    {submitting ? 'Processando...' : 'Rejeitar'}
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      setSelectedRequest(null);
-                                      setAnalysisComments('');
-                                    }}
-                                    variant="outline"
-                                    size="sm"
-                                  >
-                                    Cancelar
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Formulário de Ofertas */}
-                            {showOffersForm === request.id && (
-                              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                                <h4 className="font-medium mb-4">Adicionar Ofertas Bancárias</h4>
-                                {offers.map((offer, index) => (
-                                  <div key={index} className="mb-4 p-4 border rounded-lg bg-white">
-                                    <div className="flex justify-between items-center mb-3">
-                                      <h5 className="font-medium">Oferta {index + 1}</h5>
-                                      {offers.length > 1 && (
-                                        <Button
-                                          onClick={() => removeOffer(index)}
-                                          variant="outline"
-                                          size="sm"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      )}
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div>
-                                        <Label htmlFor={`bank_name_${index}`}>Nome do Banco</Label>
-                                        <Input
-                                          id={`bank_name_${index}`}
-                                          value={offer.bank_name}
-                                          onChange={(e) => updateOffer(index, 'bank_name', e.target.value)}
-                                          placeholder="Ex: Banco do Brasil"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor={`approved_amount_${index}`}>Valor Aprovado</Label>
-                                        <Input
-                                          id={`approved_amount_${index}`}
-                                          type="number"
-                                          value={offer.approved_amount}
-                                          onChange={(e) => updateOffer(index, 'approved_amount', parseFloat(e.target.value) || 0)}
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor={`interest_rate_${index}`}>Taxa de Juros (%)</Label>
-                                        <Input
-                                          id={`interest_rate_${index}`}
-                                          type="number"
-                                          step="0.01"
-                                          value={offer.interest_rate}
-                                          onChange={(e) => updateOffer(index, 'interest_rate', parseFloat(e.target.value) || 0)}
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor={`installments_${index}`}>Parcelas</Label>
-                                        <Input
-                                          id={`installments_${index}`}
-                                          type="number"
-                                          value={offer.installments}
-                                          onChange={(e) => updateOffer(index, 'installments', parseInt(e.target.value) || 0)}
-                                          placeholder="12"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="mt-4">
-                                      <Label htmlFor={`conditions_${index}`}>Condições</Label>
-                                      <Textarea
-                                        id={`conditions_${index}`}
-                                        value={offer.conditions}
-                                        onChange={(e) => updateOffer(index, 'conditions', e.target.value)}
-                                        placeholder="Descreva as condições da oferta..."
-                                        className="min-h-[80px]"
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-
-                                <div className="flex gap-2 mb-4">
-                                  <Button
-                                    onClick={addOffer}
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={offers.length >= 4}
-                                  >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Adicionar Oferta
-                                  </Button>
-                                </div>
-
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={submitOffers}
-                                    disabled={submittingOffers}
-                                    className="bg-green-600 hover:bg-green-700"
-                                    size="sm"
-                                  >
-                                    <Building2 className="w-4 h-4 mr-2" />
-                                    {submittingOffers ? 'Enviando...' : 'Enviar Ofertas'}
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      setShowOffersForm(null);
-                                      setOffers([]);
-                                    }}
-                                    variant="outline"
-                                    size="sm"
-                                  >
-                                    Cancelar
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Botões de Ação Principal */}
-                            {selectedRequest !== request.id && showOffersForm !== request.id && (
-                              <div className="flex gap-2 flex-wrap">
-                                {request.status === 'clinic_approved' && (
-                                  <>
-                                    <Button
-                                      onClick={() => {
-                                        setShowOffersForm(request.id);
-                                        initializeOffers(request.id);
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700"
-                                      size="sm"
-                                    >
-                                      <Building2 className="w-4 h-4 mr-2" />
-                                      Aprovar (Enviar Ofertas)
-                                    </Button>
-                                    <Button
-                                      onClick={() => setSelectedRequest(request.id)}
-                                      variant="destructive"
-                                      size="sm"
-                                    >
-                                      <XCircle className="w-4 h-4 mr-2" />
-                                      Rejeitar
-                                    </Button>
-                                    <Button
-                                      onClick={() => handleStatusUpdate(request.id, 'admin_analyzing')}
-                                      variant="outline"
-                                      size="sm"
-                                    >
-                                      <Clock className="w-4 h-4 mr-2" />
-                                      Em Análise
-                                    </Button>
-                                  </>
-                                )}
-
-                                {request.status === 'admin_analyzing' && (
-                                  <>
-                                    <Button
-                                      onClick={() => {
-                                        setShowOffersForm(request.id);
-                                        initializeOffers(request.id);
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700"
-                                      size="sm"
-                                    >
-                                      <Building2 className="w-4 h-4 mr-2" />
-                                      Aprovar (Enviar Ofertas)
-                                    </Button>
-                                    <Button
-                                      onClick={() => setSelectedRequest(request.id)}
-                                      variant="destructive"
-                                      size="sm"
-                                    >
-                                      <XCircle className="w-4 h-4 mr-2" />
-                                      Rejeitar
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                )}
+                {/* Botões de Ação */}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSettings(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSaveGlobalSettings}
+                    disabled={settingsLoading}
+                    className="min-w-[120px]"
+                  >
+                    {settingsLoading ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                        Salvando...
+                      </div>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvar Configurações
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          ))
-        )}
+          )}
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total de Solicitações</p>
+                    <p className="text-2xl font-bold">{stats.total_requests}</p>
+                  </div>
+                  <FileText className="h-8 w-8 text-primary shadow-glow-sm" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Aguardando Análise</p>
+                    <p className="text-2xl font-bold">{stats.pending_approval}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-warning shadow-glow-sm" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Aprovadas Hoje</p>
+                    <p className="text-2xl font-bold">{stats.approved_today}</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-success shadow-glow-sm" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Valor Total Aprovado</p>
+                    <p className="text-2xl font-bold">
+                      R$ {stats.total_approved_amount.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-success shadow-glow-sm" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <>
+              {/* Filtros */}
+              <div className="mb-6 flex gap-2 flex-wrap">
+                <Button
+                  variant={filter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setFilter('all')}
+                >
+                  Todas ({creditRequests.length})
+                </Button>
+                <Button
+                  variant={filter === 'clinic_approved' ? 'default' : 'outline'}
+                  onClick={() => setFilter('clinic_approved')}
+                >
+                  Aguardando Análise ({creditRequests.filter(r => r.status === 'clinic_approved').length})
+                </Button>
+                <Button
+                  variant={filter === 'admin_analyzing' ? 'default' : 'outline'}
+                  onClick={() => setFilter('admin_analyzing')}
+                >
+                  Em Análise ({creditRequests.filter(r => r.status === 'admin_analyzing').length})
+                </Button>
+                <Button
+                  variant={filter === 'admin_approved' ? 'default' : 'outline'}
+                  onClick={() => setFilter('admin_approved')}
+                >
+                  Aprovadas ({creditRequests.filter(r => r.status === 'admin_approved').length})
+                </Button>
+                <Button
+                  variant={filter === 'admin_rejected' ? 'default' : 'outline'}
+                  onClick={() => setFilter('admin_rejected')}
+                >
+                  Rejeitadas ({creditRequests.filter(r => r.status === 'admin_rejected').length})
+                </Button>
+              </div>
+
+              {/* Lista de Solicitações */}
+              <div className="grid gap-4">
+                {filteredRequests.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma solicitação encontrada</h3>
+                        <p className="text-gray-500">Não há solicitações de crédito para exibir.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredRequests.map((request) => (
+                    <Card key={request.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg">
+                              {request.profiles?.full_name || request.patient_name}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              Clínica: {request.clinics.name}
+                            </p>
+                          </div>
+                          {getStatusBadge(request.status)}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Valor Solicitado</p>
+                            <p className="text-lg font-semibold text-success">
+                              R$ {request.requested_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Parcelas</p>
+                            <p className="text-lg font-semibold">{request.installments}x</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Valor da Parcela</p>
+                            <p className="text-lg font-semibold">
+                              R$ {(request.requested_amount / request.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Data da Solicitação</p>
+                            <p className="text-sm">
+                              {new Date(request.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-muted-foreground mb-2">Descrição do Tratamento</p>
+                          <p className="text-sm text-foreground bg-muted p-3 rounded-md border border-border/50">
+                            {request.treatment_description}
+                          </p>
+                        </div>
+
+                        {/* Formulário de Análise */}
+                        {selectedRequest === request.id && (request.status === 'clinic_approved' || request.status === 'admin_analyzing') && (
+                          <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-foreground mb-2">
+                                Comentários da Análise *
+                              </label>
+                              <Textarea
+                                value={analysisComments}
+                                onChange={(e) => setAnalysisComments(e.target.value)}
+                                placeholder="Descreva os motivos da sua decisão..."
+                                rows={3}
+                                className="w-full bg-background"
+                              />
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleStatusUpdate(request.id, 'admin_approved')}
+                                disabled={submitting || !analysisComments.trim()}
+                                className="bg-success hover:bg-success/90 text-success-foreground"
+                                size="sm"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                {submitting ? 'Processando...' : 'Aprovar'}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() => handleStatusUpdate(request.id, 'admin_rejected')}
+                                disabled={submitting || !analysisComments.trim()}
+                                size="sm"
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                {submitting ? 'Processando...' : 'Rejeitar'}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedRequest(null);
+                                  setAnalysisComments('');
+                                }}
+                                size="sm"
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formulário de Ofertas Bancárias */}
+                        {showOffersForm === request.id && (
+                          <div className="mt-4 p-6 bg-primary/5 rounded-lg border border-primary/20 backdrop-blur-sm">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-semibold text-primary flex items-center">
+                                <Building2 className="w-5 h-5 mr-2" />
+                                Ofertas Bancárias ({offers.length}/4)
+                              </h3>
+                              <Button
+                                onClick={addOffer}
+                                disabled={offers.length >= 4}
+                                variant="outline"
+                                size="sm"
+                                className="border-primary/30 text-primary hover:bg-primary/10"
+                              >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Adicionar Oferta
+                              </Button>
+                            </div>
+
+                            <div className="space-y-4">
+                              {offers.map((offer, index) => (
+                                <div key={index} className="p-4 bg-background rounded-lg border border-border shadow-sm">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-medium text-foreground">Oferta {index + 1}</h4>
+                                    {offers.length > 1 && (
+                                      <Button
+                                        onClick={() => removeOffer(index)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div>
+                                      <Label htmlFor={`bank-${index}`} className="text-sm font-medium text-muted-foreground">
+                                        Nome do Banco *
+                                      </Label>
+                                      <Input
+                                        id={`bank-${index}`}
+                                        value={offer.bank_name}
+                                        onChange={(e) => updateOffer(index, 'bank_name', e.target.value)}
+                                        placeholder="Ex: Banco do Brasil"
+                                        className="mt-1"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor={`amount-${index}`} className="text-sm font-medium text-muted-foreground">
+                                        Valor Aprovado (R$) *
+                                      </Label>
+                                      <Input
+                                        id={`amount-${index}`}
+                                        type="number"
+                                        value={offer.approved_amount || ''}
+                                        onChange={(e) => updateOffer(index, 'approved_amount', Number(e.target.value))}
+                                        placeholder="0,00"
+                                        className="mt-1"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor={`rate-${index}`} className="text-sm font-medium text-muted-foreground">
+                                        Taxa (% a.m.) *
+                                      </Label>
+                                      <Input
+                                        id={`rate-${index}`}
+                                        type="number"
+                                        value={offer.interest_rate || ''}
+                                        onChange={(e) => updateOffer(index, 'interest_rate', Number(e.target.value))}
+                                        placeholder="2,5"
+                                        className="mt-1"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor={`installments-${index}`} className="text-sm font-medium text-muted-foreground">
+                                        Parcelas *
+                                      </Label>
+                                      <Input
+                                        id={`installments-${index}`}
+                                        type="number"
+                                        value={offer.installments || ''}
+                                        onChange={(e) => updateOffer(index, 'installments', Number(e.target.value))}
+                                        className="mt-1"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label className="text-sm font-medium text-muted-foreground">
+                                        Valor da Parcela
+                                      </Label>
+                                      <div className="mt-1 p-2 bg-muted rounded border text-sm font-bold text-success">
+                                        {offer.monthly_payment ?
+                                          `R$ ${offer.monthly_payment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
+                                          'R$ 0,00'
+                                        }
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <Label className="text-sm font-medium text-muted-foreground">
+                                        Valor Total
+                                      </Label>
+                                      <div className="mt-1 p-2 bg-muted rounded border text-sm font-bold text-primary">
+                                        {offer.total_amount ?
+                                          `R$ ${offer.total_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` :
+                                          'R$ 0,00'
+                                        }
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4">
+                                    <Label htmlFor={`conditions-${index}`} className="text-sm font-medium text-muted-foreground">
+                                      Condições e Observações
+                                    </Label>
+                                    <Textarea
+                                      id={`conditions-${index}`}
+                                      value={offer.conditions}
+                                      onChange={(e) => updateOffer(index, 'conditions', e.target.value)}
+                                      placeholder="Descreva as condições específicas desta oferta..."
+                                      rows={2}
+                                      className="mt-1 bg-background"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="flex gap-3 mt-6 pt-4 border-t border-border">
+                              <Button
+                                onClick={submitOffers}
+                                disabled={submittingOffers}
+                                className="bg-primary hover:bg-primary/90"
+                              >
+                                {submittingOffers ? 'Enviando...' : 'Enviar Ofertas'}
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setShowOffersForm(null);
+                                  setOffers([]);
+                                }}
+                                variant="outline"
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Botão Ver Detalhes */}
+                        {selectedRequest !== request.id && showOffersForm !== request.id && (
+                          <div className="flex gap-2">
+                            <Dialog open={showDetailsModal === request.id} onOpenChange={(open) => setShowDetailsModal(open ? request.id : null)}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Ver Detalhes
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl bg-background border-border shadow-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="text-2xl font-bold text-primary">
+                                    Detalhes da Solicitação
+                                  </DialogTitle>
+                                </DialogHeader>
+
+                                <div className="space-y-6 overflow-y-auto max-h-[80vh] pr-2">
+                                  {/* Info Grid */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                      <h4 className="font-semibold text-lg flex items-center border-b pb-1">
+                                        <Users className="w-4 h-4 mr-2 text-primary" />
+                                        Dados do Paciente
+                                      </h4>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Nome:</span>
+                                          <span className="font-medium">{request.profiles?.full_name || request.patient_name}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Email:</span>
+                                          <span>{request.profiles?.email || 'Não informado'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Telefone:</span>
+                                          <span>{request.profiles?.phone || 'Não informado'}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                      <h4 className="font-semibold text-lg flex items-center border-b pb-1">
+                                        <Building2 className="w-4 h-4 mr-2 text-primary" />
+                                        Dados da Clínica
+                                      </h4>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Clínica:</span>
+                                          <span className="font-medium">{request.clinics.name}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Contato:</span>
+                                          <span>{request.clinics.email}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <Separator className="opacity-50" />
+
+                                  <div className="space-y-4">
+                                    <h4 className="font-semibold text-lg flex items-center border-b pb-1">
+                                      <DollarSign className="w-4 h-4 mr-2 text-primary" />
+                                      Informações do Crédito
+                                    </h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                      <div className="p-3 bg-muted/50 rounded-lg border">
+                                        <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Valor Solicitado</p>
+                                        <p className="text-xl font-bold text-success">{formatCurrency(request.requested_amount)}</p>
+                                      </div>
+                                      <div className="p-3 bg-muted/50 rounded-lg border">
+                                        <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Parcelamento</p>
+                                        <p className="text-xl font-bold">{request.installments}x</p>
+                                      </div>
+                                      <div className="p-3 bg-muted/50 rounded-lg border">
+                                        <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Status Atual</p>
+                                        <div className="mt-1">{getStatusBadge(request.status)}</div>
+                                      </div>
+                                    </div>
+
+                                    <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                                      <p className="text-sm font-medium mb-2 text-muted-foreground">Descrição do Tratamento</p>
+                                      <p className="text-sm italic text-foreground/80 leading-relaxed">
+                                        "{request.treatment_description}"
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Actions in Modal */}
+                                  <div className="pt-4 flex justify-end">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setShowDetailsModal(null)}
+                                    >
+                                      Fechar Detalhes
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

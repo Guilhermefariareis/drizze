@@ -84,9 +84,9 @@ export default function AuthPageSimple() {
         // Redirecionar baseado no perfil
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
 
         // Redirecionar para a página principal após login
         navigate('/');
@@ -163,7 +163,6 @@ export default function AuthPageSimple() {
           .from('profiles')
           .insert({
             id: data.user.id,
-            user_id: data.user.id,
             full_name: signupData.fullName,
             role: signupData.role,
             email: signupData.email,

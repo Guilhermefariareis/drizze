@@ -112,8 +112,8 @@ export const ProposalDetailsPage: React.FC = () => {
       if ((needsCep || needsCity || needsState || needsBirth) && requestData.patient_id) {
         try {
           const [{ data: profileData }, { data: patientData }] = await Promise.all([
-            supabase.from('profiles').select('city, state, zip_code, birth_date').eq('id', requestData.patient_id).maybeSingle(),
-            supabase.from('patients').select('city, state, zip_code, birth_date').eq('id', requestData.patient_id).maybeSingle()
+            supabase.from('profiles').select('*').eq('id', requestData.patient_id).maybeSingle(),
+            supabase.from('patients').select('*').eq('id', requestData.patient_id).maybeSingle()
           ]);
 
           const fallbackCity = (profileData as any)?.city ?? (patientData as any)?.city ?? null;
@@ -216,10 +216,10 @@ export const ProposalDetailsPage: React.FC = () => {
   }
 
   // Pegar a melhor oferta (maior valor aprovado)
-  const bestOffer = offers && offers.length > 0 
-    ? offers.reduce((best, current) => 
-        (current.approved_amount || 0) > (best.approved_amount || 0) ? current : best
-      )
+  const bestOffer = offers && offers.length > 0
+    ? offers.reduce((best, current) =>
+      (current.approved_amount || 0) > (best.approved_amount || 0) ? current : best
+    )
     : null;
 
   // Calcular valores baseados na melhor oferta ou dados da solicitação
@@ -232,12 +232,12 @@ export const ProposalDetailsPage: React.FC = () => {
   const taxaJurosAnual = taxaJurosMensal * 12;
   const cet = taxaJurosAnual + 3; // Estimativa do CET
   const prazoMeses = parcelas;
-  
+
   // Calcular encargos
   const iof = valorFinanciado * 0.038; // 3.8% estimado
   const tarifas = 350.00; // Valor fixo estimado
   const totalEncargos = iof + tarifas;
-  
+
   const instituicaoFinanceira = bestOffer?.bank_name || request.fidc_name || 'FIDC Santander';
 
   const formatCurrency = (value: number) => {
@@ -271,57 +271,57 @@ export const ProposalDetailsPage: React.FC = () => {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    
+
     // Configurações
     const pageWidth = doc.internal.pageSize.width;
     const margin = 20;
     let yPosition = 30;
-    
+
     // Título
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text('PROPOSTA DE CRÉDITO', pageWidth / 2, yPosition, { align: 'center' });
-    
+
     yPosition += 20;
-    
+
     // Status
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(`Status: Mesa de Crédito`, margin, yPosition);
     doc.text(`Data: ${formatDate(request.updated_at)}`, pageWidth - margin - 60, yPosition);
-    
+
     yPosition += 20;
-    
+
     // Valores do Financiamento
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('VALORES DO FINANCIAMENTO', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Valor Solicitado: ${formatCurrency(valorSolicitado)}`, margin, yPosition);
     doc.text(`Valor Financiado: ${formatCurrency(valorFinanciado)}`, margin + 100, yPosition);
     yPosition += 10;
-    
+
     doc.text(`Parcelas: ${parcelas}x`, margin, yPosition);
     doc.text(`Valor da Parcela: ${formatCurrency(valorParcela)}`, margin + 100, yPosition);
     yPosition += 10;
-    
+
     doc.text(`Total a Pagar: ${formatCurrency(totalAPagar)}`, margin, yPosition);
     doc.text(`Taxa Juros Mensal: ${taxaJurosMensal.toFixed(2)}%`, margin + 100, yPosition);
     yPosition += 10;
-    
+
     doc.text(`Taxa Juros Anual: ${taxaJurosAnual.toFixed(2)}%`, margin, yPosition);
     doc.text(`CET: ${cet.toFixed(2)}%`, margin + 100, yPosition);
     yPosition += 20;
-    
+
     // Encargos e Tarifas
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('ENCARGOS E TARIFAS', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`IOF: ${formatCurrency(iof)}`, margin, yPosition);
@@ -330,24 +330,24 @@ export const ProposalDetailsPage: React.FC = () => {
     yPosition += 10;
     doc.text(`Total Encargos: ${formatCurrency(totalEncargos)}`, margin, yPosition);
     yPosition += 20;
-    
+
     // Instituição Financeira
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('INSTITUIÇÃO FINANCEIRA', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(instituicaoFinanceira, margin, yPosition);
     yPosition += 20;
-    
+
     // Informações do Cliente
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('INFORMAÇÕES DO CLIENTE', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Nome: ${request.patient_name || 'Não informado'}`, margin, yPosition);
@@ -360,13 +360,13 @@ export const ProposalDetailsPage: React.FC = () => {
     yPosition += 10;
     doc.text(`Telefone: ${request.patient_phone ? formatPhone(request.patient_phone) : 'Não informado'}`, margin, yPosition);
     yPosition += 15;
-    
+
     // Endereço do Cliente
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('ENDEREÇO:', margin, yPosition);
     yPosition += 10;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     const endereco = [
@@ -374,55 +374,55 @@ export const ProposalDetailsPage: React.FC = () => {
       request.patient_address_state,
       request.patient_address_cep
     ].filter(Boolean).join(', ') || 'Endereço não informado';
-    
+
     doc.text(`${endereco}`, margin, yPosition);
     yPosition += 20;
-    
+
     // Informações da Clínica
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('INFORMAÇÕES DA CLÍNICA', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Razão Social: ${clinicName || 'Não informado'}`, margin, yPosition);
     yPosition += 10;
     doc.text(`CNPJ: ${formatCNPJ(clinicCnpj || '')}`, margin, yPosition);
-    
+
     // Salvar o PDF
     doc.save(`proposta-credito-${request.id}.pdf`);
   };
 
   const generateContract = () => {
     const doc = new jsPDF();
-    
+
     // Configurações
     const pageWidth = doc.internal.pageSize.width;
     const margin = 20;
     let yPosition = 30;
-    
+
     // Título
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text('CONTRATO DE FINANCIAMENTO', pageWidth / 2, yPosition, { align: 'center' });
-    
+
     yPosition += 20;
-    
+
     // Número do contrato
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(`Contrato Nº: ${request.id.toUpperCase()}`, margin, yPosition);
     doc.text(`Data: ${formatDate(new Date().toISOString())}`, pageWidth - margin - 60, yPosition);
-    
+
     yPosition += 20;
-    
+
     // Partes do contrato
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('PARTES CONTRATANTES', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text('CONTRATANTE:', margin, yPosition);
@@ -433,18 +433,18 @@ export const ProposalDetailsPage: React.FC = () => {
     yPosition += 8;
     doc.text(`E-mail: ${request.patient_email}`, margin + 10, yPosition);
     yPosition += 15;
-    
+
     doc.text('CONTRATADA:', margin, yPosition);
     yPosition += 8;
     doc.text(`Instituição: ${instituicaoFinanceira}`, margin + 10, yPosition);
     yPosition += 20;
-    
+
     // Objeto do contrato
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('OBJETO DO CONTRATO', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     const objetoText = `Financiamento para tratamento odontológico no valor de ${formatCurrency(valorFinanciado)}, `;
@@ -453,13 +453,13 @@ export const ProposalDetailsPage: React.FC = () => {
     yPosition += 8;
     doc.text(objetoText2, margin, yPosition);
     yPosition += 20;
-    
+
     // Condições financeiras
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('CONDIÇÕES FINANCEIRAS', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`• Valor do Financiamento: ${formatCurrency(valorFinanciado)}`, margin, yPosition);
@@ -476,20 +476,20 @@ export const ProposalDetailsPage: React.FC = () => {
     yPosition += 8;
     doc.text(`• Total a Pagar: ${formatCurrency(totalAPagar)}`, margin, yPosition);
     yPosition += 20;
-    
+
     // Encargos
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('ENCARGOS E TARIFAS', margin, yPosition);
     yPosition += 15;
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`• IOF: ${formatCurrency(iof)}`, margin, yPosition);
     yPosition += 8;
     doc.text(`• Tarifas Administrativas: ${formatCurrency(tarifas)}`, margin, yPosition);
     yPosition += 20;
-    
+
     // Assinaturas
     yPosition = doc.internal.pageSize.height - 60;
     doc.setFontSize(10);
@@ -498,7 +498,7 @@ export const ProposalDetailsPage: React.FC = () => {
     yPosition += 8;
     doc.text('Assinatura do Contratante', margin, yPosition);
     doc.text('Assinatura da Contratada', pageWidth - margin - 80, yPosition);
-    
+
     // Salvar o PDF
     doc.save(`contrato-financiamento-${request.id}.pdf`);
   };
@@ -581,11 +581,10 @@ export const ProposalDetailsPage: React.FC = () => {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`py-3 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
-                        activeTab === tab.id
+                      className={`py-3 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${activeTab === tab.id
                           ? 'border-blue-500 text-blue-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
+                        }`}
                     >
                       {tab.label}
                     </button>
@@ -604,7 +603,7 @@ export const ProposalDetailsPage: React.FC = () => {
                           <span className="w-2 h-2 bg-gray-400 rounded-full mr-2 sm:mr-3"></span>
                           Valores do Financiamento
                         </h3>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                           <div>
                             <div className="text-xs sm:text-sm text-gray-500 mb-1">Valor Solicitado</div>
@@ -656,7 +655,7 @@ export const ProposalDetailsPage: React.FC = () => {
                     <div>
                       <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Encargos e Tarifas</h3>
-                        
+
                         <div className="space-y-3 sm:space-y-4">
                           <div className="flex justify-between">
                             <span className="text-gray-600 text-xs sm:text-sm">IOF</span>
@@ -689,7 +688,7 @@ export const ProposalDetailsPage: React.FC = () => {
                           <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                           Informações do Cliente
                         </h3>
-                        
+
                         <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                           <div>
                             <div className="text-gray-500 mb-1 text-xs sm:text-sm">Nome Completo</div>
@@ -725,7 +724,7 @@ export const ProposalDetailsPage: React.FC = () => {
                         <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         Dados Pessoais
                       </h3>
-                      
+
                       <div className="space-y-3 sm:space-y-4">
                         <div>
                           <div className="text-xs sm:text-sm text-gray-500 mb-1">Nome Completo</div>
@@ -756,7 +755,7 @@ export const ProposalDetailsPage: React.FC = () => {
                         <Building2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         Endereço
                       </h3>
-                      
+
                       <div className="space-y-3 sm:space-y-4">
                         <div>
                           <div className="text-xs sm:text-sm text-gray-500 mb-1">CEP</div>
@@ -781,7 +780,7 @@ export const ProposalDetailsPage: React.FC = () => {
                     {/* Resumo Financeiro */}
                     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Resumo Financeiro</h3>
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                         <div className="text-center">
                           <div className="text-xl sm:text-3xl font-bold text-blue-600 mb-1 sm:mb-2">{formatCurrency(valorFinanciado)}</div>
@@ -801,7 +800,7 @@ export const ProposalDetailsPage: React.FC = () => {
                     {/* Detalhes das Taxas */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-6">Detalhes das Taxas</h3>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <div className="text-sm text-gray-500 mb-1">Taxa de Juros Mensal</div>
@@ -825,7 +824,7 @@ export const ProposalDetailsPage: React.FC = () => {
                     {/* Encargos Detalhados */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-6">Encargos Detalhados</h3>
-                      
+
                       <div className="space-y-4">
                         <div className="flex justify-between items-center py-2 border-b border-gray-100">
                           <span className="text-gray-600">IOF (Imposto sobre Operações Financeiras)</span>
@@ -847,7 +846,7 @@ export const ProposalDetailsPage: React.FC = () => {
                 {activeTab === 'historico' && (
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6">Histórico da Proposta</h3>
-                    
+
                     <div className="space-y-4">
                       <div className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
@@ -857,7 +856,7 @@ export const ProposalDetailsPage: React.FC = () => {
                           <div className="text-sm text-gray-600 mt-1">Solicitação de crédito enviada para análise</div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
                         <div>

@@ -1,25 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Textarea } from '../../components/ui/textarea';
-import { 
-  ArrowLeft, 
-  User, 
-  Building, 
-  DollarSign, 
-  Calendar, 
-  FileText, 
+import {
+  ArrowLeft,
+  User,
+  Building,
+  DollarSign,
+  Calendar,
+  FileText,
   Download,
-  CheckCircle, 
-  XCircle, 
+  CheckCircle,
+  XCircle,
   Clock,
   AlertCircle,
   MessageSquare
 } from 'lucide-react';
+import { AdminSidebar } from '../../components/admin/AdminSidebar';
+import { AdminHeader } from '../../components/admin/AdminHeader';
+
+// Admin client to bypass RLS
+const adminSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+);
 
 interface CreditRequest {
   id: string;
@@ -83,6 +92,7 @@ interface CreditAnalysis {
 const AdminCreditDetails: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [creditRequest, setCreditRequest] = useState<CreditRequest | null>(null);
   const [documents, setDocuments] = useState<CreditDocument[]>([]);
   const [analyses, setAnalyses] = useState<CreditAnalysis[]>([]);
@@ -102,7 +112,7 @@ const AdminCreditDetails: React.FC = () => {
       setLoading(true);
 
       // Buscar detalhes da solicitação primeiro
-      const { data: requestData, error: requestError } = await supabase
+      const { data: requestData, error: requestError } = await adminSupabase
         .from('credit_requests')
         .select('*')
         .eq('id', requestId)
@@ -116,7 +126,7 @@ const AdminCreditDetails: React.FC = () => {
       // Buscar dados do perfil separadamente se patient_id existir
       let profileData = null;
       if (requestData.patient_id) {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await adminSupabase
           .from('profiles')
           .select(`
             full_name,
@@ -148,7 +158,7 @@ const AdminCreditDetails: React.FC = () => {
       // Buscar dados da clínica separadamente
       let clinicData = null;
       if (requestData.clinic_id) {
-        const { data: clinic, error: clinicError } = await supabase
+        const { data: clinic, error: clinicError } = await adminSupabase
           .from('clinics')
           .select(`
             name,
@@ -178,7 +188,7 @@ const AdminCreditDetails: React.FC = () => {
 
       // Buscar documentos (com tratamento de erro para tabela inexistente)
       try {
-        const { data: documentsData, error: documentsError } = await supabase
+        const { data: documentsData, error: documentsError } = await adminSupabase
           .from('credit_documents')
           .select('*')
           .eq('credit_request_id', requestId)
@@ -197,7 +207,7 @@ const AdminCreditDetails: React.FC = () => {
 
       // Buscar análises (com tratamento de erro para tabela inexistente)
       try {
-        const { data: analysesData, error: analysesError } = await supabase
+        const { data: analysesData, error: analysesError } = await adminSupabase
           .from('credit_analysis')
           .select('*')
           .eq('credit_request_id', requestId)
@@ -216,14 +226,14 @@ const AdminCreditDetails: React.FC = () => {
     } catch (error) {
       console.error('Erro ao buscar detalhes da solicitação:', error);
       console.error('Request ID:', requestId);
-      
+
       // Mostrar erro mais específico
       if (error?.message) {
         toast.error(`Erro ao carregar detalhes: ${error.message}`);
       } else {
         toast.error('Erro ao carregar detalhes da solicitação');
       }
-      
+
       // Não navegar automaticamente, deixar o usuário tentar novamente
       // navigate('/admin/credit-management');
     } finally {
@@ -241,9 +251,9 @@ const AdminCreditDetails: React.FC = () => {
       setSubmitting(true);
 
       // Atualizar status da solicitação
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminSupabase
         .from('credit_requests')
-        .update({ 
+        .update({
           status: newStatus,
           updated_at: new Date().toISOString()
         })
@@ -255,7 +265,7 @@ const AdminCreditDetails: React.FC = () => {
 
       // Criar registro de análise se for aprovação ou rejeição
       if (newStatus === 'admin_approved' || newStatus === 'admin_rejected') {
-        const { error: analysisError } = await supabase
+        const { error: analysisError } = await adminSupabase
           .from('credit_analysis')
           .insert({
             credit_request_id: requestId,
@@ -290,7 +300,7 @@ const AdminCreditDetails: React.FC = () => {
             break;
         }
 
-        await supabase
+        await adminSupabase
           .from('notifications')
           .insert({
             user_id: creditRequest.patient_id,
@@ -325,7 +335,7 @@ const AdminCreditDetails: React.FC = () => {
 
     const config = statusConfig[status as keyof typeof statusConfig];
     if (!config) return null;
-    
+
     const Icon = config.icon;
 
     return (
@@ -380,414 +390,67 @@ const AdminCreditDetails: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/admin/credit-management')}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar ao Gerenciamento
-        </Button>
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Detalhes da Solicitação de Crédito
-            </h1>
-            <p className="text-gray-600">ID: {creditRequest.id}</p>
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} min-h-screen`}>
+        <AdminHeader />
+
+        <div className="p-4 sm:p-8 space-y-8">
+          <div className="mb-8">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/admin/credit-management')}
+              className="mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar ao Gerenciamento
+            </Button>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Detalhes da Solicitação de Crédito
+                </h1>
+                <p className="text-gray-600">ID: {creditRequest.id}</p>
+              </div>
+              {getStatusBadge(creditRequest.status)}
+            </div>
           </div>
-          {getStatusBadge(creditRequest.status)}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Coluna Principal */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Informações da Solicitação */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Informações da Solicitação
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Valor Solicitado</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    R$ {creditRequest.requested_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Número de Parcelas</p>
-                  <p className="text-2xl font-bold">{creditRequest.installments}x</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Valor da Parcela</p>
-                  <p className="text-xl font-semibold">
-                    R$ {(creditRequest.requested_amount / creditRequest.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Data da Solicitação</p>
-                  <p className="text-lg">
-                    {new Date(creditRequest.created_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <p className="text-sm font-medium text-gray-700 mb-2">Descrição do Tratamento</p>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700">{creditRequest.treatment_description}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Dados Pessoais */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Dados Pessoais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Nome Completo</p>
-                  <p className="text-lg">{creditRequest.profiles?.full_name || creditRequest.patient_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">CPF</p>
-                  <p className="text-lg">{creditRequest.profiles?.cpf || creditRequest.patient_cpf || 'Não informado'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">RG</p>
-                  <p className="text-lg">{creditRequest.profiles?.rg || 'Não informado'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Data de Nascimento</p>
-                  <p className="text-lg">
-                    {creditRequest.profiles?.birth_date 
-                      ? new Date(creditRequest.profiles.birth_date).toLocaleDateString('pt-BR')
-                      : 'Não informado'
-                    }
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Estado Civil</p>
-                  <p className="text-lg">
-                    {creditRequest.profiles?.marital_status 
-                      ? creditRequest.profiles.marital_status.charAt(0).toUpperCase() + creditRequest.profiles.marital_status.slice(1).replace('_', ' ')
-                      : 'Não informado'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Dados de Contato */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                Dados de Contato
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Email</p>
-                  <p className="text-lg">{creditRequest.profiles?.email || creditRequest.patient_email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Telefone</p>
-                  <p className="text-lg">{creditRequest.profiles?.phone || creditRequest.patient_phone}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-gray-700">Endereço Completo</p>
-                  <p className="text-lg">
-                    {creditRequest.profiles?.address 
-                      ? (typeof creditRequest.profiles.address === 'object' 
-                          ? `${creditRequest.profiles.address.street || ''}, ${creditRequest.profiles.address.neighborhood || ''}, ${creditRequest.profiles.address.city || ''} - ${creditRequest.profiles.address.state || ''}, CEP: ${creditRequest.profiles.address.zipCode || creditRequest.profiles.address.zip_code || ''}`
-                          : creditRequest.profiles.address)
-                      : 'Não informado'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Dados Profissionais */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Dados Profissionais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Profissão</p>
-                  <p className="text-lg">{creditRequest.profiles?.profession || 'Não informado'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Renda Mensal</p>
-                  <p className="text-lg">
-                    {creditRequest.profiles?.monthly_income 
-                      ? `R$ ${creditRequest.profiles.monthly_income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : 'Não informado'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Dados Bancários */}
-          {(creditRequest.profiles?.bank_name || creditRequest.profiles?.bank_code || creditRequest.profiles?.bank_agency || creditRequest.profiles?.bank_account) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Dados Bancários
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Banco</p>
-                    <p className="text-lg">{creditRequest.profiles?.bank_name || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Código do Banco</p>
-                    <p className="text-lg">{creditRequest.profiles?.bank_code || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Agência</p>
-                    <p className="text-lg">{creditRequest.profiles?.bank_agency || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Conta</p>
-                    <p className="text-lg">{creditRequest.profiles?.bank_account || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Tipo de Conta</p>
-                    <p className="text-lg">
-                      {creditRequest.profiles?.bank_account_type 
-                        ? creditRequest.profiles.bank_account_type.charAt(0).toUpperCase() + creditRequest.profiles.bank_account_type.slice(1)
-                        : 'Não informado'
-                      }
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Informações da Clínica */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Informações da Clínica
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Nome</p>
-                  <p className="text-lg">{creditRequest.clinics.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Email</p>
-                  <p className="text-lg">{creditRequest.clinics.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Telefone</p>
-                  <p className="text-lg">{creditRequest.clinics.phone || 'Não informado'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">CNPJ</p>
-                  <p className="text-lg">{creditRequest.clinics.cnpj || 'Não informado'}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-gray-700">Endereço</p>
-                  <p className="text-lg">
-                    {creditRequest.clinics.address 
-                      ? (typeof creditRequest.clinics.address === 'object' 
-                          ? `${creditRequest.clinics.address.street || ''}, ${creditRequest.clinics.address.number || ''} - ${creditRequest.clinics.address.neighborhood || ''}, ${creditRequest.clinics.address.city || ''} - ${creditRequest.clinics.address.state || ''}, CEP: ${creditRequest.clinics.address.zip_code || ''}`
-                          : creditRequest.clinics.address)
-                      : 'Não informado'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Documentos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Documentos Anexados ({documents.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {documents.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Nenhum documento anexado</p>
-              ) : (
-                <div className="space-y-3">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="font-medium">{getDocumentTypeLabel(doc.document_type)}</p>
-                          <p className="text-sm text-gray-500">{doc.file_name}</p>
-                          <p className="text-xs text-gray-400">
-                            Enviado em {new Date(doc.uploaded_at).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(doc.file_url, '_blank')}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Baixar
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Ações */}
-          {(creditRequest.status === 'clinic_approved' || creditRequest.status === 'admin_analyzing') && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Ações</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!showAnalysisForm ? (
-                  <div className="space-y-3">
-                    <Button
-                      onClick={() => setShowAnalysisForm(true)}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Analisar Solicitação
-                    </Button>
-                    
-                    {creditRequest.status === 'clinic_approved' && (
-                      <Button
-                        onClick={() => handleStatusUpdate('admin_analyzing')}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        <Clock className="w-4 h-4 mr-2" />
-                        Colocar em Análise
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Coluna Principal */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Informações da Solicitação */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Informações da Solicitação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Comentários da Análise *
-                      </label>
-                      <Textarea
-                        value={analysisComments}
-                        onChange={(e) => setAnalysisComments(e.target.value)}
-                        placeholder="Descreva os motivos da sua decisão..."
-                        rows={4}
-                        className="w-full"
-                      />
+                      <p className="text-sm font-medium text-gray-700 mb-1">Valor Solicitado</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        R$ {creditRequest.requested_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Button
-                        onClick={() => handleStatusUpdate('admin_approved')}
-                        disabled={submitting || !analysisComments.trim()}
-                        className="w-full bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        {submitting ? 'Processando...' : 'Aprovar'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleStatusUpdate('admin_rejected')}
-                        disabled={submitting || !analysisComments.trim()}
-                        className="w-full"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        {submitting ? 'Processando...' : 'Rejeitar'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowAnalysisForm(false);
-                          setAnalysisComments('');
-                        }}
-                        className="w-full"
-                      >
-                        Cancelar
-                      </Button>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Número de Parcelas</p>
+                      <p className="text-2xl font-bold">{creditRequest.installments}x</p>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Histórico de Análises */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                Histórico de Análises
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analyses.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Nenhuma análise registrada</p>
-              ) : (
-                <div className="space-y-4">
-                  {analyses.map((analysis) => (
-                    <div key={analysis.id} className="border-l-4 border-blue-200 pl-4 py-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant={analysis.decision === 'approved' ? 'default' : 'destructive'}>
-                          {analysis.decision === 'approved' ? 'Aprovado' : 'Rejeitado'}
-                        </Badge>
-                        <span className="text-sm text-gray-500">
-                          {analysis.analysis_type === 'clinic' ? 'Clínica' : 'Administrador'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 mb-2">{analysis.comments}</p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(analysis.created_at).toLocaleDateString('pt-BR', {
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Valor da Parcela</p>
+                      <p className="text-xl font-semibold">
+                        R$ {(creditRequest.requested_amount / creditRequest.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Data da Solicitação</p>
+                      <p className="text-lg">
+                        {new Date(creditRequest.created_at).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric',
@@ -796,49 +459,404 @@ const AdminCreditDetails: React.FC = () => {
                         })}
                       </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium">Solicitação criada</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(creditRequest.created_at).toLocaleDateString('pt-BR')}
-                    </p>
                   </div>
-                </div>
-                
-                {creditRequest.status !== 'pending' && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+
+                  <div className="mt-6">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Descrição do Tratamento</p>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-700">{creditRequest.treatment_description}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dados Pessoais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Dados Pessoais
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium">Status atual: {getStatusBadge(creditRequest.status)}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(creditRequest.updated_at).toLocaleDateString('pt-BR')}
+                      <p className="text-sm font-medium text-gray-700">Nome Completo</p>
+                      <p className="text-lg">{creditRequest.profiles?.full_name || creditRequest.patient_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">CPF</p>
+                      <p className="text-lg">{creditRequest.profiles?.cpf || creditRequest.patient_cpf || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">RG</p>
+                      <p className="text-lg">{creditRequest.profiles?.rg || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Data de Nascimento</p>
+                      <p className="text-lg">
+                        {creditRequest.profiles?.birth_date
+                          ? new Date(creditRequest.profiles.birth_date).toLocaleDateString('pt-BR')
+                          : 'Não informado'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Estado Civil</p>
+                      <p className="text-lg">
+                        {creditRequest.profiles?.marital_status
+                          ? creditRequest.profiles.marital_status.charAt(0).toUpperCase() + creditRequest.profiles.marital_status.slice(1).replace('_', ' ')
+                          : 'Não informado'
+                        }
                       </p>
                     </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+
+              {/* Dados de Contato */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    Dados de Contato
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Email</p>
+                      <p className="text-lg">{creditRequest.profiles?.email || creditRequest.patient_email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Telefone</p>
+                      <p className="text-lg">{creditRequest.profiles?.phone || creditRequest.patient_phone}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-medium text-gray-700">Endereço Completo</p>
+                      <p className="text-lg">
+                        {creditRequest.profiles?.address
+                          ? (typeof creditRequest.profiles.address === 'object'
+                            ? `${creditRequest.profiles.address.street || ''}, ${creditRequest.profiles.address.neighborhood || ''}, ${creditRequest.profiles.address.city || ''} - ${creditRequest.profiles.address.state || ''}, CEP: ${creditRequest.profiles.address.zipCode || creditRequest.profiles.address.zip_code || ''}`
+                            : creditRequest.profiles.address)
+                          : 'Não informado'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dados Profissionais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    Dados Profissionais
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Profissão</p>
+                      <p className="text-lg">{creditRequest.profiles?.profession || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Renda Mensal</p>
+                      <p className="text-lg">
+                        {creditRequest.profiles?.monthly_income
+                          ? `R$ ${creditRequest.profiles.monthly_income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                          : 'Não informado'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dados Bancários */}
+              {(creditRequest.profiles?.bank_name || creditRequest.profiles?.bank_code || creditRequest.profiles?.bank_agency || creditRequest.profiles?.bank_account) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Dados Bancários
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Banco</p>
+                        <p className="text-lg">{creditRequest.profiles?.bank_name || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Código do Banco</p>
+                        <p className="text-lg">{creditRequest.profiles?.bank_code || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Agência</p>
+                        <p className="text-lg">{creditRequest.profiles?.bank_agency || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Conta</p>
+                        <p className="text-lg">{creditRequest.profiles?.bank_account || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Tipo de Conta</p>
+                        <p className="text-lg">
+                          {creditRequest.profiles?.bank_account_type
+                            ? creditRequest.profiles.bank_account_type.charAt(0).toUpperCase() + creditRequest.profiles.bank_account_type.slice(1)
+                            : 'Não informado'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Informações da Clínica */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    Informações da Clínica
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Nome</p>
+                      <p className="text-lg">{creditRequest.clinics.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Email</p>
+                      <p className="text-lg">{creditRequest.clinics.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Telefone</p>
+                      <p className="text-lg">{creditRequest.clinics.phone || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">CNPJ</p>
+                      <p className="text-lg">{creditRequest.clinics.cnpj || 'Não informado'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-medium text-gray-700">Endereço</p>
+                      <p className="text-lg">
+                        {creditRequest.clinics.address
+                          ? (typeof creditRequest.clinics.address === 'object'
+                            ? `${creditRequest.clinics.address.street || ''}, ${creditRequest.clinics.address.number || ''} - ${creditRequest.clinics.address.neighborhood || ''}, ${creditRequest.clinics.address.city || ''} - ${creditRequest.clinics.address.state || ''}, CEP: ${creditRequest.clinics.address.zip_code || ''}`
+                            : creditRequest.clinics.address)
+                          : 'Não informado'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Documentos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Documentos Anexados ({documents.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {documents.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">Nenhum documento anexado</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {documents.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <p className="font-medium">{getDocumentTypeLabel(doc.document_type)}</p>
+                              <p className="text-sm text-gray-500">{doc.file_name}</p>
+                              <p className="text-xs text-gray-400">
+                                Enviado em {new Date(doc.uploaded_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(doc.file_url, '_blank')}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Baixar
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Ações */}
+              {(creditRequest.status === 'clinic_approved' || creditRequest.status === 'admin_analyzing') && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ações</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!showAnalysisForm ? (
+                      <div className="space-y-3">
+                        <Button
+                          onClick={() => setShowAnalysisForm(true)}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          Analisar Solicitação
+                        </Button>
+
+                        {creditRequest.status === 'clinic_approved' && (
+                          <Button
+                            onClick={() => handleStatusUpdate('admin_analyzing')}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Colocar em Análise
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Comentários da Análise *
+                          </label>
+                          <Textarea
+                            value={analysisComments}
+                            onChange={(e) => setAnalysisComments(e.target.value)}
+                            placeholder="Descreva os motivos da sua decisão..."
+                            rows={4}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Button
+                            onClick={() => handleStatusUpdate('admin_approved')}
+                            disabled={submitting || !analysisComments.trim()}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {submitting ? 'Processando...' : 'Aprovar'}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleStatusUpdate('admin_rejected')}
+                            disabled={submitting || !analysisComments.trim()}
+                            className="w-full"
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            {submitting ? 'Processando...' : 'Rejeitar'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowAnalysisForm(false);
+                              setAnalysisComments('');
+                            }}
+                            className="w-full"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Histórico de Análises */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    Histórico de Análises
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {analyses.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">Nenhuma análise registrada</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {analyses.map((analysis) => (
+                        <div key={analysis.id} className="border-l-4 border-blue-200 pl-4 py-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={analysis.decision === 'approved' ? 'default' : 'destructive'}>
+                              {analysis.decision === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                            </Badge>
+                            <span className="text-sm text-gray-500">
+                              {analysis.analysis_type === 'clinic' ? 'Clínica' : 'Administrador'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-2">{analysis.comments}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(analysis.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Timeline */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                      <div>
+                        <p className="text-sm font-medium">Solicitação criada</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(creditRequest.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+
+                    {creditRequest.status !== 'pending' && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                        <div>
+                          <p className="text-sm font-medium">Status atual: {getStatusBadge(creditRequest.status)}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(creditRequest.updated_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
   );
 };
 

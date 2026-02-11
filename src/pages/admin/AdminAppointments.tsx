@@ -36,7 +36,7 @@ type Appointment = {
   clinics?: {
     name: string;
   };
-  professionals?: {
+  clinic_professionals?: {
     name: string;
   };
 };
@@ -67,9 +67,7 @@ export default function AdminAppointments() {
         .from('agendamentos')
         .select(`
           *,
-          profiles:paciente_id (full_name),
-          clinics:clinica_id (name),
-          professionals:profissional_id (name)
+          clinics (name)
         `)
         .order('data_hora', { ascending: false });
 
@@ -91,10 +89,85 @@ export default function AdminAppointments() {
         query = query.gte('data_hora', monthAgo.toISOString());
       }
 
-      const { data, error } = await query;
+      const { data: appointmentsData, error: appointmentsError } = await query;
 
-      if (error) throw error;
-      setAppointments(data as any);
+      if (appointmentsError) throw appointmentsError;
+
+      let enrichedAppointments = appointmentsData;
+
+      // 1. Manually fetch profiles for patients
+      if (enrichedAppointments && enrichedAppointments.length > 0) {
+        const patientIds = [...new Set(enrichedAppointments.map(a => a.paciente_id).filter(Boolean))];
+
+        const { data: profilesData } = await adminSupabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', patientIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+        enrichedAppointments = enrichedAppointments.map(app => ({
+          ...app,
+          profiles: profilesMap.get(app.paciente_id) || { full_name: 'Desconhecido' }
+        }));
+
+        // 2. Manually fetch professionals
+        // profissional_id might point to 'clinic_professionals' table
+        const professionalIds = [...new Set(enrichedAppointments.map(a => a.profissional_id).filter(Boolean))];
+
+        if (professionalIds.length > 0) {
+          // Fetch clinic_professionals to get user_id
+          const { data: proData, error: proError } = await adminSupabase
+            .from('clinic_professionals')
+            .select('id, user_id')
+            .in('id', professionalIds);
+
+          // Note: If agendamentos points to 'professionals' table instead, we might need a fallback
+          // But checking previous errors, it seems ambiguous. 
+          // If clinic_professionals returns empty, maybe it's the 'professionals' table which we don't know schema of.
+          // Let's assume clinic_professionals for now as per migration found.
+
+          if (proData && proData.length > 0) {
+            const userIds = [...new Set(proData.map(p => p.user_id).filter(Boolean))];
+
+            // Fetch profiles for these professionals
+            const { data: proProfiles } = await adminSupabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', userIds);
+
+            const proProfilesMap = new Map(proProfiles?.map(p => [p.id, p]) || []);
+            const clinicProMap = new Map(proData.map(p => [p.id, p]));
+
+            enrichedAppointments = enrichedAppointments.map(app => {
+              const proRecord = clinicProMap.get(app.profissional_id);
+              const proProfile = proRecord ? proProfilesMap.get(proRecord.user_id) : null;
+
+              return {
+                ...app,
+                clinic_professionals: proProfile ? { name: proProfile.full_name } : { name: 'Não atribuído' }
+              };
+            });
+          } else {
+            // Fallback: maybe profissional_id IS the user_id (direct link)?
+            // Let's try to fetch profiles directly with these IDs just in case
+            const { data: potentialProProfiles } = await adminSupabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', professionalIds);
+
+            if (potentialProProfiles && potentialProProfiles.length > 0) {
+              const directProMap = new Map(potentialProProfiles.map(p => [p.id, p]));
+              enrichedAppointments = enrichedAppointments.map(app => ({
+                ...app,
+                clinic_professionals: directProMap.get(app.profissional_id) ? { name: directProMap.get(app.profissional_id)!.full_name } : (app.clinic_professionals || { name: 'Não atribuído' })
+              }));
+            }
+          }
+        }
+      }
+
+      setAppointments(enrichedAppointments as any);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast.error('Erro ao carregar consultas');
@@ -183,7 +256,7 @@ export default function AdminAppointments() {
     const searchLower = searchQuery.toLowerCase();
     const patientName = appointment.profiles?.full_name?.toLowerCase() || '';
     const clinicName = appointment.clinics?.name?.toLowerCase() || '';
-    const professionalName = appointment.professionals?.name?.toLowerCase() || '';
+    const professionalName = appointment.clinic_professionals?.name?.toLowerCase() || '';
 
     return patientName.includes(searchLower) ||
       clinicName.includes(searchLower) ||
@@ -320,7 +393,7 @@ export default function AdminAppointments() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm font-medium">{appointment.professionals?.name || 'Não atribuído'}</span>
+                              <span className="text-sm font-medium">{appointment.clinic_professionals?.name || 'Não atribuído'}</span>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">

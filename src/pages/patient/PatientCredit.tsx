@@ -68,30 +68,27 @@ export default function PatientCredit() {
   const fetchCreditData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🔍 [DEBUG] Buscando dados de crédito para:', user!.id);
 
-      // Primeiro buscar o profile do usuário
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user!.id)
-        .single();
+        .eq('id', user!.id)
+        .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is code for 'no rows returned' for single()
-        console.error('Erro ao buscar perfil do usuário:', profileError);
-        toast.error('Erro ao carregar dados do perfil');
+      if (profileError) {
+        console.error('🚨 [ERROR] Erro ao buscar perfil em PatientCredit:', profileError);
+        toast.error('Erro ao buscar dados do perfil');
         return;
       }
 
       if (!profile) {
-        console.warn('Perfil não encontrado no banco de dados. Usando dados básicos do Usuário Auth.');
-        // Se não houver perfil, ainda podemos tentar mostrar dados se o ID do Auth for usado como patient_id em algumas tabelas
-        // Ou simplesmente mostrar estado vazio. 
-        setLoanRequests([]);
-        setLoading(false);
-        return;
+        console.warn('⚠️ [WARN] Perfil não encontrado no banco de dados. Tentando buscar solicitações pelo ID do Auth.');
       }
 
-      // Buscar solicitações de crédito usando o profile.id
+      const patientIdForQuery = profile?.id || user!.id;
+
+      // Buscar solicitações de crédito usando o ID identificado
       const { data: loanData, error: loanError } = await supabase
         .from('credit_requests')
         .select(`

@@ -73,7 +73,7 @@ const AgendamentoPage: React.FC = () => {
         const { data } = await supabase
           .from('profiles')
           .select('full_name, email, phone')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .maybeSingle();
 
         if (data) {

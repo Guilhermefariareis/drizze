@@ -81,8 +81,8 @@ export default function PatientProfile() {
       const { data: profileBase, error: profileBaseError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
-        .single();
+        .eq('id', user?.id)
+        .maybeSingle();
 
       if (profileBaseError && profileBaseError.code !== 'PGRST116') {
         throw profileBaseError;
@@ -165,31 +165,82 @@ export default function PatientProfile() {
 
       let profileId = profile?.id;
 
-      // Check if profile exists first
-      const { data: existingProfile } = await supabase.from('profiles').select('id').eq('user_id', user.id).single();
+      // 1. Fetch current profile to discover available columns
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Erro ao buscar perfil para verificação de colunas:', fetchError);
+      }
+
+      // Filter updates based on what actually exists in the DB Row
+      const safeProfileUpdates: any = { ...profileUpdates };
+
+      if (existingProfile) {
+        const existingKeys = Object.keys(existingProfile);
+        Object.keys(safeProfileUpdates).forEach(key => {
+          if (!existingKeys.includes(key)) {
+            console.warn(`⚠️ [PatientProfile] Coluna "${key}" não encontrada na tabela profiles. Removendo do update.`);
+            delete safeProfileUpdates[key];
+          }
+        });
+      }
 
       let updatedProfile;
+      const attemptUpdate: any = async (payload: any) => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .update(payload)
+          .eq('id', user.id)
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          // If update fails due to a missing column, try to identify it and retry
+          const missingColumnMatch = error.message?.match(/column "(.+)" does not exist/);
+          if (missingColumnMatch && missingColumnMatch[1]) {
+            const missingCol = missingColumnMatch[1];
+            console.warn(`⚠️ [PatientProfile] Retentativa: Removendo "${missingCol}" que gerou erro.`);
+            const nextPayload = { ...payload };
+            delete nextPayload[missingCol];
+            return attemptUpdate(nextPayload);
+          }
+          throw error;
+        }
+        return data;
+      };
+
+      const attemptInsert: any = async (payload: any) => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert([{ ...payload, id: user.id, email: user.email }])
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          const missingColumnMatch = error.message?.match(/column "(.+)" does not exist/);
+          if (missingColumnMatch && missingColumnMatch[1]) {
+            const missingCol = missingColumnMatch[1];
+            console.warn(`⚠️ [PatientProfile] Retentativa (Insert): Removendo "${missingCol}" que gerou erro.`);
+            const nextPayload = { ...payload };
+            delete nextPayload[missingCol];
+            return attemptInsert(nextPayload);
+          }
+          throw error;
+        }
+        return data;
+      };
+
       if (existingProfile) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .update(profileUpdates)
-          .eq('user_id', user.id)
-          .select()
-          .single();
-        if (error) throw error;
-        updatedProfile = data;
-        profileId = data.id;
+        updatedProfile = await attemptUpdate(safeProfileUpdates);
       } else {
-        // Create if doesn't exist (Unlikely but good to handle)
-        const { data, error } = await supabase
-          .from('profiles')
-          .insert([{ ...profileUpdates, user_id: user.id, email: user.email }])
-          .select()
-          .single();
-        if (error) throw error;
-        updatedProfile = data;
-        profileId = data.id;
+        updatedProfile = await attemptInsert(safeProfileUpdates);
       }
+
+      profileId = updatedProfile?.id || user.id;
 
       // 2. Atualizar ou Criar Patient (Dados Médicos)
       const patientData = {

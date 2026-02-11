@@ -226,9 +226,9 @@ export default function PatientSettings() {
       // Primeiro buscar o profile do usuário
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('user_id', user!.id)
-        .single();
+        .select('*')
+        .eq('id', user!.id)
+        .maybeSingle();
 
       if (profileError) {
         console.error('Erro ao buscar perfil do usuário:', profileError);

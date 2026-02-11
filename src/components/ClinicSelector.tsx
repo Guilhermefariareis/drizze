@@ -24,11 +24,11 @@ export function ClinicSelector() {
   const fetchClinics = async () => {
     try {
       setLoading(true);
-      
+
       const { data: clinicsData, error } = await supabase
         .from('clinics')
         .select('*')
-        .eq('active', true)
+        .eq('is_active', true)
         .order('rating', { ascending: false });
 
       if (error) {
@@ -57,7 +57,7 @@ export function ClinicSelector() {
       // Combinar dados das clínicas com perfis
       const clinicsWithProfiles = clinicsData.map(clinic => {
         const profile = profilesData?.find(p => p.clinic_id === clinic.id);
-        
+
         // Calcular faixa de preços dos serviços
         let priceRange = 'Consulte';
         if (profile?.services && Array.isArray(profile.services)) {
@@ -65,11 +65,11 @@ export function ClinicSelector() {
             .map(service => service.price)
             .filter(price => price && price > 0)
             .sort((a, b) => a - b);
-          
+
           if (prices.length > 0) {
             const minPrice = prices[0];
             const maxPrice = prices[prices.length - 1];
-            priceRange = minPrice === maxPrice 
+            priceRange = minPrice === maxPrice
               ? `R$ ${minPrice.toFixed(0)}`
               : `R$ ${minPrice.toFixed(0)} - R$ ${maxPrice.toFixed(0)}`;
           }
@@ -160,8 +160,8 @@ export function ClinicSelector() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {clinics.map((clinic) => (
-          <Card 
-            key={clinic.id} 
+          <Card
+            key={clinic.id}
             className="overflow-hidden transition-all duration-300 hover:shadow-lg"
           >
             {/* Cover Image */}
@@ -182,8 +182,8 @@ export function ClinicSelector() {
             <CardHeader className="pb-4">
               <div className="flex items-start gap-3">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage 
-                    src={clinic.logo} 
+                  <AvatarImage
+                    src={clinic.logo}
                     alt={clinic.name}
                   />
                   <AvatarFallback>
@@ -249,7 +249,7 @@ export function ClinicSelector() {
                   ))}
                 </div>
               )}
-              
+
               {/* Price Range */}
               {clinic.priceRange && (
                 <div className="text-sm">

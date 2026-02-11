@@ -47,7 +47,7 @@ export default function AdminReports() {
       const { count: userCount } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true });
 
       // 2. Fetch Clinics
-      const { count: clinicCount } = await adminSupabase.from('clinics').select('*', { count: 'exact', head: true }).eq('active', true);
+      const { count: clinicCount } = await adminSupabase.from('clinics').select('*', { count: 'exact', head: true }).eq('is_active', true);
 
       // 3. Fetch Appointments
       const { data: appointments } = await adminSupabase.from('agendamentos').select('valor, status, created_at, clinic_id, clinics(name)');

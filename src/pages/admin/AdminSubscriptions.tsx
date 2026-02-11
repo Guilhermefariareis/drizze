@@ -22,8 +22,7 @@ const adminSupabase = createClient(
 type ClinicSubscription = {
     id: string;
     name: string;
-    city: string;
-    state: string;
+    address: any;
     subscription_plan: string | null;
     is_active: boolean;
     created_at: string;
@@ -69,7 +68,7 @@ export default function AdminSubscriptions() {
             // Fetch clinics with their subscription info
             const { data: clinicsData, error: clinicsError } = await adminSupabase
                 .from('clinics')
-                .select('id, name, city, state, subscription_plan, is_active, created_at')
+                .select('id, name, address, subscription_plan, is_active, created_at')
                 .order('created_at', { ascending: false });
 
             if (clinicsError) throw clinicsError;
@@ -104,8 +103,10 @@ export default function AdminSubscriptions() {
     const totalMonthlyRevenue = Object.values(stats).reduce((acc, curr) => acc + curr.revenue, 0);
 
     const filteredClinics = clinics.filter(clinic => {
+        const city = typeof clinic.address === 'object' ? clinic.address?.city : '';
         const matchesSearch = clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            clinic.city?.toLowerCase().includes(searchQuery.toLowerCase());
+            (city && city.toLowerCase().includes(searchQuery.toLowerCase()));
+
         const matchesPlan = planFilter === 'all' || (clinic.subscription_plan || 'Sem Plano') === planFilter;
         return matchesSearch && matchesPlan;
     });
@@ -243,7 +244,12 @@ export default function AdminSubscriptions() {
                                             {filteredClinics.map((clinic) => (
                                                 <TableRow key={clinic.id}>
                                                     <TableCell className="font-medium">{clinic.name}</TableCell>
-                                                    <TableCell>{clinic.city}, {clinic.state}</TableCell>
+                                                    <TableCell>
+                                                        {typeof clinic.address === 'object' ?
+                                                            `${clinic.address?.city || 'N/A'}, ${clinic.address?.state || ''}` :
+                                                            'Endereço não informado'
+                                                        }
+                                                    </TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline" className={`font-normal ${getPlanColor(clinic.subscription_plan)}`}>
                                                             {clinic.subscription_plan || 'Sem Plano'}

@@ -87,12 +87,11 @@ const PatientDocuments: React.FC = () => {
     try {
       setLoading(true);
 
-      // Primeiro buscar o profile do usuário logado
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', user.id)
+        .maybeSingle();
 
       if (profileError) {
         throw profileError;
@@ -103,6 +102,8 @@ const PatientDocuments: React.FC = () => {
       }
 
       // Buscar solicitações de crédito do paciente logado usando profile.id
+      const patientId = profile?.id || user.id;
+
       const { data, error } = await supabase
         .from('credit_requests')
         .select(`
@@ -116,7 +117,7 @@ const PatientDocuments: React.FC = () => {
             name
           )
         `)
-        .eq('patient_id', profile.id)
+        .eq('patient_id', patientId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -261,12 +262,15 @@ const PatientDocuments: React.FC = () => {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user!.id)
-        .single();
+        .eq('id', user!.id)
+        .maybeSingle();
 
       if (profileError) {
+        console.error('🚨 [ERROR] uploadFile: Erro ao buscar perfil:', profileError);
         throw profileError;
       }
+
+      const patientId = profile?.id || user!.id;
 
       // Salvar informações do documento no banco
       const { error: dbError } = await supabase
@@ -276,7 +280,7 @@ const PatientDocuments: React.FC = () => {
           document_type: uploadingFile.document_type,
           file_name: uploadingFile.file.name,
           file_url: fileUrl,
-          patient_id: profile.id
+          patient_id: patientId
         });
 
       if (dbError) {

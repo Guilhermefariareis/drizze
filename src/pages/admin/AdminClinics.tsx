@@ -376,7 +376,7 @@ export default function AdminClinics() {
                                   Editar
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => toggleClinicStatus(clinic.id, clinic.is_active)}
+                                  onClick={() => updateClinicStatus(clinic.id, clinic.is_active)}
                                 >
                                   <Star className="h-4 w-4 mr-2" />
                                   {clinic.is_active ? 'Desativar' : 'Ativar'}

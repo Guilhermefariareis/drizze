@@ -1,25 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { 
-  Settings, 
-  Plus, 
-  Edit,
-  Trash2,
-  Clock,
-  DollarSign,
-  Search,
-  Filter,
-  Star,
-  Users
-} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 interface Service {
   id: string;
@@ -41,17 +22,13 @@ interface ServicesManagerProps {
 
 export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMaster = false }) => {
   const { toast } = useToast();
-  const [services, setServices] = useState<Service[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [showAddService, setShowAddService] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [loading, setLoading] = useState(true);
   const [newService, setNewService] = useState({
     name: '',
     description: '',
     price: 0,
     duration: 60,
-    category: '',
+    category: 'Clínica Geral',
     is_active: true,
     is_featured: false
   });
@@ -69,84 +46,57 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
     'Radiologia'
   ];
 
-  // Dados simulados para demonstração
   useEffect(() => {
-    const mockServices: Service[] = [
-      {
-        id: '1',
-        name: 'Consulta Odontológica',
-        description: 'Consulta completa com exame clínico e orientações',
-        price: 150,
-        duration: 60,
-        category: 'Clínica Geral',
-        is_active: true,
-        is_featured: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Limpeza Dental',
-        description: 'Profilaxia completa com remoção de tártaro e polimento',
-        price: 120,
-        duration: 45,
-        category: 'Clínica Geral',
-        is_active: true,
-        is_featured: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '3',
-        name: 'Tratamento de Canal',
-        description: 'Endodontia completa com medicação e obturação',
-        price: 800,
-        duration: 120,
-        category: 'Endodontia',
-        is_active: true,
-        is_featured: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '4',
-        name: 'Ortodontia',
-        description: 'Aparelho ortodôntico fixo completo',
-        price: 2500,
-        duration: 30,
-        category: 'Ortodontia',
-        is_active: true,
-        is_featured: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '5',
-        name: 'Implante Dentário',
-        description: 'Implante unitário com coroa protética',
-        price: 3500,
-        duration: 90,
-        category: 'Implantodontia',
-        is_active: true,
-        is_featured: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '6',
-        name: 'Clareamento Dental',
-        description: 'Clareamento dental com gel e moldeira',
-        price: 450,
-        duration: 60,
-        category: 'Estética',
-        is_active: false,
-        is_featured: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+    if (clinicId) {
+      console.log('🔧 [ServicesManager] Carregando serviços para clínica:', clinicId);
+      fetchServices();
+    } else {
+      console.warn('⚠️ [ServicesManager] clinicId não fornecido');
+      setLoading(false);
+    }
+  }, [clinicId]);
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('clinic_services')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('service_name');
+
+      if (error) {
+        console.error('❌ [ServicesManager] Erro detalhado Supabase:', error);
+        throw error;
       }
-    ];
-    setServices(mockServices);
-  }, []);
+
+      // Mapear campos do banco para o estado do componente
+      const mappedServices: Service[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.service_name,
+        description: item.service_description || '',
+        price: item.price || 0,
+        duration: item.duration_minutes || 60,
+        category: 'Clínica Geral', // DB não tem categoria, usando padrão
+        is_active: item.is_active || false,
+        is_featured: false, // DB não tem featured
+        created_at: item.created_at || new Date().toISOString(),
+        updated_at: item.updated_at || new Date().toISOString()
+      }));
+
+      console.log('✅ [ServicesManager] Serviços carregados:', mappedServices.length);
+      setServices(mappedServices);
+    } catch (error: any) {
+      console.error('❌ [ServicesManager] Erro ao carregar serviços:', error);
+      toast({
+        title: "Erro de Conexão",
+        description: error.message || "Não foi possível carregar os serviços da clínica.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setNewService({
@@ -161,80 +111,164 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
     setEditingService(null);
   };
 
-  const addService = () => {
-    if (!newService.name.trim() || !newService.category) {
+  const addService = async () => {
+    if (!newService.name.trim()) {
       toast({
         title: 'Erro',
-        description: 'Nome e categoria são obrigatórios',
+        description: 'Nome é obrigatório',
         variant: 'destructive'
       });
       return;
     }
 
-    const service: Service = {
-      id: Date.now().toString(),
-      ...newService,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('clinic_services')
+        .insert([{
+          clinic_id: clinicId,
+          service_name: newService.name,
+          service_description: newService.description,
+          price: newService.price,
+          duration_minutes: newService.duration,
+          is_active: newService.is_active
+        }])
+        .select()
+        .single();
 
-    setServices(prev => [service, ...prev]);
-    resetForm();
-    setShowAddService(false);
+      if (error) throw error;
 
-    toast({
-      title: 'Sucesso',
-      description: 'Serviço adicionado com sucesso!'
-    });
-  };
+      const mappedService: Service = {
+        id: data.id,
+        name: data.service_name,
+        description: data.service_description || '',
+        price: data.price || 0,
+        duration: data.duration_minutes || 60,
+        category: 'Clínica Geral',
+        is_active: data.is_active || false,
+        is_featured: false,
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
+      };
 
-  const updateService = () => {
-    if (!editingService || !newService.name.trim() || !newService.category) {
+      setServices(prev => [mappedService, ...prev]);
+      resetForm();
+      setShowAddService(false);
+
+      toast({
+        title: 'Sucesso',
+        description: 'Serviço adicionado com sucesso!'
+      });
+    } catch (error: any) {
+      console.error('❌ [ServicesManager] Erro ao adicionar serviço:', error);
       toast({
         title: 'Erro',
-        description: 'Nome e categoria são obrigatórios',
+        description: 'Não foi possível adicionar o serviço.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateService = async () => {
+    if (!editingService || !newService.name.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Nome é obrigatório',
         variant: 'destructive'
       });
       return;
     }
 
-    setServices(prev => prev.map(service => 
-      service.id === editingService.id
-        ? { ...service, ...newService, updated_at: new Date().toISOString() }
-        : service
-    ));
+    try {
+      const { error } = await supabase
+        .from('clinic_services')
+        .update({
+          service_name: newService.name,
+          service_description: newService.description,
+          price: newService.price,
+          duration_minutes: newService.duration,
+          is_active: newService.is_active,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingService.id);
 
-    resetForm();
-    setShowAddService(false);
+      if (error) throw error;
 
-    toast({
-      title: 'Sucesso',
-      description: 'Serviço atualizado com sucesso!'
-    });
+      setServices(prev => prev.map(service =>
+        service.id === editingService.id
+          ? { ...service, ...newService, updated_at: new Date().toISOString() }
+          : service
+      ));
+
+      resetForm();
+      setShowAddService(false);
+
+      toast({
+        title: 'Sucesso',
+        description: 'Serviço atualizado com sucesso!'
+      });
+    } catch (error: any) {
+      console.error('❌ [ServicesManager] Erro ao atualizar serviço:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o serviço.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const deleteService = (serviceId: string) => {
-    setServices(prev => prev.filter(service => service.id !== serviceId));
-    toast({
-      title: 'Sucesso',
-      description: 'Serviço removido com sucesso!'
-    });
+  const deleteService = async (serviceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('clinic_services')
+        .delete()
+        .eq('id', serviceId);
+
+      if (error) throw error;
+
+      setServices(prev => prev.filter(service => service.id !== serviceId));
+      toast({
+        title: 'Sucesso',
+        description: 'Serviço removido com sucesso!'
+      });
+    } catch (error: any) {
+      console.error('❌ [ServicesManager] Erro ao deletar serviço:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o serviço.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const toggleActive = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service.id === serviceId
-        ? { ...service, is_active: !service.is_active, updated_at: new Date().toISOString() }
-        : service
-    ));
-  };
+  const toggleActive = async (serviceId: string) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
 
-  const toggleFeatured = (serviceId: string) => {
-    setServices(prev => prev.map(service => 
-      service.id === serviceId
-        ? { ...service, is_featured: !service.is_featured, updated_at: new Date().toISOString() }
-        : service
-    ));
+    try {
+      const newStatus = !service.is_active;
+      const { error } = await supabase
+        .from('clinic_services')
+        .update({
+          is_active: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', serviceId);
+
+      if (error) throw error;
+
+      setServices(prev => prev.map(s =>
+        s.id === serviceId
+          ? { ...s, is_active: newStatus, updated_at: new Date().toISOString() }
+          : s
+      ));
+    } catch (error: any) {
+      console.error('❌ [ServicesManager] Erro ao alternar status do serviço:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o status.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const startEdit = (service: Service) => {
@@ -253,7 +287,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
 
   const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase());
+      service.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || service.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -261,8 +295,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
   const stats = {
     total: services.length,
     active: services.filter(s => s.is_active).length,
-    featured: services.filter(s => s.is_featured).length,
-    averagePrice: services.length > 0 ? 
+    averagePrice: services.length > 0 ?
       (services.reduce((sum, s) => sum + s.price, 0) / services.length).toFixed(0) : '0'
   };
 
@@ -283,14 +316,6 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.active}</div>
               <div className="text-sm text-green-800">Serviços Ativos</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{stats.featured}</div>
-              <div className="text-sm text-yellow-800">Em Destaque</div>
             </div>
           </CardContent>
         </Card>
@@ -474,15 +499,15 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
                         </div>
                       )}
                     </div>
-                    
+
                     <Badge variant="outline" className="mb-2">
                       {service.category}
                     </Badge>
-                    
+
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {service.description}
                     </p>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-green-600">
@@ -494,7 +519,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
                           <span className="text-sm">{service.duration}min</span>
                         </div>
                       </div>
-                      
+
                       {isMaster && (
                         <div className="flex gap-2 pt-2 border-t">
                           <Button
@@ -504,14 +529,6 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({ clinicId, isMa
                             className="flex-1"
                           >
                             {service.is_active ? 'Ativo' : 'Inativo'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={service.is_featured ? "default" : "outline"}
-                            onClick={() => toggleFeatured(service.id)}
-                            className="flex-1"
-                          >
-                            {service.is_featured ? 'Destacado' : 'Destacar'}
                           </Button>
                         </div>
                       )}

@@ -34,9 +34,9 @@ type Payment = {
     clinics?: {
       name: string;
     };
-    profiles?: {
-      full_name: string;
-    };
+  };
+  profiles?: {
+    full_name: string;
   };
 };
 
@@ -68,15 +68,35 @@ export default function AdminFinances() {
           appointments (
             clinic_id,
             patient_id,
-            clinics (name),
-            profiles (full_name)
+            clinics (name)
           )
         `)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      setPayments(data as any);
+
+      let enrichedPayments = data as any[];
+
+      if (enrichedPayments && enrichedPayments.length > 0) {
+        const patientIds = [...new Set(enrichedPayments.map(p => p.appointments?.patient_id).filter(Boolean))];
+
+        if (patientIds.length > 0) {
+          const { data: profilesData } = await adminSupabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', patientIds);
+
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+          enrichedPayments = enrichedPayments.map(payment => ({
+            ...payment,
+            profiles: profilesMap.get(payment.appointments?.patient_id) || { full_name: 'Desconhecido' }
+          }));
+        }
+      }
+
+      setPayments(enrichedPayments);
     } catch (error) {
       console.error('Error fetching payments:', error);
       toast.error('Erro ao carregar pagamentos');
@@ -160,7 +180,7 @@ export default function AdminFinances() {
 
   const filteredPayments = payments.filter(payment => {
     const clinicName = payment.appointments?.clinics?.name || '';
-    const patientName = payment.appointments?.profiles?.full_name || '';
+    const patientName = payment.profiles?.full_name || '';
 
     const matchesSearch = clinicName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patientName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -308,7 +328,7 @@ export default function AdminFinances() {
                                 {payment.appointments?.clinics?.name || 'N/A'}
                               </TableCell>
                               <TableCell>
-                                {payment.appointments?.profiles?.full_name || 'N/A'}
+                                {payment.profiles?.full_name || 'N/A'}
                               </TableCell>
                               <TableCell className="font-medium">
                                 {formatCurrency(payment.amount)}

@@ -91,13 +91,34 @@ export const SupportTicketsSystem = () => {
         .from('support_tickets')
         .select(`
           *,
-          clinics:clinic_id (name, email),
-          profiles:user_id (full_name, email)
+          clinics (name, email)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTickets(data as any || []);
+
+      let enrichedTickets = data as any[];
+
+      if (enrichedTickets && enrichedTickets.length > 0) {
+        const userIds = [...new Set(enrichedTickets.map(t => t.user_id).filter(Boolean))];
+
+        if (userIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await adminSupabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
+
+          if (!profilesError && profilesData) {
+            const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+            enrichedTickets = enrichedTickets.map(ticket => ({
+              ...ticket,
+              profiles: profilesMap.get(ticket.user_id) || null
+            }));
+          }
+        }
+      }
+
+      setTickets(enrichedTickets || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast.error('Erro ao carregar tickets');
@@ -111,16 +132,36 @@ export const SupportTicketsSystem = () => {
       const { data, error } = await adminSupabase
         .from('ticket_messages')
         .select(`
-          *,
-          profiles:sender_id (full_name)
+          *
         `)
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
+      let enrichedMessages = data as any[];
+
+      if (enrichedMessages && enrichedMessages.length > 0) {
+        const senderIds = [...new Set(enrichedMessages.map(m => m.sender_id).filter(Boolean))];
+
+        if (senderIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await adminSupabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', senderIds);
+
+          if (!profilesError && profilesData) {
+            const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+            enrichedMessages = enrichedMessages.map(msg => ({
+              ...msg,
+              profiles: profilesMap.get(msg.sender_id) || null
+            }));
+          }
+        }
+      }
+
       setTickets(prev => prev.map(t =>
-        t.id === ticketId ? { ...t, messages: data as any } : t
+        t.id === ticketId ? { ...t, messages: enrichedMessages } : t
       ));
 
       if (selectedTicket?.id === ticketId) {
