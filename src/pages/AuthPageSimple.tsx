@@ -123,11 +123,12 @@ export default function AuthPageSimple() {
     }
 
     try {
-      // Cadastro sem confirmação de email
+      // Cadastro com confirmação de email
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
         options: {
+          emailRedirectTo: window.location.origin + '/auth/confirm',
           data: {
             full_name: signupData.fullName,
             role: signupData.role,
@@ -145,40 +146,33 @@ export default function AuthPageSimple() {
         return;
       }
 
-      // Se o usuário foi criado com sucesso, fazer login automático
+      // Se o usuário foi iniciado com sucesso
       if (data.user) {
-        // Fazer login automático
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-          email: signupData.email,
-          password: signupData.password
+        // Criar perfil do usuário (pode falhar se o trigger de DB for lento, o que é esperado)
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              full_name: signupData.fullName,
+              role: signupData.role,
+              email: signupData.email,
+              account_type: signupData.role
+            });
+
+          if (profileError) {
+            console.error('Erro ao criar perfil:', profileError);
+          }
+        } catch (e) {
+          console.warn('DB Trigger ou Insert manual conflitou, continuando fluxo normal.');
+        }
+
+        toast.success('Cadastro realizado com sucesso! Verifique sua caixa de entrada para confirmar seu email.', {
+          duration: 6000
         });
 
-        if (loginError) {
-          setError('Cadastro realizado, mas erro no login automático. Tente fazer login manualmente.');
-          return;
-        }
-
-        // Criar perfil do usuário
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            full_name: signupData.fullName,
-            role: signupData.role,
-            email: signupData.email,
-            account_type: signupData.role
-          });
-
-        if (profileError) {
-          console.error('Erro ao criar perfil:', profileError);
-        }
-
-        toast.success('Cadastro realizado com sucesso! Redirecionando...');
-
-        // Redirecionar diretamente para a página de planos
-        setTimeout(() => {
-          navigate(`/plans?type=${signupData.role}`);
-        }, 1500);
+        // Opcional: Voltar para a aba de login para incentivar o uso após confirmação
+        setActiveTab('login');
       }
 
     } catch (err) {
@@ -376,7 +370,7 @@ export default function AuthPageSimple() {
                       </Button>
 
                       <p className="text-xs text-muted-foreground text-center">
-                        Cadastro instantâneo - sem confirmação de email necessária
+                        Enviaremos um link de confirmação para o seu email
                       </p>
                     </form>
                   </CardContent>
